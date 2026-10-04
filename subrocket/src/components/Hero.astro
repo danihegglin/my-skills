@@ -2,17 +2,13 @@
 import { buttonVariants } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
-import { ArrowRight, PlayCircle } from '@lucide/astro'
+import { ArrowRight, Check } from '@lucide/astro'
 import ProductPreview from './ProductPreview'
 
-const proof = [
-  { value: '30', unit: 'days', label: 'before a card expires, the first update request goes out' },
-  { value: '1', unit: 'click', label: 'for a customer to pause instead of cancel' },
-  { value: '0', unit: 'migrations', label: 'your subscriptions, prices and invoices stay in Stripe' },
-]
+const perks = ['14-day free trial', 'No card required', 'Live in an afternoon']
 ---
 
-<section id="product" class="relative overflow-hidden pb-20 pt-28 sm:pt-36 lg:pb-28">
+<section class="relative overflow-hidden pb-20 pt-28 sm:pt-36 lg:pb-28">
   <div class="bg-mesh absolute inset-0 -z-20" aria-hidden="true"></div>
   <div class="bg-dots absolute inset-0 -z-10 [mask-image:radial-gradient(ellipse_70%_60%_at_50%_0%,black,transparent)]" aria-hidden="true"></div>
 
@@ -20,52 +16,36 @@ const proof = [
     <div>
       <Badge variant="outline" className="rise h-7 gap-2 rounded-full border-primary/20 bg-white/70 px-3 text-xs font-medium text-accent-foreground backdrop-blur">
         <span class="relative flex size-2">
-          <span class="absolute inline-flex size-full animate-ping rounded-full bg-saved opacity-60"></span>
-          <span class="relative inline-flex size-2 rounded-full bg-saved"></span>
+          <span class="absolute inline-flex size-full animate-ping rounded-full bg-brand opacity-60"></span>
+          <span class="relative inline-flex size-2 rounded-full bg-brand"></span>
         </span>
-        For subscription businesses on Stripe
+        Runs on your existing Stripe account
       </Badge>
 
-      <h1 class="mt-7 text-[clamp(2.7rem,6.2vw,5rem)] font-semibold">
-        <span class="rise block" style="animation-delay: 80ms">Stripe bills your</span>
-        <span class="rise block" style="animation-delay: 160ms">subscribers.</span>
-        <span class="rise block" style="animation-delay: 260ms">SubRocket <span class="accent-serif text-primary">keeps them.</span></span>
+      <h1 class="mt-7 text-[clamp(2.8rem,6.4vw,5.2rem)] font-semibold">
+        <span class="rise block" style="animation-delay: 80ms">Sell more subscriptions.</span>
+        <span class="rise block" style="animation-delay: 200ms"><span class="accent-serif relative text-primary">Keep<span class="absolute inset-x-0 bottom-[0.08em] -z-10 h-[0.28em] rounded-full bg-lime/80" aria-hidden="true"></span></span> more of them.</span>
       </h1>
 
-      <p class="rise mt-7 max-w-xl text-lg leading-relaxed text-muted-foreground sm:text-xl" style="animation-delay: 380ms">
-        Sell gift subscriptions at checkout, get new card details before old ones expire, and let customers pause or switch plans without emailing you.
+      <p class="rise mt-7 max-w-lg text-lg leading-relaxed text-muted-foreground sm:text-xl" style="animation-delay: 340ms">
+        Gift checkout, card rescue and a pause-first portal for subscription brands.
       </p>
 
-      <div class="rise mt-9 flex flex-col gap-3 sm:flex-row sm:items-center" style="animation-delay: 480ms">
-        <a href="/signup" class={cn(buttonVariants({ size: 'lg' }), 'group h-13 rounded-full px-7 text-base font-semibold shadow-[0_12px_30px_-10px_rgb(36_80_230/0.8)] transition-all hover:-translate-y-0.5 hover:shadow-[0_18px_40px_-12px_rgb(36_80_230/0.9)]')}>
+      <div class="rise mt-9 flex flex-col gap-3 sm:flex-row sm:items-center" style="animation-delay: 460ms">
+        <a href="/signup" class={cn(buttonVariants({ size: 'lg' }), 'group h-13 rounded-full px-7 text-base font-semibold shadow-[0_12px_30px_-10px_rgb(8_122_79/0.75)] transition-all hover:-translate-y-0.5 hover:shadow-[0_18px_40px_-12px_rgb(8_122_79/0.85)]')}>
           Start free trial
           <ArrowRight class="size-4 transition-transform group-hover:translate-x-1" />
         </a>
-        <a href="/demo" class={cn(buttonVariants({ variant: 'outline', size: 'lg' }), 'h-13 rounded-full bg-white/70 px-6 text-base backdrop-blur')}>
-          <PlayCircle class="size-4 text-primary" />
-          Book a 20-minute demo
-        </a>
+        <a href="/demo" class={cn(buttonVariants({ variant: 'outline', size: 'lg' }), 'h-13 rounded-full bg-white/70 px-6 text-base backdrop-blur')}>Book a demo</a>
       </div>
-      <p class="rise mt-4 text-sm text-muted-foreground" style="animation-delay: 540ms">14-day trial. No card required.</p>
+      <ul class="rise mt-6 flex flex-wrap gap-x-5 gap-y-2 text-sm text-muted-foreground" style="animation-delay: 540ms">
+        {perks.map((p) => <li class="flex items-center gap-1.5"><Check class="size-4 text-primary" />{p}</li>)}
+      </ul>
     </div>
 
     <div class="rise mx-auto w-full max-w-[30rem] lg:mr-0" style="animation-delay: 300ms">
       <ProductPreview client:load />
-      <p class="mt-4 text-center text-xs text-muted-foreground">Try it: flip the gift switch, or cancel in the portal.</p>
+      <p class="mt-4 text-center text-xs text-muted-foreground">Try it: flip the gift switch, or hit cancel.</p>
     </div>
-  </div>
-
-  <div class="mx-auto mt-20 max-w-6xl px-4 sm:px-6">
-    <dl class="grid overflow-hidden rounded-2xl border border-border bg-white/70 backdrop-blur sm:grid-cols-3">
-      {proof.map((item, i) => (
-        <div class:list={['rise p-6 sm:p-7', i > 0 && 'border-t border-border sm:border-l sm:border-t-0']} style={`animation-delay: ${650 + i * 90}ms`}>
-          <dt class="font-display text-4xl font-semibold tracking-tight">
-            {item.value}<span class="ml-1.5 text-lg font-medium text-primary">{item.unit}</span>
-          </dt>
-          <dd class="mt-1.5 text-sm leading-relaxed text-muted-foreground">{item.label}</dd>
-        </div>
-      ))}
-    </dl>
-    <p class="eyebrow mt-6 text-center text-[0.68rem] text-muted-foreground">Runs on Stripe Billing · Card data handled by Stripe · Works with your existing prices</p>
   </div>
 </section>

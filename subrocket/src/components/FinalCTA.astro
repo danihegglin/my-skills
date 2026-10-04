@@ -1,36 +1,24 @@
 ---
 import { buttonVariants } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
-import { ArrowRight, Check } from '@lucide/astro'
-
-const perks = ['14-day free trial', 'No card required', 'Disconnect any time']
+import { ArrowRight } from '@lucide/astro'
 ---
 
-<section class="px-3 pb-24 sm:px-5 sm:pb-32">
-  <div class="relative mx-auto max-w-6xl overflow-hidden rounded-[2rem] bg-gradient-to-br from-[#2f5cf0] via-cobalt to-cobalt-deep px-6 py-20 text-center text-white sm:px-10 sm:py-28" data-reveal>
-    <div class="absolute inset-0 bg-[radial-gradient(rgb(255_255_255/0.16)_1px,transparent_1px)] [background-size:22px_22px] [mask-image:radial-gradient(ellipse_at_center,black,transparent_70%)]" aria-hidden="true"></div>
-    <div class="absolute -right-24 -top-24 size-80 rounded-full bg-[#7fe0d4]/30 blur-3xl" aria-hidden="true"></div>
-    <div class="absolute -bottom-32 -left-20 size-96 rounded-full bg-[#9db8ff]/30 blur-3xl" aria-hidden="true"></div>
+<section class="px-3 pb-24 sm:px-5 sm:pb-28">
+  <div class="relative mx-auto max-w-6xl overflow-hidden rounded-[2rem] bg-gradient-to-br from-[#0a8f5d] via-brand to-brand-deep px-6 py-20 text-center text-white sm:px-10 sm:py-24" data-reveal>
+    <div class="absolute inset-0 bg-[radial-gradient(rgb(255_255_255/0.14)_1px,transparent_1px)] [background-size:22px_22px] [mask-image:radial-gradient(ellipse_at_center,black,transparent_70%)]" aria-hidden="true"></div>
+    <div class="absolute -right-24 -top-24 size-80 rounded-full bg-lime/30 blur-3xl" aria-hidden="true"></div>
 
     <div class="relative mx-auto max-w-3xl">
-      <h2 class="text-[clamp(2.4rem,5.5vw,4.25rem)] font-semibold">
-        Keep the subscribers <span class="accent-serif text-[#bfe9e3]">you already won.</span>
-      </h2>
-      <p class="mx-auto mt-6 max-w-xl text-lg leading-relaxed text-white/75">
-        Connect Stripe, turn on the modules you need, and watch the first rescued renewal show up in your dashboard.
-      </p>
+      <h2 class="text-[clamp(2.4rem,5.5vw,4.25rem)] font-semibold">Keep the subscribers <span class="accent-serif text-lime">you already won.</span></h2>
       <div class="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row">
-        <a href="/signup" class={cn(buttonVariants({ size: 'lg' }), 'group h-14 rounded-full bg-white px-8 text-base font-semibold text-cobalt-deep shadow-[0_18px_40px_-12px_rgb(0_0_0/0.4)] transition-all hover:-translate-y-0.5 hover:bg-white')}>
+        <a href="/signup" class={cn(buttonVariants({ size: 'lg' }), 'group h-14 rounded-full bg-lime px-8 text-base font-semibold text-brand-deep shadow-[0_18px_40px_-12px_rgb(0_0_0/0.35)] transition-all hover:-translate-y-0.5 hover:bg-lime')}>
           Start free trial
           <ArrowRight class="size-4 transition-transform group-hover:translate-x-1" />
         </a>
-        <a href="/demo" class={cn(buttonVariants({ variant: 'ghost', size: 'lg' }), 'h-14 rounded-full px-7 text-base text-white hover:bg-white/10 hover:text-white')}>Book a 20-minute demo</a>
+        <a href="/demo" class={cn(buttonVariants({ variant: 'ghost', size: 'lg' }), 'h-14 rounded-full px-7 text-base text-white hover:bg-white/10 hover:text-white')}>Book a demo</a>
       </div>
-      <ul class="mt-10 flex flex-col items-center justify-center gap-3 text-sm text-white/80 sm:flex-row sm:gap-8">
-        {perks.map((p) => (
-          <li class="flex items-center gap-2"><Check class="size-4 text-[#9ff0e5]" /> {p}</li>
-        ))}
-      </ul>
+      <p class="mt-6 text-sm text-white/75">14 days free. No card required.</p>
     </div>
   </div>
 </section>

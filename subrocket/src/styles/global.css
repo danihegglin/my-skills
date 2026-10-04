@@ -2,8 +2,8 @@
 @import "tw-animate-css";
 
 /*
- * SubRocket design system: "Clear sky"
- * Cool, light canvas. Cobalt for action, teal for anything rescued or saved.
+ * SubRocket design system: "Fresh growth"
+ * Cool, light canvas with a green cast. Deep green for action, lime as a rare highlight.
  * Fonts are loaded with <link> tags in Layout.astro.
  */
 
@@ -17,14 +17,12 @@
   --font-mono: 'Geist Mono', ui-monospace, monospace;
 
   /* Brand extras beyond the shadcn tokens */
-  --color-ink: #0b1526;
-  --color-cobalt: #2450e6;
-  --color-cobalt-deep: #14307f;
-  --color-sky: #dfe9ff;
-  --color-frost: #f0f5ff;
-  --color-saved: #0f9b8e;
-  --color-saved-ink: #0a6b62;
-  --color-saved-soft: #e2f5f2;
+  --color-ink: #0a1a14;
+  --color-brand: #087a4f;
+  --color-brand-deep: #053d29;
+  --color-mint: #d6f3e4;
+  --color-frost: #eff8f3;
+  --color-lime: #c6ef6a;
 
   --animate-accordion-down: accordion-down 0.25s cubic-bezier(0.22, 1, 0.36, 1);
   --animate-accordion-up: accordion-up 0.2s cubic-bezier(0.22, 1, 0.36, 1);
@@ -33,24 +31,24 @@
 :root {
   --radius: 0.75rem;
 
-  --background: #f6f8fb;
-  --foreground: #0b1526;
+  --background: #f5f8f6;
+  --foreground: #0a1a14;
   --card: #ffffff;
-  --card-foreground: #0b1526;
+  --card-foreground: #0a1a14;
   --popover: #ffffff;
-  --popover-foreground: #0b1526;
-  --primary: #2450e6;
+  --popover-foreground: #0a1a14;
+  --primary: #087a4f;
   --primary-foreground: #ffffff;
-  --secondary: #eaf0f8;
-  --secondary-foreground: #0b1526;
-  --muted: #eef2f7;
-  --muted-foreground: #556275;
-  --accent: #e6eeff;
-  --accent-foreground: #1a3fbf;
+  --secondary: #e8f1ec;
+  --secondary-foreground: #0a1a14;
+  --muted: #edf3ef;
+  --muted-foreground: #4f6158;
+  --accent: #e1f4ea;
+  --accent-foreground: #065c3b;
   --destructive: #d23a4f;
-  --border: #dfe5ee;
-  --input: #d3dbe7;
-  --ring: #2450e6;
+  --border: #dce6e0;
+  --input: #ccdad2;
+  --ring: #087a4f;
 
   --easing: cubic-bezier(0.22, 1, 0.36, 1);
 }
@@ -108,23 +106,23 @@
     text-wrap: pretty;
   }
   ::selection {
-    background: var(--color-sky);
-    color: var(--color-cobalt-deep);
+    background: var(--color-lime);
+    color: var(--color-brand-deep);
   }
 }
 
 /* Faint dot grid, masked per section */
 .bg-dots {
-  background-image: radial-gradient(rgb(36 80 230 / 0.16) 1px, transparent 1px);
+  background-image: radial-gradient(rgb(8 122 79 / 0.16) 1px, transparent 1px);
   background-size: 22px 22px;
 }
 
 /* Cool mesh behind the hero */
 .bg-mesh {
   background:
-    radial-gradient(60% 55% at 85% 10%, rgb(189 214 255 / 0.85), transparent 70%),
-    radial-gradient(45% 45% at 10% 0%, rgb(205 240 236 / 0.8), transparent 70%),
-    radial-gradient(40% 40% at 60% 90%, rgb(226 234 255 / 0.9), transparent 70%);
+    radial-gradient(60% 55% at 85% 10%, rgb(190 238 212 / 0.85), transparent 70%),
+    radial-gradient(45% 45% at 10% 0%, rgb(214 240 235 / 0.8), transparent 70%),
+    radial-gradient(40% 40% at 60% 90%, rgb(228 245 200 / 0.6), transparent 70%);
 }
 
 /* Serif italic accent inside display headlines */

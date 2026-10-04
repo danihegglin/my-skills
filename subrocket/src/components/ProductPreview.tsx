@@ -46,18 +46,18 @@ function Checkout() {
       <div
         className={cn(
           'flex items-center justify-between gap-4 rounded-xl border px-4 py-3 transition-colors',
-          gift ? 'border-saved/50 bg-saved-soft' : 'border-border bg-muted/50',
+          gift ? 'border-primary/50 bg-accent' : 'border-border bg-muted/50',
         )}
       >
         <Label htmlFor="gift-toggle" className="flex cursor-pointer items-center gap-2.5 text-sm font-medium">
-          <Gift className={cn('size-4', gift ? 'text-saved-ink' : 'text-muted-foreground')} aria-hidden="true" />
+          <Gift className={cn('size-4', gift ? 'text-accent-foreground' : 'text-muted-foreground')} aria-hidden="true" />
           This is a gift
         </Label>
         <Switch
           id="gift-toggle"
           checked={gift}
           onCheckedChange={setGift}
-          className="data-[state=checked]:bg-saved"
+          className="data-[state=checked]:bg-brand"
         />
       </div>
 
@@ -116,10 +116,10 @@ function Checkout() {
 }
 
 const rescueSteps = [
-  { day: '30 days before', label: 'Heads-up email with a one-tap update link', state: 'sent' },
-  { day: '7 days before', label: 'Reminder, sent because the card is unchanged', state: 'sent' },
-  { day: '3 days before', label: 'Customer updates their card', state: 'saved' },
-  { day: 'Renewal day', label: 'Charged $24.00 on the new card', state: 'saved' },
+  { day: '30 days before', label: 'Email with a one-tap update link', state: 'sent' },
+  { day: '7 days before', label: 'Reminder: card still unchanged', state: 'sent' },
+  { day: '3 days before', label: 'Card updated. Reminders stop.', state: 'saved' },
+  { day: 'Renewal day', label: '$24.00 charged on the new card', state: 'saved' },
 ] as const
 
 function Rescue() {
@@ -127,24 +127,24 @@ function Rescue() {
     <div className="space-y-5">
       <div className="flex items-center justify-between gap-4 rounded-xl border border-border bg-muted/50 p-4">
         <div className="flex items-center gap-3">
-          <div className="flex h-9 w-14 items-center justify-center rounded-md bg-gradient-to-br from-cobalt to-cobalt-deep font-mono text-[0.65rem] font-medium tracking-widest text-white">VISA</div>
+          <div className="flex h-9 w-14 items-center justify-center rounded-md bg-gradient-to-br from-brand to-brand-deep font-mono text-[0.65rem] font-medium tracking-widest text-white">VISA</div>
           <div>
             <p className="font-mono text-sm">•••• 0341</p>
             <p className="text-xs text-muted-foreground">Expires 11/26</p>
           </div>
         </div>
-        <Badge className="rounded-full border-saved/30 bg-saved-soft text-saved-ink">
+        <Badge className="rounded-full border-primary/30 bg-accent text-accent-foreground">
           <Check aria-hidden="true" /> Rescued
         </Badge>
       </div>
 
-      <ol className="relative space-y-5 pl-1 before:absolute before:left-[17px] before:top-3 before:h-[calc(100%-1.5rem)] before:w-px before:bg-gradient-to-b before:from-primary/50 before:to-saved/60">
+      <ol className="relative space-y-5 pl-1 before:absolute before:left-[17px] before:top-3 before:h-[calc(100%-1.5rem)] before:w-px before:bg-gradient-to-b before:from-primary/50 before:to-brand/60">
         {rescueSteps.map((step) => (
           <li key={step.day} className="relative flex gap-4">
             <span
               className={cn(
                 'relative z-10 flex size-8 shrink-0 items-center justify-center rounded-full ring-4 ring-card',
-                step.state === 'sent' ? 'bg-accent text-accent-foreground' : 'bg-saved text-white',
+                step.state === 'sent' ? 'bg-accent text-accent-foreground' : 'bg-brand text-white',
               )}
             >
               {step.state === 'sent' ? <Mail className="size-4" aria-hidden="true" /> : <Check className="size-4" aria-hidden="true" />}
@@ -157,9 +157,6 @@ function Rescue() {
         ))}
       </ol>
 
-      <div className="rounded-xl border border-dashed border-border p-4 text-sm text-muted-foreground">
-        The day-1 reminder never went out. Reminders stop as soon as the card changes.
-      </div>
     </div>
   )
 }
@@ -183,7 +180,7 @@ function Portal() {
             <p className="text-xs text-muted-foreground">$24/mo · Renews Nov 3</p>
           </div>
         </div>
-        <Badge variant="outline" className={cn('rounded-full', paused && 'border-saved/30 bg-saved-soft text-saved-ink')}>
+        <Badge variant="outline" className={cn('rounded-full', paused && 'border-primary/30 bg-accent text-accent-foreground')}>
           {paused ? `Paused until ${resumeDates[pause]}` : 'Active'}
         </Badge>
       </div>
@@ -278,8 +275,8 @@ export default function ProductPreview() {
 
   return (
     <div className="relative w-full">
-      <div className="absolute -inset-6 -z-10 rounded-[2.5rem] bg-gradient-to-br from-sky via-white/40 to-saved-soft blur-2xl" aria-hidden="true" />
-      <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-[0_40px_80px_-30px_rgb(20_48_127/0.35),0_2px_6px_rgb(20_48_127/0.06)]">
+      <div className="absolute -inset-6 -z-10 rounded-[2.5rem] bg-gradient-to-br from-mint via-white/40 to-frost blur-2xl" aria-hidden="true" />
+      <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-[0_40px_80px_-30px_rgb(5_61_41/0.35),0_2px_6px_rgb(5_61_41/0.06)]">
         <div className="flex items-center gap-3 border-b border-border bg-muted/40 px-4 py-2.5">
           <div className="flex gap-1.5" aria-hidden="true">
             <span className="size-2.5 rounded-full bg-border" />
@@ -310,7 +307,7 @@ export default function ProductPreview() {
             <TabsContent
               key={value}
               value={value}
-              className="min-h-[26.5rem] p-4 pt-5 animate-in fade-in-0 slide-in-from-bottom-1 duration-300 sm:p-6 sm:pt-6"
+              className="min-h-[25rem] p-4 pt-5 animate-in fade-in-0 slide-in-from-bottom-1 duration-300 sm:p-6 sm:pt-6"
             >
               <Panel />
             </TabsContent>

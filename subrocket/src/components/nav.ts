@@ -1,6 +1,5 @@
 export const nav = [
-  { href: '#product', label: 'Product' },
-  { href: '#modules', label: 'Modules' },
+  { href: '#features', label: 'Features' },
   { href: '#setup', label: 'Setup' },
   { href: '#faq', label: 'FAQ' },
 ]

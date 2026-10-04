@@ -2,61 +2,30 @@
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import QuoteAvatar from './QuoteAvatar'
-import { cn } from '@/lib/utils'
 
 // SAMPLE QUOTES: replace with real, attributed customer quotes before launch.
 const testimonials = [
-  {
-    quote: 'We sold gift subscriptions for the first time last December. Our old checkout had no way to do it.',
-    name: 'Founder',
-    company: 'Coffee subscription',
-    initials: 'CS',
-    featured: true,
-  },
-  {
-    quote: 'Expiry emails go out a month ahead now. Most customers update their card before we ever see a failed renewal.',
-    name: 'Head of Growth',
-    company: 'Fitness app',
-    initials: 'FA',
-  },
-  {
-    quote: 'Customers who used to email “please cancel” now pause for two months and come back.',
-    name: 'Support Lead',
-    company: 'Meal kit service',
-    initials: 'MK',
-  },
-  {
-    quote: 'Everything still lives in Stripe, so our finance team didn’t have to change a single report.',
-    name: 'CTO',
-    company: 'B2B SaaS',
-    initials: 'BS',
-  },
+  { quote: 'Our first December selling gift subscriptions.', name: 'Founder', company: 'Coffee subscription', initials: 'CS' },
+  { quote: 'Most cards get updated before a renewal ever fails.', name: 'Head of Growth', company: 'Fitness app', initials: 'FA' },
+  { quote: '“Please cancel” emails turned into two-month pauses.', name: 'Support Lead', company: 'Meal kits', initials: 'MK' },
 ]
 ---
 
-<section class="border-y border-border bg-white py-24 sm:py-32">
+<section class="border-y border-border bg-white py-24 sm:py-28">
   <div class="mx-auto max-w-6xl px-4 sm:px-6">
-    <div class="flex flex-col justify-between gap-4 sm:flex-row sm:items-end" data-reveal>
-      <div>
-        <p class="eyebrow text-primary">From subscription teams</p>
-        <h2 class="mt-4 text-4xl font-semibold sm:text-5xl">What changes after launch</h2>
-      </div>
-      <Badge variant="outline" className="w-fit rounded-full text-muted-foreground">Sample quotes</Badge>
+    <div class="flex flex-wrap items-end justify-between gap-4" data-reveal>
+      <h2 class="text-4xl font-semibold sm:text-5xl">What teams notice first</h2>
+      <Badge variant="outline" className="rounded-full text-muted-foreground">Sample quotes</Badge>
     </div>
-
-    <div class="mt-14 grid gap-5 md:grid-cols-3">
+    <div class="mt-12 grid gap-4 md:grid-cols-3">
       {testimonials.map((t, i) => (
-        <figure
-          class:list={[t.featured ? 'md:col-span-3' : 'md:col-span-1']}
-          data-reveal
-          style={`transition-delay: ${i * 80}ms`}
-        >
-          <Card className={cn('h-full gap-0 rounded-3xl py-0 shadow-none transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_24px_50px_-28px_rgb(20_48_127/0.4)]', t.featured && 'border-transparent bg-frost')}>
-            <CardContent className={cn('flex h-full flex-col justify-between gap-8 p-7 sm:p-9', t.featured && 'md:flex-row md:items-end md:gap-16')}>
-              <blockquote class:list={['font-display font-medium leading-snug tracking-tight', t.featured ? 'max-w-3xl text-2xl sm:text-[2.1rem]' : 'text-lg']}>
+        <figure data-reveal style={`transition-delay: ${i * 80}ms`}>
+          <Card className="h-full gap-0 rounded-3xl bg-frost py-0 shadow-none transition-transform duration-300 hover:-translate-y-1">
+            <CardContent className="flex h-full flex-col justify-between gap-8 p-7">
+              <blockquote class="font-display text-xl font-medium leading-snug tracking-tight">
                 <span class="accent-serif text-primary">“</span>{t.quote}<span class="accent-serif text-primary">”</span>
               </blockquote>
-              <figcaption class="flex shrink-0 items-center gap-3">
+              <figcaption class="flex items-center gap-3">
                 <QuoteAvatar initials={t.initials} />
                 <div class="text-sm">
                   <p class="font-semibold">{t.name}</p>

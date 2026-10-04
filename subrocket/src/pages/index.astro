@@ -2,18 +2,18 @@
 /*
  * SubRocket landing page
  *
- * Aesthetic direction: "Clear sky". Minimal and light, cool blue-grey canvas with airy spacing.
+ * Aesthetic direction: "Fresh growth". Minimal and light, cool green-grey canvas, deliberately unlike Stripe's blurple.
  * Typography: Instrument Sans (display) + Instrument Serif italic (accent words) + Geist (body) + Geist Mono (labels).
- * Palette: canvas #f6f8fb, ink #0b1526, cobalt #2450e6 (action), teal #0f9b8e (anything rescued or saved).
+ * Palette: canvas #f5f8f6, ink #0a1a14, green #087a4f (action), lime #c6ef6a (rare highlight).
  * Components: shadcn/ui Tabs, Switch, ToggleGroup, Input, Label, Sheet, Card, Badge, Accordion, Avatar, Separator.
  * Motion: staggered hero rise, scroll reveals, soft hover lifts. All respect reduced motion.
- * Layout: split hero with an interactive product window, journey row, bento modules, two-column setup and FAQ.
+ * Layout: split hero with an interactive product window, three number-led feature rows, compact setup, FAQ.
+ * Copy: short and number-led. Every statistic is sourced in the footer.
  */
 import Layout from '@/layouts/Layout.astro'
 import Header from '@/components/Header.astro'
 import Hero from '@/components/Hero.astro'
-import Problem from '@/components/Problem.astro'
-import Modules from '@/components/Modules.astro'
+import Features from '@/components/Features.astro'
 import HowItWorks from '@/components/HowItWorks.astro'
 import Testimonials from '@/components/Testimonials.astro'
 import FAQ from '@/components/FAQ.astro'
@@ -22,14 +22,13 @@ import Footer from '@/components/Footer.astro'
 ---
 
 <Layout
-  title="SubRocket: Gift Checkout, Card Expiry Rescue and Self-Service for Stripe Subscriptions"
-  description="Sell gift subscriptions, update cards before they expire, and let customers pause or switch plans. SubRocket runs on your existing Stripe account."
+  title="SubRocket: Gift Checkout, Card Rescue and Self-Service for Subscriptions"
+  description="Sell gift subscriptions, fix cards before they fail, and turn cancels into pauses. Runs on your existing Stripe account."
 >
   <Header />
   <main id="main">
     <Hero />
-    <Problem />
-    <Modules />
+    <Features />
     <HowItWorks />
     <Testimonials />
     <FAQ />
