@@ -6,7 +6,7 @@ interface Props {
 const { class: className = '', tone = 'dark' } = Astro.props
 ---
 
-<a href="/" class:list={['group inline-flex items-center gap-2.5 rounded-md', className]} aria-label="SubRocket home">
+<a href="/" class:list={['group inline-flex items-center gap-2.5 rounded-md', className]} aria-label="subrocket home">
   <svg viewBox="0 0 32 32" class="size-8 transition-transform duration-500 group-hover:-translate-y-0.5 group-hover:rotate-[8deg]" aria-hidden="true">
     <defs>
       <linearGradient id="logo-g" x1="0" y1="0" x2="1" y2="1">
@@ -19,5 +19,5 @@ const { class: className = '', tone = 'dark' } = Astro.props
     <circle cx="16" cy="13.6" r="2.1" fill="#087a4f" />
     <path d="M13.4 22.8h5.2L16 27z" fill="#c6ef6a" class="origin-top transition-transform duration-500 group-hover:scale-y-125" />
   </svg>
-  <span class:list={['font-display text-[1.2rem] font-semibold tracking-tight', tone === 'light' ? 'text-white' : 'text-foreground']}>SubRocket</span>
+  <span class:list={['font-display text-[1.2rem] font-semibold tracking-tight', tone === 'light' ? 'text-white' : 'text-foreground']}>subrocket</span>
 </a>

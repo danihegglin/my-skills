@@ -17,7 +17,7 @@ export default function MobileNav() {
       </SheetTrigger>
       <SheetContent side="right" className="w-[85vw] max-w-sm bg-background">
         <SheetHeader>
-          <SheetTitle className="font-display text-xl">SubRocket</SheetTitle>
+          <SheetTitle className="font-display text-xl">subrocket</SheetTitle>
           <SheetDescription>Gift checkout, card rescue and self-service for Stripe.</SheetDescription>
         </SheetHeader>
         <nav aria-label="Mobile" className="px-4">
