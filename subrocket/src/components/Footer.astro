@@ -1,0 +1,65 @@
+---
+import { Separator } from '@/components/ui/separator'
+import Logo from './Logo.astro'
+
+const year = new Date().getFullYear()
+
+const columns = [
+  {
+    title: 'Product',
+    links: [
+      { href: '#checkout', label: 'Gift checkout' },
+      { href: '#rescue', label: 'Card rescue' },
+      { href: '#portal', label: 'Self-service portal' },
+      { href: '/pricing', label: 'Pricing' },
+    ],
+  },
+  {
+    title: 'Company',
+    links: [
+      { href: '/about', label: 'About' },
+      { href: '/blog', label: 'Blog' },
+      { href: 'mailto:hello@subrocket.io', label: 'Contact' },
+    ],
+  },
+  {
+    title: 'Legal',
+    links: [
+      { href: '/privacy', label: 'Privacy policy' },
+      { href: '/terms', label: 'Terms of service' },
+      { href: '/dpa', label: 'Data processing agreement' },
+      { href: '/imprint', label: 'Imprint' },
+    ],
+  },
+]
+---
+
+<footer class="border-t border-border bg-[#070a11]">
+  <div class="mx-auto max-w-7xl px-5 py-16 sm:px-8">
+    <div class="grid gap-12 md:grid-cols-12">
+      <div class="md:col-span-5">
+        <Logo />
+        <p class="mt-5 max-w-xs text-sm leading-relaxed text-haze">Gift checkout, card-expiry rescue and customer self-service for Stripe subscriptions.</p>
+        <address class="mt-6 space-y-1 text-sm not-italic text-haze">
+          <p>SubRocket</p>
+          <p><a href="mailto:hello@subrocket.io" class="hover:text-paper">hello@subrocket.io</a></p>
+        </address>
+      </div>
+      {columns.map((col) => (
+        <nav aria-label={col.title} class="md:col-span-2 lg:col-span-2">
+          <h3 class="telemetry text-paper">{col.title}</h3>
+          <ul class="mt-5 space-y-3 text-sm text-haze">
+            {col.links.map((l) => (
+              <li><a href={l.href} data-astro-prefetch class="transition-colors hover:text-signal">{l.label}</a></li>
+            ))}
+          </ul>
+        </nav>
+      ))}
+    </div>
+    <Separator className="my-10 bg-gradient-to-r from-signal/50 via-border to-transparent" />
+    <div class="flex flex-col justify-between gap-4 text-xs text-haze sm:flex-row">
+      <p>&copy; {year} SubRocket. All rights reserved.</p>
+      <p>Stripe is a trademark of Stripe, Inc. SubRocket is an independent product.</p>
+    </div>
+  </div>
+</footer>

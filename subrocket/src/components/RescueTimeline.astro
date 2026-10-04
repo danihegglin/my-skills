@@ -1,0 +1,40 @@
+---
+// Product visual: the card-expiry rescue sequence for one customer.
+import { Check, Mail } from '@lucide/astro'
+
+const steps = [
+  { day: 'Day −30', label: 'Heads-up email with a one-tap update link', state: 'sent' },
+  { day: 'Day −7', label: 'Reminder, sent only if the card is unchanged', state: 'sent' },
+  { day: 'Day −3', label: 'Card updated by the customer', state: 'saved' },
+  { day: 'Renewal', label: 'Charged $24.00 on the new card', state: 'paid' },
+]
+---
+
+<div class="relative rounded-2xl border border-white/10 bg-ink p-6 shadow-2xl sm:p-7">
+  <div class="flex items-center justify-between gap-4 border-b border-border pb-5">
+    <div class="flex items-center gap-3">
+      <div class="flex h-9 w-14 items-center justify-center rounded-md bg-gradient-to-br from-ink-3 to-white/10 font-mono text-xs">VISA</div>
+      <div>
+        <p class="font-mono text-sm">•••• 0341</p>
+        <p class="text-xs text-haze">Expires 11/26</p>
+      </div>
+    </div>
+    <span class="telemetry rounded-full bg-mint/10 px-3 py-1 text-[0.65rem] text-mint">Rescued</span>
+  </div>
+  <ol class="relative mt-6 space-y-6 before:absolute before:left-[11px] before:top-2 before:h-[calc(100%-1rem)] before:w-px before:bg-gradient-to-b before:from-signal before:to-mint">
+    {steps.map((step) => (
+      <li class="relative flex gap-4 pl-0">
+        <span class:list={[
+          'relative z-10 flex size-6 shrink-0 items-center justify-center rounded-full',
+          step.state === 'sent' ? 'bg-signal text-ink' : 'bg-mint text-ink',
+        ]}>
+          {step.state === 'sent' ? <Mail class="size-3.5" /> : <Check class="size-3.5" />}
+        </span>
+        <div>
+          <p class="telemetry text-[0.65rem] text-haze">{step.day}</p>
+          <p class="text-sm font-medium">{step.label}</p>
+        </div>
+      </li>
+    ))}
+  </ol>
+</div>

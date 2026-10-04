@@ -1,0 +1,34 @@
+---
+import { buttonVariants } from '@/components/ui/button'
+import { cn } from '@/lib/utils'
+import { ArrowRight, Check } from '@lucide/astro'
+
+const perks = ['14-day free trial', 'No card required', 'Disconnect any time']
+---
+
+<section class="grain relative overflow-hidden py-28 sm:py-40">
+  <div class="bg-grid absolute inset-0 -z-10 [mask-image:radial-gradient(ellipse_at_center,black,transparent_70%)]" aria-hidden="true"></div>
+  <div class="absolute left-1/2 top-1/2 -z-10 size-[48rem] -translate-x-1/2 -translate-y-1/2 rounded-full bg-signal/20 blur-[140px]" aria-hidden="true"></div>
+
+  <div class="mx-auto max-w-5xl px-5 text-center sm:px-8" data-reveal>
+    <p class="telemetry text-mint">Ready for launch</p>
+    <h2 class="mt-6 text-[clamp(2.6rem,6.5vw,5.75rem)] font-extrabold">
+      Keep the subscribers<br /><span class="text-signal">you already won.</span>
+    </h2>
+    <p class="mx-auto mt-8 max-w-2xl text-lg leading-relaxed text-haze sm:text-xl">
+      Connect Stripe, turn on the modules you need, and watch the first rescued renewal show up in your dashboard.
+    </p>
+    <div class="mt-12 flex flex-col items-center justify-center gap-4 sm:flex-row">
+      <a href="/signup" class={cn(buttonVariants({ size: 'lg' }), 'group h-16 rounded-full px-10 text-lg font-bold transition-all hover:scale-[1.04] hover:shadow-[0_0_60px_0_rgb(255_106_61/0.55)]')}>
+          Start Free Trial
+          <ArrowRight class="size-5 transition-transform group-hover:translate-x-1" />
+        </a>
+      <a href="/demo" class={cn(buttonVariants({ variant: 'ghost', size: 'lg' }), 'h-16 rounded-full px-8 text-base font-semibold')}>Book a 20-minute demo</a>
+    </div>
+    <ul class="mt-10 flex flex-col items-center justify-center gap-3 text-sm text-haze sm:flex-row sm:gap-8">
+      {perks.map((p) => (
+        <li class="flex items-center gap-2"><Check class="size-4 text-mint" /> {p}</li>
+      ))}
+    </ul>
+  </div>
+</section>

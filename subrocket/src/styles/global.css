@@ -1,0 +1,171 @@
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+@import "tailwindcss";
+
+/*
+ * SubRocket design system: "Mission control"
+ * Ink-dark canvas, signal orange for action, mint for anything rescued or saved.
+ */
+
+@theme {
+  --font-display: 'Syne', ui-sans-serif, sans-serif;
+  --font-body: 'Manrope', ui-sans-serif, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+
+  --color-ink: #0a0e17;
+  --color-ink-2: #111725;
+  --color-ink-3: #1a2233;
+  --color-signal: #ff6a3d;
+  --color-signal-soft: #ff8f6b;
+  --color-mint: #7cf5c8;
+  --color-haze: #8a93a8;
+  --color-paper: #edeff5;
+
+  --animate-accordion-down: accordion-down 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  --animate-accordion-up: accordion-up 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ShadCN tokens, pointed at the brand palette */
+:root {
+  --background: #0a0e17;
+  --foreground: #edeff5;
+  --card: #111725;
+  --card-foreground: #edeff5;
+  --primary: #ff6a3d;
+  --primary-foreground: #0a0e17;
+  --secondary: #1a2233;
+  --secondary-foreground: #edeff5;
+  --accent: #7cf5c8;
+  --accent-foreground: #0a0e17;
+  --muted: #1a2233;
+  --muted-foreground: #8a93a8;
+  --border: rgb(237 239 245 / 0.1);
+  --input: rgb(237 239 245 / 0.16);
+  --ring: #ff6a3d;
+
+  --duration-fast: 150ms;
+  --duration-medium: 300ms;
+  --duration-slow: 600ms;
+  --easing: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+}
+
+@layer base {
+  * {
+    border-color: var(--border);
+  }
+  html {
+    scroll-behavior: smooth;
+    scroll-padding-top: 6rem;
+    overflow-x: clip;
+  }
+  body {
+    background: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-body);
+    -webkit-font-smoothing: antialiased;
+  }
+  h1, h2, h3 {
+    font-family: var(--font-display);
+    letter-spacing: -0.02em;
+    line-height: 1.05;
+  }
+  ::selection {
+    background: var(--color-signal);
+    color: var(--color-ink);
+  }
+}
+
+/* Blueprint grid used behind the hero and final CTA */
+.bg-grid {
+  background-image:
+    linear-gradient(to right, rgb(237 239 245 / 0.045) 1px, transparent 1px),
+    linear-gradient(to bottom, rgb(237 239 245 / 0.045) 1px, transparent 1px);
+  background-size: 56px 56px;
+}
+
+/* Film grain for depth */
+.grain::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.06;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+.telemetry {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+@keyframes rise {
+  from { opacity: 0; transform: translateY(24px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes accordion-down {
+  from { height: 0; }
+  to { height: var(--radix-accordion-content-height); }
+}
+@keyframes accordion-up {
+  from { height: var(--radix-accordion-content-height); }
+  to { height: 0; }
+}
+@keyframes blink {
+  50% { opacity: 0.25; }
+}
+@keyframes thrust {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
+.rise {
+  animation: rise var(--duration-slow) var(--easing) both;
+}
+.blink {
+  animation: blink 1.6s steps(2) infinite;
+}
+.thrust {
+  animation: thrust 5s ease-in-out infinite;
+}
+
+/* Scroll reveal: hidden until the observer adds .is-visible */
+[data-reveal] {
+  opacity: 0;
+  transform: translateY(28px);
+  transition: opacity var(--duration-slow) var(--easing), transform var(--duration-slow) var(--easing);
+}
+[data-reveal].is-visible {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  [data-reveal] {
+    opacity: 1;
+    transform: none;
+  }
+}

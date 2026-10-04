@@ -1,0 +1,33 @@
+---
+import { buttonVariants } from '@/components/ui/button'
+import { cn } from '@/lib/utils'
+import Logo from './Logo.astro'
+
+const nav = [
+  { href: '#checkout', label: 'Gift checkout' },
+  { href: '#rescue', label: 'Card rescue' },
+  { href: '#portal', label: 'Self-service' },
+  { href: '#faq', label: 'FAQ' },
+]
+---
+
+<header id="site-header" class="fixed inset-x-0 top-0 z-50 border-b border-transparent transition-[background-color,border-color,backdrop-filter] duration-300 data-[scrolled=true]:border-border data-[scrolled=true]:bg-ink/80 data-[scrolled=true]:backdrop-blur-lg">
+  <div class="mx-auto flex h-18 max-w-7xl items-center justify-between px-5 sm:px-8">
+    <Logo />
+    <nav aria-label="Main" class="hidden md:block">
+      <ul class="flex items-center gap-8 text-sm font-medium text-haze">
+        {nav.map((item) => (
+          <li><a href={item.href} class="transition-colors hover:text-paper">{item.label}</a></li>
+        ))}
+      </ul>
+    </nav>
+    <a href="/signup" class={cn(buttonVariants({ size: 'sm' }), 'h-10 rounded-full px-5 font-semibold transition-transform hover:scale-105')}>Start Free Trial</a>
+  </div>
+</header>
+
+<script>
+  const header = document.getElementById('site-header')
+  const update = () => header?.setAttribute('data-scrolled', String(window.scrollY > 12))
+  update()
+  window.addEventListener('scroll', update, { passive: true })
+</script>
