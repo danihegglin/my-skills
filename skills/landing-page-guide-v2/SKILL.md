@@ -476,7 +476,8 @@ Astro renders everything to static HTML and ships **zero JavaScript** unless you
   - `client:visible` - hydrate when scrolled into view (default choice for below-the-fold)
   - `client:load` - hydrate immediately (only for above-the-fold interactivity)
   - `client:idle` - hydrate once the browser is idle
-- Never pass nested React components as children from `.astro` into a hydrated island (e.g. `AccordionItem` inside `<Accordion client:visible>`) - they won't share React context. Wrap the whole composition in one `.tsx` component instead.
+- **Each React component in a `.astro` file is its own React root**, hydrated or not. Radix-based compound components (`Avatar` + `AvatarFallback`, `Accordion` + `AccordionItem`, `Tabs`, `Dialog`, ...) share React context, so compose all their parts inside one `.tsx` component and use that from `.astro`. Writing `<Avatar><AvatarFallback /></Avatar>` directly in `.astro` fails the build ("must be used within `Avatar`"). Plain-div components (`Card`, `CardHeader`, `CardContent`, `Badge`) are safe.
+- **`asChild` does not work from `.astro`**: Astro passes children as a pre-rendered HTML slot, so Radix `Slot` can't merge into them and `<Button asChild><a /></Button>` renders an unstyled link. For CTAs and other link-buttons, style a plain `<a>` with `buttonVariants()` (see Step 5).
 - For simple interactions (sticky header on scroll, scroll reveals, count-up numbers) prefer a plain `<script>` tag inside the `.astro` component over a React island.
 
 **IMPORTANT**: ShadCN components are STARTING POINTS, not final designs. Customize them heavily:
@@ -644,14 +645,21 @@ Map sections to ShadCN components and **customize heavily**:
 
 ShadCN components used in `.astro` files take `className` (React prop); plain HTML elements use `class`.
 
-**Hero CTA Example:**
+**Hero CTA Example** (a link styled as a button; `asChild` doesn't work from `.astro`):
 ```astro
-<Button
-  size="lg"
-  className="bg-accent hover:bg-accent/90 text-white px-12 py-6 text-xl font-display rounded-full shadow-2xl hover:shadow-accent/50 hover:scale-105 transition-all duration-300"
+---
+import { buttonVariants } from '@/components/ui/button'
+import { cn } from '@/lib/utils'
+---
+<a
+  href="/signup"
+  class={cn(
+    buttonVariants({ size: 'lg' }),
+    'bg-accent hover:bg-accent/90 text-white px-12 py-6 text-xl font-display rounded-full shadow-2xl hover:shadow-accent/50 hover:scale-105 transition-all duration-300'
+  )}
 >
   Start Free Trial →
-</Button>
+</a>
 ```
 
 **Benefits Card Example:**
@@ -762,7 +770,7 @@ For complete, production-ready component implementations using ShadCN UI, refer 
 This reference file includes:
 - Hero section with Button, Badge, and `astro:assets` image optimization
 - Benefits section with Card components
-- Testimonials with Avatar and Card
+- Testimonials with Card and an Avatar composed in a small `.tsx` component
 - FAQ with Accordion (React island hydrated via `client:visible`)
 - Final CTA with Card and Button
 - Footer with Separator and links

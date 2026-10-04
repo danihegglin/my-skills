@@ -9,13 +9,18 @@ This reference provides complete, production-ready component implementations for
 - Icons come from `@lucide/astro` (Astro components, use `class`).
 - No `key` prop is needed when mapping in `.astro` templates.
 
+**Two React-in-Astro rules (both break the build or the styling if ignored):**
+- **Each React component in a `.astro` file renders as its own React root.** Radix-based compound components (`Avatar` + `AvatarImage`/`AvatarFallback`, `Accordion` + its items, `Tabs`, `Dialog`, ...) share React context, so their parts must be composed together inside one `.tsx` component. This applies to static rendering too: `<Avatar><AvatarFallback /></Avatar>` written in `.astro` fails the build with "`AvatarFallback` must be used within `Avatar`". Plain-div components like `Card`, `CardHeader`, `CardContent` have no context and are fine in `.astro`.
+- **`asChild` does not work from `.astro`.** Children passed from Astro arrive as a pre-rendered HTML slot, so Radix `Slot` can't merge props into them and `<Button asChild><a /></Button>` renders an unstyled link. For link-buttons, style a plain `<a>` with `buttonVariants()` instead.
+
 ## Hero Section (Elements 1-5)
 
 ```astro
 ---
 // src/components/Hero.astro
 import { Image } from 'astro:assets'
-import { Button } from '@/components/ui/button'
+import { Button, buttonVariants } from '@/components/ui/button'
+import { cn } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
 import { ArrowRight, Play } from '@lucide/astro'
 import dashboardPreview from '@/assets/dashboard-preview.jpg'
@@ -52,16 +57,16 @@ import dashboardPreview from '@/assets/dashboard-preview.jpg'
           복잡한 프로젝트도 간단하게, 모든 팀원이 하나로 연결되는 워크스페이스
         </p>
 
-        <!-- Element 4: Primary CTA with ShadCN Button (static, zero JS) -->
+        <!-- Element 4: Primary CTA. CTAs are links, styled with buttonVariants (static, zero JS) -->
         <div class="flex flex-col sm:flex-row gap-4">
-          <Button size="lg" className="text-lg px-8 py-6 shadow-lg hover:shadow-xl transition-all">
+          <a href="/signup" class={cn(buttonVariants({ size: 'lg' }), 'text-lg px-8 py-6 shadow-lg hover:shadow-xl transition-all')}>
             무료로 시작하기
             <ArrowRight class="ml-2 h-5 w-5" />
-          </Button>
-          <Button size="lg" variant="outline" className="text-lg px-8 py-6">
+          </a>
+          <a href="#demo" class={cn(buttonVariants({ size: 'lg', variant: 'outline' }), 'text-lg px-8 py-6')}>
             <Play class="mr-2 h-5 w-5" />
             데모 보기
-          </Button>
+          </a>
         </div>
 
         <!-- Element 5: Social Proof -->
@@ -206,13 +211,29 @@ const benefits = [
 
 ## Testimonials Section (Element 8)
 
+`Avatar` and its parts share Radix context, so they are composed in one small React component (rendered statically, no `client:*` needed):
+
+```tsx
+// src/components/TestimonialAvatar.tsx
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+
+export default function TestimonialAvatar({ src, name }: { src: string; name: string }) {
+  return (
+    <Avatar>
+      <AvatarImage src={src} alt={name} />
+      <AvatarFallback>{name.charAt(0)}</AvatarFallback>
+    </Avatar>
+  )
+}
+```
+
 ```astro
 ---
 // src/components/Testimonials.astro
 import { Card, CardContent } from '@/components/ui/card'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { Quote } from '@lucide/astro'
+import TestimonialAvatar from './TestimonialAvatar'
 
 const testimonials = [
   {
@@ -278,10 +299,7 @@ const testimonials = [
 
             <!-- Author -->
             <div class="flex items-center gap-3 pt-4 border-t">
-              <Avatar>
-                <AvatarImage src={testimonial.image} alt={testimonial.name} />
-                <AvatarFallback>{testimonial.name.charAt(0)}</AvatarFallback>
-              </Avatar>
+              <TestimonialAvatar src={testimonial.image} name={testimonial.name} />
               <div>
                 <p class="font-semibold text-gray-900">{testimonial.name}</p>
                 <p class="text-sm text-gray-600">
@@ -381,8 +399,9 @@ const faqs = [
 ```astro
 ---
 // src/components/FinalCTA.astro
-import { Button } from '@/components/ui/button'
+import { buttonVariants } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
+import { cn } from '@/lib/utils'
 import { ArrowRight, CircleCheck } from '@lucide/astro'
 ---
 
@@ -408,10 +427,10 @@ import { ArrowRight, CircleCheck } from '@lucide/astro'
       </div>
 
       <div class="flex flex-col sm:flex-row gap-4 justify-center">
-        <Button size="lg" className="text-lg px-8 py-6">
+        <a href="/signup" class={cn(buttonVariants({ size: 'lg' }), 'text-lg px-8 py-6')}>
           무료로 시작하기
           <ArrowRight class="ml-2 h-5 w-5" />
-        </Button>
+        </a>
       </div>
     </Card>
   </div>
