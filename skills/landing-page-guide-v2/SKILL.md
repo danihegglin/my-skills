@@ -1,6 +1,6 @@
 ---
 name: landing-page-guide-v2
-description: Create distinctive, high-converting landing pages that combine proven conversion elements with exceptional design quality. Build beautiful, memorable landing pages using Astro and ShadCN UI that avoid generic AI aesthetics while following the 11 essential elements framework.
+description: Create distinctive, high-converting landing pages that combine proven conversion elements with exceptional design quality. Build beautiful, memorable landing pages using Astro and ShadCN UI that avoid generic AI aesthetics while following the 11 essential elements framework, with concise, precise copy that avoids AI tells.
 ---
 
 # Landing Page Guide V2
@@ -8,6 +8,7 @@ description: Create distinctive, high-converting landing pages that combine prov
 ## Overview
 
 This skill enables creation of **distinctive, high-converting landing pages** that combine:
+- **Concise, Precise Copy**: Clear, specific copy written before design, free of AI tells
 - **Proven Conversion Framework**: 11 essential elements from DESIGNNAS for high conversion rates
 - **Exceptional Design Quality**: Bold aesthetic choices that create unforgettable brand experiences
 - **Production-Ready Code**: Astro with ShadCN UI, TypeScript, and performance optimization (zero JS by default)
@@ -23,6 +24,127 @@ Use this skill when users request:
 - Professional marketing pages with exceptional design quality
 - Landing pages that avoid generic "template" aesthetics
 - Brand experiences that are both conversion-optimized and memorable
+
+## Copy First: Concise and Precise
+
+Write the copy before you design or code. Every section of the page exists to carry one message, so the words decide the layout. Your goal is copy that is clear, specific, and drives the one action the page asks for.
+
+### Before Writing
+
+**Check for product marketing context first:**
+If `.agents/product-marketing.md` exists (or `.claude/product-marketing.md`, or the legacy `product-marketing-context.md`), read it before asking questions. Use that context and only ask for information it doesn't already cover.
+
+Gather this context (ask if not provided):
+
+1. **Page purpose**: What is the ONE primary action you want visitors to take?
+2. **Audience**: Who is the ideal customer? What problem are they trying to solve? What objections do they have? What words do they use to describe the problem?
+3. **Product/offer**: What are you selling? What makes it different from alternatives? What's the key outcome? What proof points exist (numbers, testimonials, case studies)?
+4. **Traffic context**: Where are visitors coming from (ads, organic, email)? What do they already know when they arrive?
+
+### Copywriting Principles
+
+**Clarity over cleverness.** If you have to choose between clear and creative, choose clear. Clarity also converts: clearer positioning and copy is associated with +81% conversions, a 38% shorter sales cycle, 28% lower CAC, and 175% more referrals. When a reader has to decode your line, you've lost them.
+
+**Benefits over features.** Features say what it does. Benefits say what that means for the customer.
+
+**Specificity over vagueness.**
+- Vague: "Save time on your workflow"
+- Specific: "Cut your weekly reporting from 4 hours to 15 minutes"
+
+**Customer language over company language.** Use the words your customers use. Mirror voice-of-customer from reviews, interviews, and support tickets.
+
+**One idea per section.** Each section advances one argument. Build a logical flow down the page.
+
+### Writing Style Rules
+
+1. **Simple over complex**: "Use" not "utilize," "help" not "facilitate"
+2. **Specific over vague**: Avoid "streamline," "optimize," "innovative"
+3. **Active over passive**: "We generate reports" not "Reports are generated"
+4. **Confident over qualified**: Remove "almost," "very," "really"
+5. **Show over tell**: Describe the outcome instead of using adverbs
+6. **Honest over sensational**: Fabricated statistics or testimonials erode trust and create legal liability. Flag missing proof as `[NEED: ...]` rather than inventing it.
+
+### Be Direct
+
+Get to the point. Don't bury the value in qualifications.
+
+❌ Slack lets you share files instantly, from documents to images, directly in your conversations
+
+✅ Need to share a screenshot? Send as many documents, images, and audio files as your heart desires.
+
+A question that names the reader's pain can open a section well ("Tired of chasing approvals?"). A question that labels your own claim ("The result? 3x faster.") is an AI tell.
+
+Analogies make abstract concepts concrete. Humor and wit help when they fit the brand and don't cost clarity.
+
+### No AI Tells
+
+Buyers reject copy that reads as AI-written, and a reader who spots a tell tends to doubt the claims around it. Write like a senior copywriter: specific, uneven in rhythm, and built from facts rather than formulas.
+
+**Never write these:**
+
+1. **Contrast reveals.** "It's not X, it's Y." "Not because X. Because Y." "Not just X, but Y." State Y directly, with the reason.
+2. **Negation lists.** "No setup call, no templates, no waiting on IT. No contract." Say what does happen. State a real absence once, near the CTA ("No card required").
+3. **Trailing pile-ons.** A full claim followed by a comma and more clauses: "...the data you already have, no exports, no spreadsheets, no second copy." End the sentence at the claim.
+4. **Self-answered questions and colon reveals.** "The result? 3x faster." "The best part: it learns." Just say it. FAQ questions and a reader's own question are fine.
+5. **Stock openers and phrases.** "In today's fast-paced world," "Whether you're X or Y," "Here's the thing," "Say goodbye to," "X, reimagined," "Unlock the power of," "Take it to the next level."
+6. **Em dashes in short copy.** Headlines, subheads, and CTAs use none.
+
+**Keep these rare:**
+- At most one fragment and one list of three per section. CTA microcopy and a real three-feature list are fine.
+- Words like seamless, robust, powerful, unlock, and streamline: replace them with the fact they stand in for.
+- **Swap test**: if a line would work unchanged on a competitor's site, rewrite it. If you lack the differentiator to fix it, flag `[NEED: differentiator]`.
+
+### Hero Copy
+
+**Headline**: your single most important message, stating the core value proposition. Specific beats generic.
+
+Example formulas:
+- "{Achieve outcome} without {pain point}"
+- "The {category} for {audience}"
+- "Never {unpleasant event} again"
+- "{Question highlighting main pain point}"
+
+Structure the hero as a transformation: current discomfort → better vision → path to action. Then run the headline through the "Now you can" test: if "Now you can {headline}" doesn't read as a real new ability, the headline isn't saying enough.
+
+**Subheadline**: expands on the headline and adds specificity, in 1-2 sentences max.
+
+**Primary CTA**: action-oriented button text that says what they get.
+
+### CTA Copy
+
+**Weak CTAs (avoid):** Submit, Sign Up, Learn More, Click Here, Get Started
+
+**Strong CTAs (use):** Start Free Trial, Get [Specific Thing], See [Product] in Action, Create Your First [Thing], Download the Guide
+
+**Formula:** [Action Verb] + [What They Get] + [Qualifier if needed], e.g. "Start My Free Trial", "Get the Complete Checklist", "See Pricing for My Team"
+
+### Landing Page Specifics
+
+- Single message, single CTA
+- Match the headline to the ad or traffic source
+- Make the complete argument on one page
+
+### Voice and Tone
+
+Before writing, establish the formality level (casual, professional but friendly, or formal/enterprise) and brand personality (playful or serious, bold or understated, technical or accessible). Keep it consistent, but adjust intensity: headlines can be bolder, body copy should be clearer, and CTAs should be action-oriented.
+
+### Check Before Delivering
+
+Before handing over any copy:
+- Search the draft for the banned patterns above
+- Reread every sentence over 20 words and split any that does more than one job
+- Read it aloud
+- Remove exclamation points, jargon, passive voice, and buzzwords without substance
+
+Fix problems from the facts, since swapping synonyms creates new tells.
+
+### Copy Output
+
+When delivering copy, provide:
+- **Page copy** organized by section (headline, subheadline, CTA, section headers and body, secondary CTAs)
+- **Annotations** on key elements: why you made the choice and which principle it applies
+- **Alternatives**: 2-3 options for headlines and CTAs, each with a one-line rationale
+- **Meta content**: page title and meta description for SEO
 
 ## Design Thinking: Before You Code
 
@@ -528,7 +650,7 @@ ShadCN components used in `.astro` files take `className` (React prop); plain HT
   size="lg"
   className="bg-accent hover:bg-accent/90 text-white px-12 py-6 text-xl font-display rounded-full shadow-2xl hover:shadow-accent/50 hover:scale-105 transition-all duration-300"
 >
-  Get Started →
+  Start Free Trial →
 </Button>
 ```
 
@@ -696,6 +818,7 @@ Before completing any landing page, verify ALL items:
 - [ ] Keyboard navigation works
 - [ ] Hover states feel delightful
 - [ ] No Lorem Ipsum or placeholder content
+- [ ] Copy passes the Copy First checks (no AI tells, swap test, long sentences reviewed)
 - [ ] Brand feels unique and memorable
 
 ## Best Practices
@@ -708,7 +831,7 @@ Before completing any landing page, verify ALL items:
 - Remember: Conversions come from trust, and trust comes from professionalism + distinctiveness
 
 ### Content Guidelines
-- Write clear, benefit-focused copy that matches your brand voice
+- Follow the **Copy First** section: clear, specific, benefit-focused copy in your brand voice
 - Use action-oriented language in CTAs (verb + benefit)
 - Keep sections scannable with proper headings
 - Include specific numbers and statistics (builds credibility)
