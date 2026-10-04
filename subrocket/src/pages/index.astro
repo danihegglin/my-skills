@@ -1,0 +1,40 @@
+---
+/*
+ * SubRocket landing page
+ *
+ * Aesthetic direction: "Mission control". Retro-futuristic telemetry on an ink-dark canvas.
+ * Typography: Syne (display, wide and characterful) + Manrope (body) + JetBrains Mono (telemetry labels).
+ * Palette: ink #0a0e17 (dominant), signal orange #ff6a3d (action, CTAs), mint #7cf5c8 (rescued / saved states).
+ * Motion: staggered hero rise, scroll reveals via IntersectionObserver, hover lifts. All respect reduced motion.
+ * Layout: asymmetric 7/5 hero, alternating module rows with live product mockups, offset testimonial grid.
+ */
+import Layout from '@/layouts/Layout.astro'
+import Header from '@/components/Header.astro'
+import Hero from '@/components/Hero.astro'
+import Leaks from '@/components/Leaks.astro'
+import Modules from '@/components/Modules.astro'
+import Extras from '@/components/Extras.astro'
+import HowItWorks from '@/components/HowItWorks.astro'
+import Testimonials from '@/components/Testimonials.astro'
+import FAQ from '@/components/FAQ.astro'
+import FinalCTA from '@/components/FinalCTA.astro'
+import Footer from '@/components/Footer.astro'
+---
+
+<Layout
+  title="SubRocket: Gift Checkout, Card Expiry Rescue and Self-Service for Stripe Subscriptions"
+  description="Sell gift subscriptions, update cards before they expire, and let customers pause or switch plans. SubRocket runs on your existing Stripe account."
+>
+  <Header />
+  <main>
+    <Hero />
+    <Leaks />
+    <Modules />
+    <Extras />
+    <HowItWorks />
+    <Testimonials />
+    <FAQ />
+    <FinalCTA />
+  </main>
+  <Footer />
+</Layout>

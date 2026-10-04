@@ -1,0 +1,47 @@
+---
+import FAQAccordion from './FAQAccordion'
+
+const faqs = [
+  {
+    question: 'Do I need to move my subscriptions off Stripe?',
+    answer: 'No. SubRocket runs on your existing Stripe account. Customers, prices and invoices stay in Stripe, and you can disconnect at any time.',
+  },
+  {
+    question: 'How does a gift subscription work?',
+    answer: 'The buyer pays for 3, 6 or 12 months at checkout and picks a delivery date. On that date the recipient gets an email with a claim link and starts the subscription with their own account. When the prepaid period ends, they can add a card to keep going.',
+  },
+  {
+    question: 'What happens when a card is about to expire?',
+    answer: 'SubRocket emails the customer 30, 7 and 1 day before the card expires, with a Stripe-hosted link to update it. The reminders stop as soon as the card changes. If a renewal still fails, a recovery email goes out the same day.',
+  },
+  {
+    question: 'Can customers cancel without contacting us?',
+    answer: 'Yes. Cancel is always available in the portal. You can show one save offer, such as a pause or a cheaper plan, before the cancellation is confirmed.',
+  },
+  {
+    question: 'Can I keep using Stripe Checkout and the Stripe Customer Portal?',
+    answer: 'Yes, they run side by side. Start by pointing your pricing page at the SubRocket checkout, then switch the portal link once your save offer is ready.',
+  },
+  {
+    question: 'Is my customers’ payment data safe?',
+    answer: 'Card details are collected and stored by Stripe. SubRocket never sees or stores full card numbers.',
+  },
+  {
+    question: 'How much does it cost?',
+    answer: 'Every plan starts with a 14-day free trial. After that, pricing depends on your monthly recurring revenue. The pricing page lists current rates.',
+  },
+]
+---
+
+<section id="faq" class="border-t border-border bg-ink-2 py-24 sm:py-32">
+  <div class="mx-auto grid max-w-7xl gap-12 px-5 sm:px-8 lg:grid-cols-12">
+    <div class="lg:col-span-4" data-reveal>
+      <p class="telemetry text-signal">FAQ</p>
+      <h2 class="mt-4 text-4xl font-extrabold sm:text-5xl">Questions before you connect Stripe</h2>
+      <p class="mt-6 text-haze">Something else on your mind? Email <a href="mailto:hello@subrocket.io" class="text-paper underline decoration-signal underline-offset-4 hover:text-signal">hello@subrocket.io</a>.</p>
+    </div>
+    <div class="lg:col-span-8">
+      <FAQAccordion client:visible faqs={faqs} />
+    </div>
+  </div>
+</section>

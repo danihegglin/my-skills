@@ -1,0 +1,76 @@
+---
+// A product mockup of the SubRocket checkout, with a working gift toggle (vanilla JS, no island).
+import { Gift, Lock } from '@lucide/astro'
+---
+
+<div class="relative w-full max-w-md" data-checkout>
+  <div class="absolute -inset-8 -z-10 rounded-[2rem] bg-signal/25 blur-3xl" aria-hidden="true"></div>
+  <div class="rounded-2xl border border-white/10 bg-ink-2 p-6 shadow-[0_40px_80px_-20px_rgb(0_0_0/0.7)] sm:p-7">
+    <div class="flex items-start justify-between">
+      <div>
+        <p class="telemetry text-haze">Your plan</p>
+        <p class="mt-1 font-display text-2xl font-bold">Roast Club, monthly</p>
+      </div>
+      <p class="text-right font-display text-2xl font-bold">$24<span class="text-sm font-medium text-haze">/mo</span></p>
+    </div>
+
+    <label class="mt-6 flex cursor-pointer items-center justify-between gap-4 rounded-xl border border-white/10 bg-ink-3 px-4 py-3.5 transition-colors has-[:checked]:border-mint/60 has-[:checked]:bg-mint/10">
+      <span class="flex items-center gap-3 text-sm font-semibold">
+        <Gift class="size-5 text-mint" aria-hidden="true" />
+        This is a gift
+      </span>
+      <input type="checkbox" class="peer sr-only" data-gift-toggle />
+      <span class="relative h-6 w-11 rounded-full bg-white/15 transition-colors peer-checked:bg-mint after:absolute after:left-0.5 after:top-0.5 after:size-5 after:rounded-full after:bg-paper after:transition-transform peer-checked:after:translate-x-5 peer-focus-visible:ring-2 peer-focus-visible:ring-signal" aria-hidden="true"></span>
+    </label>
+
+    <div class="grid transition-[grid-template-rows] duration-500 [grid-template-rows:0fr] data-[open=true]:[grid-template-rows:1fr]" data-gift-fields>
+      <div class="overflow-hidden">
+        <div class="space-y-3 pt-4">
+          <div class="grid grid-cols-2 gap-3">
+            <div class="rounded-lg border border-white/10 bg-ink px-3 py-2.5">
+              <p class="telemetry text-[0.6rem] text-haze">Recipient</p>
+              <p class="text-sm">maya@example.com</p>
+            </div>
+            <div class="rounded-lg border border-white/10 bg-ink px-3 py-2.5">
+              <p class="telemetry text-[0.6rem] text-haze">Deliver on</p>
+              <p class="text-sm">Dec 24</p>
+            </div>
+          </div>
+          <div class="rounded-lg border border-white/10 bg-ink px-3 py-2.5">
+            <p class="telemetry text-[0.6rem] text-haze">Message</p>
+            <p class="text-sm">Three months of good mornings. Love, Sam</p>
+          </div>
+          <div class="flex gap-2 text-xs font-semibold">
+            <span class="rounded-full border border-mint/50 bg-mint/10 px-3 py-1 text-mint">3 months</span>
+            <span class="rounded-full border border-white/10 px-3 py-1 text-haze">6 months</span>
+            <span class="rounded-full border border-white/10 px-3 py-1 text-haze">12 months</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="mt-5 grid grid-cols-2 gap-2">
+      <div class="flex h-11 items-center justify-center rounded-lg bg-paper text-sm font-semibold text-ink">Apple Pay</div>
+      <div class="flex h-11 items-center justify-center rounded-lg border border-white/15 text-sm font-semibold">Google Pay</div>
+    </div>
+    <div class="mt-3 rounded-lg border border-white/10 bg-ink px-3 py-3 text-sm text-haze">
+      <span class="font-mono">4242 4242 4242 4242</span>
+    </div>
+    <div class="mt-4 flex h-12 items-center justify-center rounded-lg bg-signal font-semibold text-ink" data-pay-label>Subscribe for $24/mo</div>
+    <p class="mt-3 flex items-center justify-center gap-1.5 text-xs text-haze">
+      <Lock class="size-3.5" aria-hidden="true" /> Payments processed by Stripe
+    </p>
+  </div>
+</div>
+
+<script>
+  document.querySelectorAll<HTMLElement>('[data-checkout]').forEach((root) => {
+    const toggle = root.querySelector<HTMLInputElement>('[data-gift-toggle]')
+    const fields = root.querySelector<HTMLElement>('[data-gift-fields]')
+    const pay = root.querySelector<HTMLElement>('[data-pay-label]')
+    toggle?.addEventListener('change', () => {
+      fields?.setAttribute('data-open', String(toggle.checked))
+      if (pay) pay.textContent = toggle.checked ? 'Send gift for $72' : 'Subscribe for $24/mo'
+    })
+  })
+</script>

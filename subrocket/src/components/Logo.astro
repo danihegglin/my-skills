@@ -1,0 +1,16 @@
+---
+interface Props {
+  class?: string
+}
+const { class: className = '' } = Astro.props
+---
+
+<a href="/" class:list={['group inline-flex items-center gap-2.5', className]} aria-label="SubRocket home">
+  <svg viewBox="0 0 32 32" class="size-8 transition-transform duration-500 group-hover:-translate-y-1 group-hover:rotate-6" aria-hidden="true">
+    <rect width="32" height="32" rx="8" fill="#1a2233" />
+    <path d="M16 5c4 3 6 7.5 6 12.5V22h-12v-4.5C10 12.5 12 8 16 5z" fill="#ff6a3d" />
+    <circle cx="16" cy="14" r="2.4" fill="#0a0e17" />
+    <path d="M13 24h6l-3 4z" fill="#7cf5c8" class="origin-top transition-transform duration-500 group-hover:scale-y-125" />
+  </svg>
+  <span class="font-display text-xl font-extrabold tracking-tight">Sub<span class="text-signal">Rocket</span></span>
+</a>
