@@ -3,7 +3,7 @@
 
 /*
  * subrocket design system: "Ink & pop"
- * Cool off-white canvas, near-black ink for text and buttons, one hot-pink accent.
+ * Cool off-white canvas, near-black ink for text and buttons, one hot-pink accent. Flat colour only.
  * Fonts are loaded with <link> tags in Layout.astro.
  */
 
@@ -110,26 +110,9 @@
   }
 }
 
-/* Faint dot grid, masked per section */
-.bg-dots {
-  background-image: radial-gradient(rgb(11 11 18 / 0.09) 1px, transparent 1px);
-  background-size: 22px 22px;
-}
-
-/* Cool mesh behind the hero */
-.bg-mesh {
-  background:
-    radial-gradient(55% 55% at 88% 8%, rgb(253 205 226 / 0.75), transparent 70%),
-    radial-gradient(45% 50% at 5% 0%, rgb(221 226 255 / 0.85), transparent 70%),
-    radial-gradient(40% 40% at 55% 95%, rgb(240 232 255 / 0.7), transparent 70%);
-}
-
 /* Accent words inside display headlines */
 .accent-text {
-  background: linear-gradient(100deg, #e5337c 10%, #b44dff 90%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+  color: var(--color-pop);
 }
 
 .eyebrow {

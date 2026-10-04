@@ -20,7 +20,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 import { cn } from '@/lib/utils'
 
-const PRICE = 24
+const PRICE = 39
 
 const toggleItem =
   'h-9 flex-1 rounded-md border border-border bg-background text-sm font-medium text-muted-foreground first:rounded-l-md last:rounded-r-md data-[state=on]:border-pop data-[state=on]:bg-accent data-[state=on]:text-accent-foreground'
@@ -35,7 +35,7 @@ function Checkout() {
       <div className="flex items-start justify-between gap-4">
         <div>
           <p className="eyebrow text-muted-foreground">Your plan</p>
-          <p className="mt-1 font-display text-xl font-semibold">Roast Club, monthly</p>
+          <p className="mt-1 font-display text-xl font-semibold">Hop Society, 12 craft beers</p>
         </div>
         <p className="font-display text-xl font-semibold">
           ${PRICE}
@@ -119,7 +119,7 @@ const rescueSteps = [
   { day: '30 days before', label: 'Email with a one-tap update link', state: 'sent' },
   { day: '7 days before', label: 'Reminder: card still unchanged', state: 'sent' },
   { day: '3 days before', label: 'Card updated. Reminders stop.', state: 'saved' },
-  { day: 'Renewal day', label: '$24.00 charged on the new card', state: 'saved' },
+  { day: 'Renewal day', label: '$29.00 charged, Glow Box ships', state: 'saved' },
 ] as const
 
 function Rescue() {
@@ -127,7 +127,7 @@ function Rescue() {
     <div className="space-y-5">
       <div className="flex items-center justify-between gap-4 rounded-xl border border-border bg-muted/50 p-4">
         <div className="flex items-center gap-3">
-          <div className="flex h-9 w-14 items-center justify-center rounded-md bg-gradient-to-br from-pop to-pop-deep font-mono text-[0.65rem] font-medium tracking-widest text-white">VISA</div>
+          <div className="flex h-9 w-14 items-center justify-center rounded-md bg-ink font-mono text-[0.65rem] font-medium tracking-widest text-white">VISA</div>
           <div>
             <p className="font-mono text-sm">•••• 0341</p>
             <p className="text-xs text-muted-foreground">Expires 11/26</p>
@@ -138,7 +138,7 @@ function Rescue() {
         </Badge>
       </div>
 
-      <ol className="relative space-y-5 pl-1 before:absolute before:left-[17px] before:top-3 before:h-[calc(100%-1.5rem)] before:w-px before:bg-gradient-to-b before:from-primary/50 before:to-pop/60">
+      <ol className="relative space-y-5 pl-1 before:absolute before:left-[17px] before:top-3 before:h-[calc(100%-1.5rem)] before:w-px before:bg-border">
         {rescueSteps.map((step) => (
           <li key={step.day} className="relative flex gap-4">
             <span
@@ -176,8 +176,8 @@ function Portal() {
             <UserRound className="size-5" aria-hidden="true" />
           </span>
           <div>
-            <p className="font-display text-lg font-semibold leading-tight">Roast Club</p>
-            <p className="text-xs text-muted-foreground">$24/mo · Renews Nov 3</p>
+            <p className="font-display text-lg font-semibold leading-tight">Hop Society</p>
+            <p className="text-xs text-muted-foreground">$39/mo · Next box Nov 3</p>
           </div>
         </div>
         <Badge variant="outline" className={cn('rounded-full', paused && 'border-pop/30 bg-accent text-accent-foreground')}>
@@ -188,7 +188,7 @@ function Portal() {
       {cancelling ? (
         <div className="rounded-xl border border-pop/30 bg-cloud p-4">
           <p className="font-display text-base font-semibold">Before you go</p>
-          <p className="mt-1 text-sm text-muted-foreground">Take two months off instead. You won’t be charged while paused.</p>
+          <p className="mt-1 text-sm text-muted-foreground">Fridge full? Skip two months instead. No charge while paused.</p>
           <div className="mt-4 flex flex-wrap gap-2">
             <Button
               size="sm"
@@ -209,7 +209,7 @@ function Portal() {
       ) : (
         <div className="rounded-xl border border-border bg-muted/50 p-4">
           <p className="flex items-center gap-2 text-sm font-medium">
-            <Pause className="size-4 text-pop" aria-hidden="true" /> Pause deliveries
+            <Pause className="size-4 text-pop" aria-hidden="true" /> Skip boxes
           </p>
           <ToggleGroup
             type="single"
@@ -230,7 +230,7 @@ function Portal() {
             ))}
           </ToggleGroup>
           <div className="mt-3 flex items-center justify-between gap-3">
-            <p className="text-xs text-muted-foreground">Billing resumes {resumeDates[pause]}.</p>
+            <p className="text-xs text-muted-foreground">Next box {resumeDates[pause]}.</p>
             <Button size="sm" variant={paused ? 'outline' : 'default'} className="h-8 rounded-full" onClick={() => setPaused(true)}>
               {paused ? 'Paused' : 'Pause'}
             </Button>
@@ -264,9 +264,9 @@ function Portal() {
 }
 
 const tabs = [
-  { value: 'checkout', label: 'Gift checkout', url: 'pay.roastclub.com', Panel: Checkout },
+  { value: 'checkout', label: 'Gift checkout', url: 'shop.hopsociety.com', Panel: Checkout },
   { value: 'rescue', label: 'Card rescue', url: 'dashboard.subrocket.com/rescue', Panel: Rescue },
-  { value: 'portal', label: 'Self-service', url: 'account.roastclub.com', Panel: Portal },
+  { value: 'portal', label: 'Self-service', url: 'account.hopsociety.com', Panel: Portal },
 ]
 
 export default function ProductPreview() {
@@ -275,7 +275,6 @@ export default function ProductPreview() {
 
   return (
     <div className="relative w-full">
-      <div className="absolute -inset-6 -z-10 rounded-[2.5rem] bg-gradient-to-br from-pop-soft via-white/40 to-cloud blur-2xl" aria-hidden="true" />
       <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-[0_40px_80px_-30px_rgb(11_11_18/0.35),0_2px_6px_rgb(11_11_18/0.06)]">
         <div className="flex items-center gap-3 border-b border-border bg-muted/40 px-4 py-2.5">
           <div className="flex gap-1.5" aria-hidden="true">

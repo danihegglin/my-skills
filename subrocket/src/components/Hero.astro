@@ -6,11 +6,10 @@ import { ArrowRight, Check } from '@lucide/astro'
 import ProductPreview from './ProductPreview'
 
 const perks = ['14-day free trial', 'No card required', 'Live in an afternoon']
+const niches = ['Craft beer', 'Cosmetics', 'Coffee', 'Wine', 'Pet food', 'Snacks']
 ---
 
 <section class="relative overflow-hidden pb-20 pt-28 sm:pt-36 lg:pb-28">
-  <div class="bg-mesh absolute inset-0 -z-20" aria-hidden="true"></div>
-  <div class="bg-dots absolute inset-0 -z-10 [mask-image:radial-gradient(ellipse_70%_60%_at_50%_0%,black,transparent)]" aria-hidden="true"></div>
 
   <div class="mx-auto grid max-w-6xl items-center gap-14 px-4 sm:px-6 lg:grid-cols-[1.05fr_1fr] lg:gap-12">
     <div>
@@ -19,7 +18,7 @@ const perks = ['14-day free trial', 'No card required', 'Live in an afternoon']
           <span class="absolute inline-flex size-full animate-ping rounded-full bg-pop opacity-60"></span>
           <span class="relative inline-flex size-2 rounded-full bg-pop"></span>
         </span>
-        Runs on your existing Stripe account
+        For subscription boxes on Stripe
       </Badge>
 
       <h1 class="mt-7 text-[clamp(2.8rem,6.4vw,5.2rem)] font-semibold">
@@ -28,7 +27,7 @@ const perks = ['14-day free trial', 'No card required', 'Live in an afternoon']
       </h1>
 
       <p class="rise mt-7 max-w-lg text-lg leading-relaxed text-muted-foreground sm:text-xl" style="animation-delay: 340ms">
-        Gift checkout, card rescue and a pause-first portal for subscription brands.
+        Gift checkout, card rescue and a pause button for craft beer clubs, beauty boxes and every subscription that ships.
       </p>
 
       <div class="rise mt-9 flex flex-col gap-3 sm:flex-row sm:items-center" style="animation-delay: 460ms">
@@ -43,9 +42,16 @@ const perks = ['14-day free trial', 'No card required', 'Live in an afternoon']
       </ul>
     </div>
 
-    <div class="rise mx-auto w-full max-w-[30rem] lg:mr-0" style="animation-delay: 300ms">
+    <div class="rise relative mx-auto w-full max-w-[30rem] lg:mr-0" style="animation-delay: 300ms">
+      <div class="absolute -right-5 -top-5 -z-10 h-[85%] w-[85%] rounded-[2rem] bg-pop-soft" aria-hidden="true"></div>
       <ProductPreview client:load />
       <p class="mt-4 text-center text-xs text-muted-foreground">Try it: flip the gift switch, or hit cancel.</p>
     </div>
+  </div>
+
+  <div class="mx-auto mt-20 flex max-w-6xl flex-wrap items-center gap-x-3 gap-y-3 px-4 sm:px-6">
+    <p class="eyebrow mr-2 text-[0.68rem] text-muted-foreground">Made for</p>
+    {niches.map((n) => <span class="rounded-full border border-border bg-white px-4 py-1.5 text-sm font-medium">{n}</span>)}
+    <span class="text-sm text-muted-foreground">and every subscription that ships.</span>
   </div>
 </section>
