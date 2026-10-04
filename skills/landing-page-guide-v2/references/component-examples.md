@@ -1,126 +1,130 @@
 # Landing Page Component Examples
 
-This reference provides complete, production-ready component implementations using ShadCN UI.
+This reference provides complete, production-ready component implementations for **Astro** using ShadCN UI.
+
+**How ShadCN works in Astro:** ShadCN components are React components (via `@astrojs/react`). Used inside `.astro` files *without* a `client:*` directive, they render to static HTML at build time and ship **zero JavaScript**. Only components that need interactivity (e.g. the FAQ accordion) are wrapped in a small React island and hydrated with `client:visible`.
+
+**Syntax reminders:**
+- Plain HTML elements in `.astro` files use `class`; React (ShadCN) components take `className`.
+- Icons come from `@lucide/astro` (Astro components, use `class`).
+- No `key` prop is needed when mapping in `.astro` templates.
 
 ## Hero Section (Elements 1-5)
 
-```typescript
-// components/Hero.tsx
+```astro
+---
+// src/components/Hero.astro
+import { Image } from 'astro:assets'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import Image from 'next/image'
-import { ArrowRight, Play } from 'lucide-react'
+import { ArrowRight, Play } from '@lucide/astro'
+import dashboardPreview from '@/assets/dashboard-preview.jpg'
+---
 
-export default function Hero() {
-  return (
-    <section className="relative min-h-screen flex items-center justify-center bg-gradient-to-b from-blue-50 to-white overflow-hidden">
-      {/* Background decorations */}
-      <div className="absolute inset-0 -z-10">
-        <div className="absolute top-20 left-10 w-72 h-72 bg-blue-200 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob" />
-        <div className="absolute top-40 right-10 w-72 h-72 bg-purple-200 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob animation-delay-2000" />
-      </div>
+<section class="relative min-h-screen flex items-center justify-center bg-gradient-to-b from-blue-50 to-white overflow-hidden">
+  <!-- Background decorations -->
+  <div class="absolute inset-0 -z-10">
+    <div class="absolute top-20 left-10 w-72 h-72 bg-blue-200 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob" />
+    <div class="absolute top-40 right-10 w-72 h-72 bg-purple-200 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob animation-delay-2000" />
+  </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
-        <div className="grid lg:grid-cols-2 gap-12 items-center">
-          {/* Left Content */}
-          <div className="space-y-8">
-            {/* Badge for announcement */}
-            <Badge variant="secondary" className="w-fit">
-              🎉 신규 기능 출시 - AI 자동화 업데이트
-            </Badge>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
+    <div class="grid lg:grid-cols-2 gap-12 items-center">
+      <!-- Left Content -->
+      <div class="space-y-8">
+        <!-- Badge for announcement -->
+        <Badge variant="secondary" className="w-fit">
+          🎉 신규 기능 출시 - AI 자동화 업데이트
+        </Badge>
 
-            {/* Element 3: SEO Optimized Title */}
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-gray-900 leading-tight">
-              팀 협업을{' '}
-              <span className="text-blue-600 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                10배 빠르게
-              </span>
-              <br />
-              만드는 프로젝트 관리 도구
-            </h1>
+        <!-- Element 3: SEO Optimized Title -->
+        <h1 class="text-4xl sm:text-5xl lg:text-6xl font-bold text-gray-900 leading-tight">
+          팀 협업을{' '}
+          <span class="text-blue-600 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+            10배 빠르게
+          </span>
+          <br />
+          만드는 프로젝트 관리 도구
+        </h1>
 
-            {/* Subtitle */}
-            <p className="text-lg sm:text-xl text-gray-600 leading-relaxed max-w-2xl">
-              복잡한 프로젝트도 간단하게, 모든 팀원이 하나로 연결되는 워크스페이스
-            </p>
+        <!-- Subtitle -->
+        <p class="text-lg sm:text-xl text-gray-600 leading-relaxed max-w-2xl">
+          복잡한 프로젝트도 간단하게, 모든 팀원이 하나로 연결되는 워크스페이스
+        </p>
 
-            {/* Element 4: Primary CTA with ShadCN Button */}
-            <div className="flex flex-col sm:flex-row gap-4">
-              <Button size="lg" className="text-lg px-8 py-6 shadow-lg hover:shadow-xl transition-all">
-                무료로 시작하기
-                <ArrowRight className="ml-2 h-5 w-5" />
-              </Button>
-              <Button size="lg" variant="outline" className="text-lg px-8 py-6">
-                <Play className="mr-2 h-5 w-5" />
-                데모 보기
-              </Button>
+        <!-- Element 4: Primary CTA with ShadCN Button (static, zero JS) -->
+        <div class="flex flex-col sm:flex-row gap-4">
+          <Button size="lg" className="text-lg px-8 py-6 shadow-lg hover:shadow-xl transition-all">
+            무료로 시작하기
+            <ArrowRight class="ml-2 h-5 w-5" />
+          </Button>
+          <Button size="lg" variant="outline" className="text-lg px-8 py-6">
+            <Play class="mr-2 h-5 w-5" />
+            데모 보기
+          </Button>
+        </div>
+
+        <!-- Element 5: Social Proof -->
+        <div class="flex flex-col sm:flex-row items-start sm:items-center gap-6 pt-4">
+          <div class="flex items-center gap-2">
+            <div class="flex">
+              {[...Array(5)].map(() => (
+                <svg class="w-5 h-5 text-yellow-400 fill-current" viewBox="0 0 20 20">
+                  <path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z" />
+                </svg>
+              ))}
             </div>
-
-            {/* Element 5: Social Proof */}
-            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6 pt-4">
-              <div className="flex items-center gap-2">
-                <div className="flex">
-                  {[...Array(5)].map((_, i) => (
-                    <svg
-                      key={i}
-                      className="w-5 h-5 text-yellow-400 fill-current"
-                      viewBox="0 0 20 20"
-                    >
-                      <path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z" />
-                    </svg>
-                  ))}
-                </div>
-                <span className="text-sm font-medium text-gray-600">5.0 (2,341 리뷰)</span>
-              </div>
-              <div className="h-4 w-px bg-gray-300 hidden sm:block" />
-              <div className="text-gray-600">
-                <span className="font-bold text-gray-900">5,000+</span> 개 팀이 사용 중
-              </div>
-            </div>
-
-            {/* Trusted by logos */}
-            <div className="pt-8 border-t">
-              <p className="text-sm text-gray-500 mb-4">신뢰하는 기업들</p>
-              <div className="flex flex-wrap gap-8 items-center opacity-60 grayscale hover:grayscale-0 transition-all">
-                {/* Company logos */}
-              </div>
-            </div>
+            <span class="text-sm font-medium text-gray-600">5.0 (2,341 리뷰)</span>
           </div>
+          <div class="h-4 w-px bg-gray-300 hidden sm:block" />
+          <div class="text-gray-600">
+            <span class="font-bold text-gray-900">5,000+</span> 개 팀이 사용 중
+          </div>
+        </div>
 
-          {/* Right Content - Element 6: Image/Video */}
-          <div className="relative">
-            <div className="relative rounded-2xl overflow-hidden shadow-2xl ring-1 ring-gray-900/10">
-              <Image
-                src="/images/dashboard-preview.jpg"
-                alt="프로젝트 관리 대시보드 미리보기"
-                width={1200}
-                height={800}
-                priority
-                className="w-full h-auto"
-              />
-              {/* Play button overlay */}
-              <Button
-                size="lg"
-                className="absolute inset-0 m-auto w-fit h-fit rounded-full p-6"
-                variant="secondary"
-              >
-                <Play className="h-8 w-8 fill-current" />
-              </Button>
-            </div>
+        <!-- Trusted by logos -->
+        <div class="pt-8 border-t">
+          <p class="text-sm text-gray-500 mb-4">신뢰하는 기업들</p>
+          <div class="flex flex-wrap gap-8 items-center opacity-60 grayscale hover:grayscale-0 transition-all">
+            <!-- Company logos -->
           </div>
         </div>
       </div>
-    </section>
-  )
-}
+
+      <!-- Right Content - Element 6: Image/Video -->
+      <div class="relative">
+        <div class="relative rounded-2xl overflow-hidden shadow-2xl ring-1 ring-gray-900/10">
+          <!-- Above the fold: load eagerly with high priority -->
+          <Image
+            src={dashboardPreview}
+            alt="프로젝트 관리 대시보드 미리보기"
+            width={1200}
+            loading="eager"
+            fetchpriority="high"
+            class="w-full h-auto"
+          />
+          <!-- Play button overlay -->
+          <Button
+            size="lg"
+            className="absolute inset-0 m-auto w-fit h-fit rounded-full p-6"
+            variant="secondary"
+          >
+            <Play class="h-8 w-8 fill-current" />
+          </Button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
 ```
 
 ## Benefits Section (Element 7)
 
-```typescript
-// components/Benefits.tsx
+```astro
+---
+// src/components/Benefits.astro
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
-import { Clock, DollarSign, Zap, Shield, Users, Rocket } from 'lucide-react'
+import { Clock, DollarSign, Zap, Shield, Users, Rocket } from '@lucide/astro'
 
 const benefits = [
   {
@@ -166,51 +170,49 @@ const benefits = [
     bgColor: 'bg-orange-50',
   },
 ]
+---
 
-export default function Benefits() {
-  return (
-    <section className="py-20 bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-16">
-          <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
-            왜 우리 제품을 선택해야 할까요?
-          </h2>
-          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            업계 최고의 기능과 서비스로 여러분의 성공을 지원합니다
-          </p>
-        </div>
-        
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {benefits.map((benefit, index) => (
-            <Card key={index} className="hover:shadow-lg transition-all duration-300 border-none">
-              <CardHeader>
-                <div className={`w-12 h-12 rounded-lg ${benefit.bgColor} flex items-center justify-center mb-4`}>
-                  <benefit.icon className={`w-6 h-6 ${benefit.color}`} />
-                </div>
-                <CardTitle className="text-xl">{benefit.title}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <CardDescription className="text-base">
-                  {benefit.description}
-                </CardDescription>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </div>
-    </section>
-  )
-}
+<section class="py-20 bg-gray-50">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="text-center mb-16">
+      <h2 class="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
+        왜 우리 제품을 선택해야 할까요?
+      </h2>
+      <p class="text-lg text-gray-600 max-w-2xl mx-auto">
+        업계 최고의 기능과 서비스로 여러분의 성공을 지원합니다
+      </p>
+    </div>
+
+    <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {benefits.map((benefit) => (
+        <Card className="hover:shadow-lg transition-all duration-300 border-none">
+          <CardHeader>
+            <div class={`w-12 h-12 rounded-lg ${benefit.bgColor} flex items-center justify-center mb-4`}>
+              <benefit.icon class={`w-6 h-6 ${benefit.color}`} />
+            </div>
+            <CardTitle className="text-xl">{benefit.title}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <CardDescription className="text-base">
+              {benefit.description}
+            </CardDescription>
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+  </div>
+</section>
 ```
 
 ## Testimonials Section (Element 8)
 
-```typescript
-// components/Testimonials.tsx
+```astro
+---
+// src/components/Testimonials.astro
 import { Card, CardContent } from '@/components/ui/card'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
-import { Quote } from 'lucide-react'
+import { Quote } from '@lucide/astro'
 
 const testimonials = [
   {
@@ -238,82 +240,105 @@ const testimonials = [
     content: '기술 지원팀의 빠른 대응과 안정적인 서비스에 매우 만족하고 있습니다.',
   },
 ]
+---
 
-export default function Testimonials() {
-  return (
-    <section className="py-20 bg-white">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-16">
-          <Badge variant="secondary" className="mb-4">
-            ⭐ 고객 후기
-          </Badge>
-          <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
-            고객들의 이야기
-          </h2>
-          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            5,000개 이상의 팀이 우리 제품으로 성공하고 있습니다
-          </p>
-        </div>
-        
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {testimonials.map((testimonial, index) => (
-            <Card key={index} className="hover:shadow-lg transition-all duration-300">
-              <CardContent className="pt-6">
-                <Quote className="w-8 h-8 text-blue-600 mb-4 opacity-50" />
-                
-                {/* Rating */}
-                <div className="flex mb-4">
-                  {[...Array(testimonial.rating)].map((_, i) => (
-                    <svg
-                      key={i}
-                      className="w-5 h-5 text-yellow-400 fill-current"
-                      viewBox="0 0 20 20"
-                    >
-                      <path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z" />
-                    </svg>
-                  ))}
-                </div>
-                
-                {/* Content */}
-                <p className="text-gray-700 mb-6 leading-relaxed">
-                  "{testimonial.content}"
+<section class="py-20 bg-white">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="text-center mb-16">
+      <Badge variant="secondary" className="mb-4">
+        ⭐ 고객 후기
+      </Badge>
+      <h2 class="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
+        고객들의 이야기
+      </h2>
+      <p class="text-lg text-gray-600 max-w-2xl mx-auto">
+        5,000개 이상의 팀이 우리 제품으로 성공하고 있습니다
+      </p>
+    </div>
+
+    <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {testimonials.map((testimonial) => (
+        <Card className="hover:shadow-lg transition-all duration-300">
+          <CardContent className="pt-6">
+            <Quote class="w-8 h-8 text-blue-600 mb-4 opacity-50" />
+
+            <!-- Rating -->
+            <div class="flex mb-4">
+              {[...Array(testimonial.rating)].map(() => (
+                <svg class="w-5 h-5 text-yellow-400 fill-current" viewBox="0 0 20 20">
+                  <path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z" />
+                </svg>
+              ))}
+            </div>
+
+            <!-- Content -->
+            <p class="text-gray-700 mb-6 leading-relaxed">
+              "{testimonial.content}"
+            </p>
+
+            <!-- Author -->
+            <div class="flex items-center gap-3 pt-4 border-t">
+              <Avatar>
+                <AvatarImage src={testimonial.image} alt={testimonial.name} />
+                <AvatarFallback>{testimonial.name.charAt(0)}</AvatarFallback>
+              </Avatar>
+              <div>
+                <p class="font-semibold text-gray-900">{testimonial.name}</p>
+                <p class="text-sm text-gray-600">
+                  {testimonial.role}, {testimonial.company}
                 </p>
-                
-                {/* Author */}
-                <div className="flex items-center gap-3 pt-4 border-t">
-                  <Avatar>
-                    <AvatarImage src={testimonial.image} alt={testimonial.name} />
-                    <AvatarFallback>{testimonial.name.charAt(0)}</AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <p className="font-semibold text-gray-900">{testimonial.name}</p>
-                    <p className="text-sm text-gray-600">
-                      {testimonial.role}, {testimonial.company}
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </div>
-    </section>
-  )
-}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+  </div>
+</section>
 ```
 
 ## FAQ Section (Element 9)
 
-```typescript
-// components/FAQ.tsx
-'use client'
+The accordion needs client-side state, so it lives in a small React island. The surrounding section stays a static `.astro` component.
+
+```tsx
+// src/components/FAQAccordion.tsx (React island)
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
 } from '@/components/ui/accordion'
+
+type Faq = { question: string; answer: string }
+
+export default function FAQAccordion({ faqs }: { faqs: Faq[] }) {
+  return (
+    <Accordion type="single" collapsible className="w-full space-y-4">
+      {faqs.map((faq, index) => (
+        <AccordionItem
+          key={index}
+          value={`item-${index}`}
+          className="bg-white rounded-lg border px-6"
+        >
+          <AccordionTrigger className="text-left hover:no-underline">
+            <span className="font-semibold text-lg pr-4">{faq.question}</span>
+          </AccordionTrigger>
+          <AccordionContent className="text-gray-600 text-base leading-relaxed">
+            {faq.answer}
+          </AccordionContent>
+        </AccordionItem>
+      ))}
+    </Accordion>
+  )
+}
+```
+
+```astro
+---
+// src/components/FAQ.astro
 import { Badge } from '@/components/ui/badge'
+import FAQAccordion from './FAQAccordion'
 
 const faqs = [
   {
@@ -329,129 +354,142 @@ const faqs = [
     answer: '직관적인 UI, 강력한 자동화 기능, 그리고 24/7 고객 지원이 우리의 강점입니다.',
   },
 ]
+---
 
-export default function FAQ() {
-  return (
-    <section className="py-20 bg-gray-50">
-      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-12">
-          <Badge variant="secondary" className="mb-4">
-            ❓ FAQ
-          </Badge>
-          <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
-            자주 묻는 질문
-          </h2>
-          <p className="text-lg text-gray-600">
-            궁금하신 점이 있으시면 언제든지 문의해 주세요
-          </p>
-        </div>
-        
-        <Accordion type="single" collapsible className="w-full space-y-4">
-          {faqs.map((faq, index) => (
-            <AccordionItem 
-              key={index} 
-              value={`item-${index}`}
-              className="bg-white rounded-lg border px-6"
-            >
-              <AccordionTrigger className="text-left hover:no-underline">
-                <span className="font-semibold text-lg pr-4">{faq.question}</span>
-              </AccordionTrigger>
-              <AccordionContent className="text-gray-600 text-base leading-relaxed">
-                {faq.answer}
-              </AccordionContent>
-            </AccordionItem>
-          ))}
-        </Accordion>
-      </div>
-    </section>
-  )
-}
+<section class="py-20 bg-gray-50">
+  <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="text-center mb-12">
+      <Badge variant="secondary" className="mb-4">
+        ❓ FAQ
+      </Badge>
+      <h2 class="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
+        자주 묻는 질문
+      </h2>
+      <p class="text-lg text-gray-600">
+        궁금하신 점이 있으시면 언제든지 문의해 주세요
+      </p>
+    </div>
+
+    <!-- Hydrate only when the FAQ scrolls into view -->
+    <FAQAccordion client:visible faqs={faqs} />
+  </div>
+</section>
 ```
 
 ## Final CTA Section (Element 10)
 
-```typescript
-// components/FinalCTA.tsx
+```astro
+---
+// src/components/FinalCTA.astro
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
-import { ArrowRight, CheckCircle } from 'lucide-react'
+import { ArrowRight, CircleCheck } from '@lucide/astro'
+---
 
-export default function FinalCTA() {
-  return (
-    <section className="py-20 bg-gradient-to-br from-blue-600 to-purple-700 relative overflow-hidden">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-        <Card className="p-8 sm:p-12 text-center border-none shadow-2xl">
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-6">
-            지금 바로 시작하세요
-          </h2>
-          <p className="text-lg sm:text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
-            14일 무료 체험으로 모든 기능을 경험해보세요
-          </p>
-          
-          <div className="flex flex-col sm:flex-row justify-center items-center gap-4 sm:gap-8 mb-8 text-gray-700">
-            <div className="flex items-center gap-2">
-              <CheckCircle className="w-5 h-5 text-green-600" />
-              <span>14일 무료 체험</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <CheckCircle className="w-5 h-5 text-green-600" />
-              <span>신용카드 불필요</span>
-            </div>
-          </div>
-          
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button size="lg" className="text-lg px-8 py-6">
-              무료로 시작하기
-              <ArrowRight className="ml-2 h-5 w-5" />
-            </Button>
-          </div>
-        </Card>
+<section class="py-20 bg-gradient-to-br from-blue-600 to-purple-700 relative overflow-hidden">
+  <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+    <Card className="p-8 sm:p-12 text-center border-none shadow-2xl">
+      <h2 class="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-6">
+        지금 바로 시작하세요
+      </h2>
+      <p class="text-lg sm:text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
+        14일 무료 체험으로 모든 기능을 경험해보세요
+      </p>
+
+      <div class="flex flex-col sm:flex-row justify-center items-center gap-4 sm:gap-8 mb-8 text-gray-700">
+        <div class="flex items-center gap-2">
+          <CircleCheck class="w-5 h-5 text-green-600" />
+          <span>14일 무료 체험</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <CircleCheck class="w-5 h-5 text-green-600" />
+          <span>신용카드 불필요</span>
+        </div>
       </div>
-    </section>
-  )
-}
+
+      <div class="flex flex-col sm:flex-row gap-4 justify-center">
+        <Button size="lg" className="text-lg px-8 py-6">
+          무료로 시작하기
+          <ArrowRight class="ml-2 h-5 w-5" />
+        </Button>
+      </div>
+    </Card>
+  </div>
+</section>
 ```
 
 ## Footer (Element 11)
 
-```typescript
-// components/Footer.tsx
-import { Button } from '@/components/ui/button'
+```astro
+---
+// src/components/Footer.astro
 import { Separator } from '@/components/ui/separator'
-import Link from 'next/link'
 
-export default function Footer() {
-  return (
-    <footer className="bg-gray-900 text-white">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-8">
-          <div className="col-span-2 md:col-span-1">
-            <h3 className="font-bold text-lg mb-4">회사 이름</h3>
-            <div className="space-y-2 text-sm text-gray-400">
-              <p>서울시 강남구 테헤란로 123</p>
-              <p>support@example.com</p>
-              <p>02-1234-5678</p>
-            </div>
-          </div>
-          
-          <div>
-            <h3 className="font-bold text-lg mb-4">법적 고지</h3>
-            <ul className="space-y-2 text-sm text-gray-400">
-              <li><Link href="/privacy" className="hover:text-white">개인정보 보호정책</Link></li>
-              <li><Link href="/terms" className="hover:text-white">이용 약관</Link></li>
-            </ul>
-          </div>
-        </div>
-        
-        <Separator className="bg-gray-800 mb-8" />
-        
-        <div className="text-center">
-          <p className="text-sm text-gray-400">
-            &copy; 2024 Company Name. All rights reserved.
-          </p>
+const year = new Date().getFullYear()
+---
+
+<footer class="bg-gray-900 text-white">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-8 mb-8">
+      <div class="col-span-2 md:col-span-1">
+        <h3 class="font-bold text-lg mb-4">회사 이름</h3>
+        <div class="space-y-2 text-sm text-gray-400">
+          <p>서울시 강남구 테헤란로 123</p>
+          <p>support@example.com</p>
+          <p>02-1234-5678</p>
         </div>
       </div>
-    </footer>
-  )
-}
+
+      <div>
+        <h3 class="font-bold text-lg mb-4">법적 고지</h3>
+        <ul class="space-y-2 text-sm text-gray-400">
+          <!-- Astro uses plain <a> tags; enable prefetch for instant navigation -->
+          <li><a href="/privacy" data-astro-prefetch class="hover:text-white">개인정보 보호정책</a></li>
+          <li><a href="/terms" data-astro-prefetch class="hover:text-white">이용 약관</a></li>
+        </ul>
+      </div>
+    </div>
+
+    <Separator className="bg-gray-800 mb-8" />
+
+    <div class="text-center">
+      <p class="text-sm text-gray-400">
+        &copy; {year} Company Name. All rights reserved.
+      </p>
+    </div>
+  </div>
+</footer>
+```
+
+## Page Assembly
+
+```astro
+---
+// src/pages/index.astro
+import Layout from '@/layouts/Layout.astro'
+import Header from '@/components/Header.astro'
+import Hero from '@/components/Hero.astro'
+import MediaSection from '@/components/MediaSection.astro'
+import Benefits from '@/components/Benefits.astro'
+import Testimonials from '@/components/Testimonials.astro'
+import FAQ from '@/components/FAQ.astro'
+import FinalCTA from '@/components/FinalCTA.astro'
+import Footer from '@/components/Footer.astro'
+---
+
+<Layout
+  title="SEO Optimized Title with Keywords | Brand Name"
+  description="Compelling description with main keywords"
+>
+  <Header />
+  <main>
+    <Hero />
+    <MediaSection />
+    <Benefits />
+    <Testimonials />
+    <FAQ />
+    <FinalCTA />
+  </main>
+  <Footer />
+</Layout>
 ```

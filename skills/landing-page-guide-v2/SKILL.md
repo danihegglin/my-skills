@@ -1,6 +1,6 @@
 ---
 name: landing-page-guide-v2
-description: Create distinctive, high-converting landing pages that combine proven conversion elements with exceptional design quality. Build beautiful, memorable landing pages using Next.js 14+ and ShadCN UI that avoid generic AI aesthetics while following the 11 essential elements framework.
+description: Create distinctive, high-converting landing pages that combine proven conversion elements with exceptional design quality. Build beautiful, memorable landing pages using Astro and ShadCN UI that avoid generic AI aesthetics while following the 11 essential elements framework.
 ---
 
 # Landing Page Guide V2
@@ -10,7 +10,7 @@ description: Create distinctive, high-converting landing pages that combine prov
 This skill enables creation of **distinctive, high-converting landing pages** that combine:
 - **Proven Conversion Framework**: 11 essential elements from DESIGNNAS for high conversion rates
 - **Exceptional Design Quality**: Bold aesthetic choices that create unforgettable brand experiences
-- **Production-Ready Code**: Next.js 14+ with ShadCN UI, TypeScript, and performance optimization
+- **Production-Ready Code**: Astro with ShadCN UI, TypeScript, and performance optimization (zero JS by default)
 
 **Philosophy**: A landing page must convert visitors AND make them remember your brand. Generic, template-looking pages fail at both. This skill ensures your landing pages are functionally effective and visually extraordinary.
 
@@ -18,7 +18,7 @@ This skill enables creation of **distinctive, high-converting landing pages** th
 
 Use this skill when users request:
 - Creation of landing pages, marketing pages, or product pages
-- Next.js or React-based promotional websites
+- Astro-based promotional websites
 - Pages that need to convert visitors into customers AND stand out visually
 - Professional marketing pages with exceptional design quality
 - Landing pages that avoid generic "template" aesthetics
@@ -263,7 +263,7 @@ For detailed explanations of each element, refer to `references/11-essential-ele
   - Subtitle follows (delay: 300ms)
   - CTA appears last (delay: 500ms) with emphasis
 - **Scroll animations**: Sections fade up as they enter viewport
-  - Use Intersection Observer API or Framer Motion's scroll triggers
+  - Use the Intersection Observer API in a `<script>` tag (or CSS scroll-driven animations)
   - Cards stagger in (each with incremental delay)
 - **Hover states**: Surprise and delight
   - Buttons: Scale up, shadow expand, color shift
@@ -310,25 +310,52 @@ These patterns make landing pages look "AI-generated" and forgettable:
 When creating landing pages, always use:
 
 ### Required Technologies
-- **Next.js 14+** with App Router
+- **Astro 5+** (static output by default)
 - **TypeScript** for type safety
-- **Tailwind CSS** for styling
-- **ShadCN UI** for all UI components (customize heavily!)
-- **Framer Motion** (optional) for advanced animations
+- **Tailwind CSS** for styling (via `@tailwindcss/vite`)
+- **ShadCN UI** for all UI components (customize heavily!), via the `@astrojs/react` integration
+- **@lucide/astro** for icons
+
+### Project Setup
+
+```bash
+npm create astro@latest landing-page -- --template minimal --typescript strict
+cd landing-page
+npx astro add react tailwind
+```
+
+Add the `@/*` path alias to `tsconfig.json` (required by ShadCN):
+
+```json
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": { "@/*": ["./src/*"] }
+  }
+}
+```
 
 ### ShadCN UI Components to Install
 
-Before creating any landing page, ensure these components are installed:
+Before creating any landing page, initialize ShadCN and install these components:
 
 ```bash
-npx shadcn-ui@latest add button
-npx shadcn-ui@latest add card
-npx shadcn-ui@latest add accordion
-npx shadcn-ui@latest add badge
-npx shadcn-ui@latest add avatar
-npx shadcn-ui@latest add separator
-npx shadcn-ui@latest add input
+npx shadcn@latest init
+npx shadcn@latest add button card accordion badge avatar separator input
+npm install @lucide/astro
 ```
+
+### Astro Islands: When to Hydrate
+
+Astro renders everything to static HTML and ships **zero JavaScript** unless you opt in:
+
+- **Static (no directive)**: ShadCN `Button`, `Card`, `Badge`, `Avatar`, `Separator` used directly in `.astro` files render as plain HTML. Use this for almost everything.
+- **Interactive islands**: Components that need client state (FAQ `Accordion`, carousels, countdown timers, forms with validation) go in a small React `.tsx` wrapper and are hydrated with a directive:
+  - `client:visible` - hydrate when scrolled into view (default choice for below-the-fold)
+  - `client:load` - hydrate immediately (only for above-the-fold interactivity)
+  - `client:idle` - hydrate once the browser is idle
+- Never pass nested React components as children from `.astro` into a hydrated island (e.g. `AccordionItem` inside `<Accordion client:visible>`) - they won't share React context. Wrap the whole composition in one `.tsx` component instead.
+- For simple interactions (sticky header on scroll, scroll reveals, count-up numbers) prefer a plain `<script>` tag inside the `.astro` component over a React island.
 
 **IMPORTANT**: ShadCN components are STARTING POINTS, not final designs. Customize them heavily:
 - Modify default styles in component files
@@ -340,7 +367,7 @@ npx shadcn-ui@latest add input
 - **Accessibility**: WCAG-compliant components (maintain this!)
 - **Customizable**: Fully customizable with Tailwind CSS (leverage this!)
 - **Type-safe**: Written in TypeScript
-- **Performance**: Copy only what you need, minimal bundle size
+- **Performance**: Copy only what you need; static ShadCN components add zero client JS in Astro
 - **Ownership**: You own the code, modify freely
 
 ## Project Structure
@@ -349,21 +376,27 @@ Create landing pages with this structure:
 
 ```
 landing-page/
-├── app/
-│   ├── layout.tsx          # Root layout with metadata
-│   ├── page.tsx            # Main landing page
-│   └── globals.css         # Global styles
-├── components/
-│   ├── Header.tsx          # Logo & Navigation (Element 2)
-│   ├── Hero.tsx            # Title, CTA, Social Proof (Elements 3-5)
-│   ├── MediaSection.tsx    # Images/Videos (Element 6)
-│   ├── Benefits.tsx        # Core Benefits (Element 7)
-│   ├── Testimonials.tsx    # Customer Reviews (Element 8)
-│   ├── FAQ.tsx             # FAQ Accordion (Element 9)
-│   ├── FinalCTA.tsx        # Bottom CTA (Element 10)
-│   └── Footer.tsx          # Contact & Legal (Element 11)
-├── public/
-│   └── images/             # Optimized images
+├── src/
+│   ├── layouts/
+│   │   └── Layout.astro        # Root layout with <head> metadata
+│   ├── pages/
+│   │   └── index.astro         # Main landing page
+│   ├── styles/
+│   │   └── global.css          # Global styles & design tokens
+│   ├── assets/                 # Images optimized by astro:assets
+│   └── components/
+│       ├── ui/                 # ShadCN components (React)
+│       ├── Header.astro        # Logo & Navigation (Element 2)
+│       ├── Hero.astro          # Title, CTA, Social Proof (Elements 3-5)
+│       ├── MediaSection.astro  # Images/Videos (Element 6)
+│       ├── Benefits.astro      # Core Benefits (Element 7)
+│       ├── Testimonials.astro  # Customer Reviews (Element 8)
+│       ├── FAQ.astro           # FAQ section (Element 9)
+│       ├── FAQAccordion.tsx    # React island for the accordion
+│       ├── FinalCTA.astro      # Bottom CTA (Element 10)
+│       └── Footer.astro        # Contact & Legal (Element 11)
+├── public/                     # Static files (favicon, og-image)
+├── astro.config.mjs
 └── package.json
 ```
 
@@ -379,16 +412,19 @@ landing-page/
    - Motion strategy (page load, scroll, hover)
    - Spatial approach (layout style, spacing)
 
-Document these decisions in comments at the top of your main component file.
+Document these decisions in comments at the top of `src/pages/index.astro`.
 
 ### Step 2: Setup Design System (CSS Variables)
 
-Create `globals.css` or `app.css` with your design system:
+Create `src/styles/global.css` with your design system and import it in `Layout.astro`:
 
 ```css
 @import url('https://fonts.googleapis.com/css2?family=Your+Display+Font&family=Your+Body+Font&display=swap');
+@import "tailwindcss";
 
-:root {
+/* Tailwind v4: tokens in @theme become CSS variables AND utilities
+   (font-display, font-body, bg-primary, text-accent, ...) */
+@theme {
   /* Typography */
   --font-display: 'Your Display Font', sans-serif;
   --font-body: 'Your Body Font', sans-serif;
@@ -398,7 +434,9 @@ Create `globals.css` or `app.css` with your design system:
   --color-accent: #your-accent-color;
   --color-neutral: #your-neutral-color;
   --color-background: #your-bg-color;
+}
 
+:root {
   /* Spacing */
   --spacing-xs: 0.5rem;
   --spacing-sm: 1rem;
@@ -423,44 +461,47 @@ body {
 }
 ```
 
-Update `tailwind.config.ts` to use your design system:
-
-```typescript
-export default {
-  theme: {
-    extend: {
-      fontFamily: {
-        display: ['var(--font-display)'],
-        body: ['var(--font-body)'],
-      },
-      colors: {
-        primary: 'var(--color-primary)',
-        accent: 'var(--color-accent)',
-        // ... etc
-      },
-    },
-  },
-}
-```
+**Note**: `npx shadcn@latest init` also writes theme variables into this file: `--primary`, `--accent`, ... in `:root`, mapped to `--color-primary`, `--color-accent`, ... in an `@theme inline` block. Once ShadCN is initialized, drop the color entries from your own `@theme` and put your brand hex values on ShadCN's `--primary` / `--accent` / `--background` instead. Utilities like `bg-primary` and `text-accent` keep working, and every ShadCN component picks up your palette.
 
 ### Step 3: Setup Metadata (SEO)
 
-Configure proper SEO metadata in `layout.tsx` or `page.tsx`:
+Configure SEO metadata in `src/layouts/Layout.astro` and pass page-specific values as props:
 
-```typescript
-import type { Metadata } from 'next'
+```astro
+---
+// src/layouts/Layout.astro
+import '@/styles/global.css'
 
-export const metadata: Metadata = {
-  title: 'SEO Optimized Title with Keywords | Brand Name',
-  description: 'Compelling description with main keywords',
-  keywords: ['keyword1', 'keyword2', 'keyword3'],
-  openGraph: {
-    title: 'OG Title',
-    description: 'OG Description',
-    images: ['/og-image.jpg'],
-  },
+interface Props {
+  title: string
+  description: string
+  ogImage?: string
 }
+
+const { title, description, ogImage = '/og-image.jpg' } = Astro.props
+const canonical = new URL(Astro.url.pathname, Astro.site)
+---
+
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:image" content={new URL(ogImage, Astro.site)} />
+    <meta name="twitter:card" content="summary_large_image" />
+  </head>
+  <body>
+    <slot />
+  </body>
+</html>
 ```
+
+Set `site` in `astro.config.mjs` so canonical and OG URLs are absolute.
 
 ### Step 4: Create Component Structure with Design
 
@@ -479,8 +520,10 @@ Build components in this order, applying your aesthetic direction to each:
 
 Map sections to ShadCN components and **customize heavily**:
 
+ShadCN components used in `.astro` files take `className` (React prop); plain HTML elements use `class`.
+
 **Hero CTA Example:**
-```tsx
+```astro
 <Button
   size="lg"
   className="bg-accent hover:bg-accent/90 text-white px-12 py-6 text-xl font-display rounded-full shadow-2xl hover:shadow-accent/50 hover:scale-105 transition-all duration-300"
@@ -490,7 +533,7 @@ Map sections to ShadCN components and **customize heavily**:
 ```
 
 **Benefits Card Example:**
-```tsx
+```astro
 <Card className="border-2 border-primary/10 hover:border-primary/30 transition-all duration-300 hover:shadow-xl hover:-translate-y-1 bg-gradient-to-br from-white to-primary/5">
   {/* Custom content */}
 </Card>
@@ -500,21 +543,23 @@ Map sections to ShadCN components and **customize heavily**:
 
 Add entrance animations and scroll effects:
 
-```tsx
-// Hero title with staggered animation
-<h1 className="text-6xl font-display font-bold">
-  <span className="inline-block animate-fade-in" style={{ animationDelay: '0ms' }}>
+```astro
+<!-- Hero title with staggered animation -->
+<h1 class="text-6xl font-display font-bold">
+  <span class="inline-block animate-fade-in" style="animation-delay: 0ms">
     Beautiful
   </span>{' '}
-  <span className="inline-block animate-fade-in" style={{ animationDelay: '100ms' }}>
+  <span class="inline-block animate-fade-in" style="animation-delay: 100ms">
     Landing
   </span>{' '}
-  <span className="inline-block animate-fade-in" style={{ animationDelay: '200ms' }}>
+  <span class="inline-block animate-fade-in" style="animation-delay: 200ms">
     Pages
   </span>
 </h1>
+```
 
-// Add to globals.css
+```css
+/* Add to global.css */
 @keyframes fade-in {
   from {
     opacity: 0;
@@ -531,7 +576,24 @@ Add entrance animations and scroll effects:
 }
 ```
 
-For scroll animations, use Intersection Observer or Framer Motion.
+For scroll animations, use a small Intersection Observer `<script>` (no framework needed):
+
+```astro
+<script>
+  const observer = new IntersectionObserver((entries) => {
+    for (const entry of entries) {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('animate-fade-in')
+        observer.unobserve(entry.target)
+      }
+    }
+  }, { threshold: 0.15 })
+
+  document.querySelectorAll('[data-reveal]').forEach((el) => observer.observe(el))
+</script>
+```
+
+Add `data-reveal` (plus an initial `opacity-0`) to sections or cards you want to reveal on scroll.
 
 ### Step 7: Implement Responsive Design
 
@@ -546,12 +608,12 @@ Ensure mobile-first responsive design with brand consistency:
 
 ### Step 8: Optimize Performance
 
-- Use Next.js `Image` component for all images
-- Add `priority` prop to above-the-fold images (hero section)
-- Implement lazy loading for below-the-fold content
+- Use Astro's `<Image />` / `<Picture />` from `astro:assets` for all images (auto WebP/AVIF, sizing, lazy loading)
+- Set `loading="eager"` and `fetchpriority="high"` on above-the-fold images (hero section)
+- Hydrate islands with `client:visible` so below-the-fold JS loads only when needed
 - Optimize fonts: Use `font-display: swap` for web fonts
 - Use CSS animations over JavaScript when possible
-- Minimize bundle size: Tree-shake unused ShadCN components
+- Minimize client JS: Keep ShadCN components static; only hydrate true islands
 
 ### Step 9: Ensure Accessibility
 
@@ -576,12 +638,13 @@ Ensure mobile-first responsive design with brand consistency:
 For complete, production-ready component implementations using ShadCN UI, refer to `references/component-examples.md`.
 
 This reference file includes:
-- Hero section with Button, Badge, and Image optimization
+- Hero section with Button, Badge, and `astro:assets` image optimization
 - Benefits section with Card components
 - Testimonials with Avatar and Card
-- FAQ with Accordion
+- FAQ with Accordion (React island hydrated via `client:visible`)
 - Final CTA with Card and Button
 - Footer with Separator and links
+- Page assembly in `src/pages/index.astro`
 
 Load this reference when implementing components to follow best practices.
 
@@ -614,12 +677,13 @@ Before completing any landing page, verify ALL items:
 - [ ] 11. Footer with contact and legal links (multi-column, refined)
 
 ### Technical Requirements 🔧
-- [ ] Next.js 14+ with App Router
-- [ ] TypeScript types defined
+- [ ] Astro 5+ with `@astrojs/react` integration
+- [ ] TypeScript types defined (component `Props` interfaces)
 - [ ] Tailwind CSS styling
 - [ ] ShadCN UI components installed and customized
-- [ ] Metadata configured for SEO (title, description, OG tags)
-- [ ] Images optimized with Next.js Image component
+- [ ] Only interactive components hydrated (`client:*`); everything else ships zero JS
+- [ ] Metadata configured for SEO in `Layout.astro` (title, description, canonical, OG tags)
+- [ ] Images optimized with `astro:assets`
 - [ ] Responsive design implemented (mobile-first)
 - [ ] Accessibility standards met (WCAG AA)
 - [ ] Performance optimized (lazy loading, font optimization)
@@ -697,9 +761,9 @@ Before completing any landing page, verify ALL items:
 - Optimize images: WebP format, proper sizing, lazy loading
 - Font loading strategy: `font-display: swap` to avoid FOIT (Flash of Invisible Text)
 - Minimize JavaScript: Use CSS animations when possible
-- Code splitting: Dynamic imports for heavy components
+- Islands architecture: Hydrate heavy components lazily (`client:visible` / `client:idle`)
 - Prefetch critical resources
-- Target: LCP < 2.5s, FID < 100ms, CLS < 0.1
+- Target: LCP < 2.5s, INP < 200ms, CLS < 0.1
 
 ## Common Patterns & Aesthetic Recommendations
 
@@ -751,7 +815,7 @@ Each landing page type has different conversion goals AND can express unique aes
 This skill includes detailed reference documentation:
 
 - `11-essential-elements.md` - In-depth explanation of each of the 11 essential elements with principles, implementation tips, and examples
-- `component-examples.md` - Complete, production-ready component code using ShadCN UI for all major sections
+- `component-examples.md` - Complete, production-ready Astro component code using ShadCN UI for all major sections
 
 Load these references as needed when implementing specific sections or when you need detailed guidance on any element.
 
