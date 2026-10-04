@@ -1,4 +1,5 @@
 ---
+// Wordmark: the "o" is a loop (the subscription) with a dot escaping it (the launch).
 interface Props {
   class?: string
   tone?: 'dark' | 'light'
@@ -6,12 +7,11 @@ interface Props {
 const { class: className = '', tone = 'dark' } = Astro.props
 ---
 
-<a href="/" class:list={['group inline-flex items-center gap-2.5 rounded-md', className]} aria-label="subrocket home">
-  <svg viewBox="0 0 32 32" class="size-8 transition-transform duration-500 group-hover:-translate-y-0.5 group-hover:rotate-[8deg]" aria-hidden="true">
-    <rect width="32" height="32" rx="9" fill="#0b0b12" />
-    <path d="M16 5.5c3.6 2.7 5.4 6.7 5.4 11.2v4.1H10.6v-4.1c0-4.5 1.8-8.5 5.4-11.2z" fill="#fff" />
-    <circle cx="16" cy="13.6" r="2.1" fill="#e5337c" />
-    <path d="M13.4 22.8h5.2L16 27z" fill="#ff8fc0" class="origin-top transition-transform duration-500 group-hover:scale-y-125" />
-  </svg>
-  <span class:list={['font-display text-[1.2rem] font-semibold tracking-tight', tone === 'light' ? 'text-white' : 'text-foreground']}>subrocket</span>
+<a href="/" class:list={['group inline-flex rounded-md', className]} aria-label="subrocket home">
+  <span class:list={['whitespace-nowrap font-display text-[1.45rem] font-semibold leading-none tracking-[-0.05em]', tone === 'light' ? 'text-white' : 'text-foreground']} aria-hidden="true">
+    subr<svg viewBox="0 0 24 24" class="mx-[0.01em] inline-block h-[0.56em] w-auto align-baseline" aria-hidden="true">
+      <path d="M19.6 7.2A10 10 0 1 0 21.9 13" fill="none" stroke="#e5337c" stroke-width="4.2" stroke-linecap="round" />
+      <circle cx="21.6" cy="2.6" r="2.6" fill="#e5337c" class="origin-center transition-transform duration-500 group-hover:-translate-y-[3px] group-hover:translate-x-[3px]" />
+    </svg>cket
+  </span>
 </a>
