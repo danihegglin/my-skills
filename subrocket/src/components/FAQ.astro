@@ -33,14 +33,14 @@ const faqs = [
 ]
 ---
 
-<section id="faq" class="border-t border-border bg-ink-2 py-24 sm:py-32">
-  <div class="mx-auto grid max-w-7xl gap-12 px-5 sm:px-8 lg:grid-cols-12">
-    <div class="lg:col-span-4" data-reveal>
-      <p class="telemetry text-signal">FAQ</p>
-      <h2 class="mt-4 text-4xl font-extrabold sm:text-5xl">Questions before you connect Stripe</h2>
-      <p class="mt-6 text-haze">Something else on your mind? Email <a href="mailto:hello@subrocket.com" class="text-paper underline decoration-signal underline-offset-4 hover:text-signal">hello@subrocket.com</a>.</p>
+<section id="faq" class="py-24 sm:py-32">
+  <div class="mx-auto grid max-w-6xl gap-12 px-4 sm:px-6 lg:grid-cols-[0.8fr_1.2fr] lg:gap-16">
+    <div class="lg:sticky lg:top-28 lg:self-start" data-reveal>
+      <p class="eyebrow text-primary">FAQ</p>
+      <h2 class="mt-4 text-4xl font-semibold sm:text-5xl">Questions before you connect Stripe</h2>
+      <p class="mt-6 text-muted-foreground">Something else on your mind? Email <a href="mailto:hello@subrocket.com" class="font-medium text-foreground underline decoration-primary/40 underline-offset-4 transition-colors hover:text-primary">hello@subrocket.com</a>.</p>
     </div>
-    <div class="lg:col-span-8">
+    <div>
       <FAQAccordion client:visible faqs={faqs} />
     </div>
   </div>

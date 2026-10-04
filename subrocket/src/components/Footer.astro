@@ -8,9 +8,9 @@ const columns = [
   {
     title: 'Product',
     links: [
-      { href: '#checkout', label: 'Gift checkout' },
-      { href: '#rescue', label: 'Card rescue' },
-      { href: '#portal', label: 'Self-service portal' },
+      { href: '/#checkout', label: 'Gift checkout' },
+      { href: '/#rescue', label: 'Card rescue' },
+      { href: '/#portal', label: 'Self-service portal' },
       { href: '/pricing', label: 'Pricing' },
     ],
   },
@@ -34,30 +34,27 @@ const columns = [
 ]
 ---
 
-<footer class="border-t border-border bg-[#070a11]">
-  <div class="mx-auto max-w-7xl px-5 py-16 sm:px-8">
+<footer class="border-t border-border bg-white">
+  <div class="mx-auto max-w-6xl px-4 py-16 sm:px-6">
     <div class="grid gap-12 md:grid-cols-12">
       <div class="md:col-span-5">
         <Logo />
-        <p class="mt-5 max-w-xs text-sm leading-relaxed text-haze">Gift checkout, card-expiry rescue and customer self-service for Stripe subscriptions.</p>
-        <address class="mt-6 space-y-1 text-sm not-italic text-haze">
-          <p>SubRocket</p>
-          <p><a href="mailto:hello@subrocket.com" class="hover:text-paper">hello@subrocket.com</a></p>
-        </address>
+        <p class="mt-5 max-w-xs text-sm leading-relaxed text-muted-foreground">Gift checkout, card-expiry rescue and customer self-service for Stripe subscriptions.</p>
+        <a href="mailto:hello@subrocket.com" class="mt-6 inline-flex items-center rounded-full border border-border px-4 py-2 text-sm font-medium transition-colors hover:border-primary/40 hover:bg-accent hover:text-accent-foreground">hello@subrocket.com</a>
       </div>
       {columns.map((col) => (
         <nav aria-label={col.title} class="md:col-span-2 lg:col-span-2">
-          <h3 class="telemetry text-paper">{col.title}</h3>
-          <ul class="mt-5 space-y-3 text-sm text-haze">
+          <h3 class="eyebrow text-[0.68rem] text-muted-foreground">{col.title}</h3>
+          <ul class="mt-5 space-y-3 text-sm">
             {col.links.map((l) => (
-              <li><a href={l.href} data-astro-prefetch class="transition-colors hover:text-signal">{l.label}</a></li>
+              <li><a href={l.href} class="text-foreground/80 transition-colors hover:text-primary">{l.label}</a></li>
             ))}
           </ul>
         </nav>
       ))}
     </div>
-    <Separator className="my-10 bg-gradient-to-r from-signal/50 via-border to-transparent" />
-    <div class="flex flex-col justify-between gap-4 text-xs text-haze sm:flex-row">
+    <Separator className="my-10" />
+    <div class="flex flex-col justify-between gap-4 text-xs text-muted-foreground sm:flex-row">
       <p>&copy; {year} SubRocket. All rights reserved.</p>
       <p>Stripe is a trademark of Stripe, Inc. SubRocket is an independent product.</p>
     </div>

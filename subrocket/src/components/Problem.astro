@@ -1,0 +1,60 @@
+---
+import { Card, CardContent } from '@/components/ui/card'
+import { ShoppingBag, CreditCard, LogOut } from '@lucide/astro'
+
+const leaks = [
+  {
+    icon: ShoppingBag,
+    where: 'At checkout',
+    title: 'Gift buyers leave',
+    body: 'Someone wants to give your subscription to a friend. Your checkout only sells to the person paying, so they close the tab.',
+  },
+  {
+    icon: CreditCard,
+    where: 'At renewal',
+    title: 'Expired cards fail',
+    body: 'Card networks don’t update every expired card. When one slips through, the renewal fails and a customer who never decided to leave is gone.',
+  },
+  {
+    icon: LogOut,
+    where: 'At cancellation',
+    title: 'Breaks become cancels',
+    body: 'A customer who wants a month off has two choices: email support or cancel. Cancel is the button they can find.',
+  },
+]
+---
+
+<section class="py-24 sm:py-32">
+  <div class="mx-auto max-w-6xl px-4 sm:px-6">
+    <div class="grid gap-6 lg:grid-cols-2 lg:items-end" data-reveal>
+      <div>
+        <p class="eyebrow text-primary">The problem</p>
+        <h2 class="mt-4 text-4xl font-semibold sm:text-5xl">Three places subscription revenue <span class="accent-serif text-primary">leaks</span></h2>
+      </div>
+      <p class="max-w-md text-lg leading-relaxed text-muted-foreground lg:justify-self-end">Stripe handles the charge. What happens before the first charge and around the next one is up to you.</p>
+    </div>
+
+    <div class="relative mt-14">
+    <div class="absolute left-[16%] right-[16%] top-[3.25rem] hidden h-px bg-[repeating-linear-gradient(90deg,var(--border)_0_6px,transparent_6px_12px)] md:block" aria-hidden="true"></div>
+    <ol class="relative grid gap-5 md:grid-cols-3">
+      {leaks.map((leak, i) => (
+        <li data-reveal style={`transition-delay: ${i * 90}ms`}>
+          <Card className="group relative h-full gap-0 rounded-2xl py-0 shadow-none transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_24px_50px_-28px_rgb(20_48_127/0.4)]">
+            <CardContent className="p-7">
+              <div class="flex items-center justify-between">
+                <span class="relative flex size-12 items-center justify-center rounded-xl border border-border bg-frost text-primary transition-colors group-hover:bg-primary group-hover:text-white">
+                  <leak.icon class="size-5" />
+                </span>
+                <span class="font-mono text-xs text-muted-foreground">0{i + 1}</span>
+              </div>
+              <p class="eyebrow mt-7 text-[0.68rem] text-muted-foreground">{leak.where}</p>
+              <h3 class="mt-2 text-2xl font-semibold">{leak.title}</h3>
+              <p class="mt-3 leading-relaxed text-muted-foreground">{leak.body}</p>
+            </CardContent>
+          </Card>
+        </li>
+      ))}
+    </ol>
+    </div>
+  </div>
+</section>
