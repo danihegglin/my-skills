@@ -2,27 +2,25 @@
 @import "tw-animate-css";
 
 /*
- * subrocket design system: "Fresh growth"
- * Cool, light canvas with a green cast. Deep green for action, lime as a rare highlight.
+ * subrocket design system: "Ink & pop"
+ * Cool off-white canvas, near-black ink for text and buttons, one hot-pink accent.
  * Fonts are loaded with <link> tags in Layout.astro.
  */
 
 @custom-variant dark (&:is(.dark *));
 
 @theme {
-  --font-display: 'Instrument Sans', ui-sans-serif, sans-serif;
-  --font-serif: 'Instrument Serif', ui-serif, Georgia, serif;
+  --font-display: 'Geist', ui-sans-serif, sans-serif;
   --font-body: 'Geist', ui-sans-serif, sans-serif;
   --font-sans: 'Geist', ui-sans-serif, sans-serif;
   --font-mono: 'Geist Mono', ui-monospace, monospace;
 
   /* Brand extras beyond the shadcn tokens */
-  --color-ink: #0a1a14;
-  --color-brand: #087a4f;
-  --color-brand-deep: #053d29;
-  --color-mint: #d6f3e4;
-  --color-frost: #eff8f3;
-  --color-lime: #c6ef6a;
+  --color-ink: #0b0b12;
+  --color-pop: #e5337c;
+  --color-pop-deep: #9d1450;
+  --color-pop-soft: #fde8f1;
+  --color-cloud: #f3f4f8;
 
   --animate-accordion-down: accordion-down 0.25s cubic-bezier(0.22, 1, 0.36, 1);
   --animate-accordion-up: accordion-up 0.2s cubic-bezier(0.22, 1, 0.36, 1);
@@ -31,24 +29,24 @@
 :root {
   --radius: 0.75rem;
 
-  --background: #f5f8f6;
-  --foreground: #0a1a14;
+  --background: #f7f7f9;
+  --foreground: #0b0b12;
   --card: #ffffff;
-  --card-foreground: #0a1a14;
+  --card-foreground: #0b0b12;
   --popover: #ffffff;
-  --popover-foreground: #0a1a14;
-  --primary: #087a4f;
+  --popover-foreground: #0b0b12;
+  --primary: #0b0b12;
   --primary-foreground: #ffffff;
-  --secondary: #e8f1ec;
-  --secondary-foreground: #0a1a14;
-  --muted: #edf3ef;
-  --muted-foreground: #4f6158;
-  --accent: #e1f4ea;
-  --accent-foreground: #065c3b;
+  --secondary: #eeeff3;
+  --secondary-foreground: #0b0b12;
+  --muted: #f0f1f4;
+  --muted-foreground: #5c5f6e;
+  --accent: #fde8f1;
+  --accent-foreground: #a3175a;
   --destructive: #d23a4f;
-  --border: #dce6e0;
-  --input: #ccdad2;
-  --ring: #087a4f;
+  --border: #e4e5eb;
+  --input: #d9dbe3;
+  --ring: #e5337c;
 
   --easing: cubic-bezier(0.22, 1, 0.36, 1);
 }
@@ -98,39 +96,40 @@
   }
   h1, h2, h3 {
     font-family: var(--font-display);
-    letter-spacing: -0.035em;
-    line-height: 1.04;
+    letter-spacing: -0.045em;
+    line-height: 1;
+    font-weight: 600;
     text-wrap: balance;
   }
   p {
     text-wrap: pretty;
   }
   ::selection {
-    background: var(--color-lime);
-    color: var(--color-brand-deep);
+    background: var(--color-pop-soft);
+    color: var(--color-pop-deep);
   }
 }
 
 /* Faint dot grid, masked per section */
 .bg-dots {
-  background-image: radial-gradient(rgb(8 122 79 / 0.16) 1px, transparent 1px);
+  background-image: radial-gradient(rgb(11 11 18 / 0.09) 1px, transparent 1px);
   background-size: 22px 22px;
 }
 
 /* Cool mesh behind the hero */
 .bg-mesh {
   background:
-    radial-gradient(60% 55% at 85% 10%, rgb(190 238 212 / 0.85), transparent 70%),
-    radial-gradient(45% 45% at 10% 0%, rgb(214 240 235 / 0.8), transparent 70%),
-    radial-gradient(40% 40% at 60% 90%, rgb(228 245 200 / 0.6), transparent 70%);
+    radial-gradient(55% 55% at 88% 8%, rgb(253 205 226 / 0.75), transparent 70%),
+    radial-gradient(45% 50% at 5% 0%, rgb(221 226 255 / 0.85), transparent 70%),
+    radial-gradient(40% 40% at 55% 95%, rgb(240 232 255 / 0.7), transparent 70%);
 }
 
-/* Serif italic accent inside display headlines */
-.accent-serif {
-  font-family: var(--font-serif);
-  font-style: italic;
-  font-weight: 400;
-  letter-spacing: -0.01em;
+/* Accent words inside display headlines */
+.accent-text {
+  background: linear-gradient(100deg, #e5337c 10%, #b44dff 90%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
 }
 
 .eyebrow {

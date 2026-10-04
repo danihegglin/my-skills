@@ -14,17 +14,17 @@ const perks = ['14-day free trial', 'No card required', 'Live in an afternoon']
 
   <div class="mx-auto grid max-w-6xl items-center gap-14 px-4 sm:px-6 lg:grid-cols-[1.05fr_1fr] lg:gap-12">
     <div>
-      <Badge variant="outline" className="rise h-7 gap-2 rounded-full border-primary/20 bg-white/70 px-3 text-xs font-medium text-accent-foreground backdrop-blur">
+      <Badge variant="outline" className="rise h-7 gap-2 rounded-full border-pop/20 bg-white/70 px-3 text-xs font-medium text-accent-foreground backdrop-blur">
         <span class="relative flex size-2">
-          <span class="absolute inline-flex size-full animate-ping rounded-full bg-brand opacity-60"></span>
-          <span class="relative inline-flex size-2 rounded-full bg-brand"></span>
+          <span class="absolute inline-flex size-full animate-ping rounded-full bg-pop opacity-60"></span>
+          <span class="relative inline-flex size-2 rounded-full bg-pop"></span>
         </span>
         Runs on your existing Stripe account
       </Badge>
 
       <h1 class="mt-7 text-[clamp(2.8rem,6.4vw,5.2rem)] font-semibold">
         <span class="rise block" style="animation-delay: 80ms">Sell more subscriptions.</span>
-        <span class="rise block" style="animation-delay: 200ms"><span class="accent-serif relative text-primary">Keep<span class="absolute inset-x-0 bottom-[0.08em] -z-10 h-[0.28em] rounded-full bg-lime/80" aria-hidden="true"></span></span> more of them.</span>
+        <span class="rise block" style="animation-delay: 200ms"><span class="accent-text">Keep</span> more of them.</span>
       </h1>
 
       <p class="rise mt-7 max-w-lg text-lg leading-relaxed text-muted-foreground sm:text-xl" style="animation-delay: 340ms">
@@ -32,14 +32,14 @@ const perks = ['14-day free trial', 'No card required', 'Live in an afternoon']
       </p>
 
       <div class="rise mt-9 flex flex-col gap-3 sm:flex-row sm:items-center" style="animation-delay: 460ms">
-        <a href="/signup" class={cn(buttonVariants({ size: 'lg' }), 'group h-13 rounded-full px-7 text-base font-semibold shadow-[0_12px_30px_-10px_rgb(8_122_79/0.75)] transition-all hover:-translate-y-0.5 hover:shadow-[0_18px_40px_-12px_rgb(8_122_79/0.85)]')}>
+        <a href="/signup" class={cn(buttonVariants({ size: 'lg' }), 'group h-13 rounded-full px-7 text-base font-semibold shadow-[0_12px_30px_-10px_rgb(11_11_18/0.45)] transition-all hover:-translate-y-0.5 hover:shadow-[0_18px_40px_-12px_rgb(229_51_124/0.45)]')}>
           Start free trial
           <ArrowRight class="size-4 transition-transform group-hover:translate-x-1" />
         </a>
         <a href="/demo" class={cn(buttonVariants({ variant: 'outline', size: 'lg' }), 'h-13 rounded-full bg-white/70 px-6 text-base backdrop-blur')}>Book a demo</a>
       </div>
       <ul class="rise mt-6 flex flex-wrap gap-x-5 gap-y-2 text-sm text-muted-foreground" style="animation-delay: 540ms">
-        {perks.map((p) => <li class="flex items-center gap-1.5"><Check class="size-4 text-primary" />{p}</li>)}
+        {perks.map((p) => <li class="flex items-center gap-1.5"><Check class="size-4 text-pop" />{p}</li>)}
       </ul>
     </div>
 

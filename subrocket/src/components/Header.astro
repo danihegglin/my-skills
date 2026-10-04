@@ -7,7 +7,7 @@ import { nav } from './nav'
 ---
 
 <header id="site-header" class="group/header fixed inset-x-0 top-0 z-50 px-3 pt-3 sm:px-5">
-  <div class="mx-auto flex h-14 max-w-6xl items-center justify-between rounded-full border border-transparent px-3 pl-4 transition-all duration-300 group-data-[scrolled=true]/header:border-border group-data-[scrolled=true]/header:bg-white/75 group-data-[scrolled=true]/header:shadow-[0_8px_30px_-12px_rgb(5_61_41/0.18)] group-data-[scrolled=true]/header:backdrop-blur-xl">
+  <div class="mx-auto flex h-14 max-w-6xl items-center justify-between rounded-full border border-transparent px-3 pl-4 transition-all duration-300 group-data-[scrolled=true]/header:border-border group-data-[scrolled=true]/header:bg-white/75 group-data-[scrolled=true]/header:shadow-[0_8px_30px_-12px_rgb(11_11_18/0.18)] group-data-[scrolled=true]/header:backdrop-blur-xl">
     <Logo />
     <nav aria-label="Main" class="hidden md:block">
       <ul class="flex items-center gap-1 text-sm font-medium text-muted-foreground">
@@ -18,7 +18,7 @@ import { nav } from './nav'
     </nav>
     <div class="flex items-center gap-1">
       <a href="/login" class={cn(buttonVariants({ variant: 'ghost', size: 'sm' }), 'hidden rounded-full px-4 sm:inline-flex')}>Log in</a>
-      <a href="/signup" class={cn(buttonVariants({ size: 'sm' }), 'h-9 rounded-full px-4 shadow-[0_6px_16px_-6px_rgb(8_122_79/0.7)]')}>Start free trial</a>
+      <a href="/signup" class={cn(buttonVariants({ size: 'sm' }), 'h-9 rounded-full px-4 shadow-[0_6px_16px_-6px_rgb(229_51_124/0.7)]')}>Start free trial</a>
       <MobileNav client:media="(max-width: 767px)" />
     </div>
   </div>

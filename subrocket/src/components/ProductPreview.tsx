@@ -23,7 +23,7 @@ import { cn } from '@/lib/utils'
 const PRICE = 24
 
 const toggleItem =
-  'h-9 flex-1 rounded-md border border-border bg-background text-sm font-medium text-muted-foreground first:rounded-l-md last:rounded-r-md data-[state=on]:border-primary data-[state=on]:bg-accent data-[state=on]:text-accent-foreground'
+  'h-9 flex-1 rounded-md border border-border bg-background text-sm font-medium text-muted-foreground first:rounded-l-md last:rounded-r-md data-[state=on]:border-pop data-[state=on]:bg-accent data-[state=on]:text-accent-foreground'
 
 function Checkout() {
   const [gift, setGift] = useState(false)
@@ -46,7 +46,7 @@ function Checkout() {
       <div
         className={cn(
           'flex items-center justify-between gap-4 rounded-xl border px-4 py-3 transition-colors',
-          gift ? 'border-primary/50 bg-accent' : 'border-border bg-muted/50',
+          gift ? 'border-pop/50 bg-accent' : 'border-border bg-muted/50',
         )}
       >
         <Label htmlFor="gift-toggle" className="flex cursor-pointer items-center gap-2.5 text-sm font-medium">
@@ -57,7 +57,7 @@ function Checkout() {
           id="gift-toggle"
           checked={gift}
           onCheckedChange={setGift}
-          className="data-[state=checked]:bg-brand"
+          className="data-[state=checked]:bg-pop"
         />
       </div>
 
@@ -127,24 +127,24 @@ function Rescue() {
     <div className="space-y-5">
       <div className="flex items-center justify-between gap-4 rounded-xl border border-border bg-muted/50 p-4">
         <div className="flex items-center gap-3">
-          <div className="flex h-9 w-14 items-center justify-center rounded-md bg-gradient-to-br from-brand to-brand-deep font-mono text-[0.65rem] font-medium tracking-widest text-white">VISA</div>
+          <div className="flex h-9 w-14 items-center justify-center rounded-md bg-gradient-to-br from-pop to-pop-deep font-mono text-[0.65rem] font-medium tracking-widest text-white">VISA</div>
           <div>
             <p className="font-mono text-sm">•••• 0341</p>
             <p className="text-xs text-muted-foreground">Expires 11/26</p>
           </div>
         </div>
-        <Badge className="rounded-full border-primary/30 bg-accent text-accent-foreground">
+        <Badge className="rounded-full border-pop/30 bg-accent text-accent-foreground">
           <Check aria-hidden="true" /> Rescued
         </Badge>
       </div>
 
-      <ol className="relative space-y-5 pl-1 before:absolute before:left-[17px] before:top-3 before:h-[calc(100%-1.5rem)] before:w-px before:bg-gradient-to-b before:from-primary/50 before:to-brand/60">
+      <ol className="relative space-y-5 pl-1 before:absolute before:left-[17px] before:top-3 before:h-[calc(100%-1.5rem)] before:w-px before:bg-gradient-to-b before:from-primary/50 before:to-pop/60">
         {rescueSteps.map((step) => (
           <li key={step.day} className="relative flex gap-4">
             <span
               className={cn(
                 'relative z-10 flex size-8 shrink-0 items-center justify-center rounded-full ring-4 ring-card',
-                step.state === 'sent' ? 'bg-accent text-accent-foreground' : 'bg-brand text-white',
+                step.state === 'sent' ? 'bg-accent text-accent-foreground' : 'bg-pop text-white',
               )}
             >
               {step.state === 'sent' ? <Mail className="size-4" aria-hidden="true" /> : <Check className="size-4" aria-hidden="true" />}
@@ -180,13 +180,13 @@ function Portal() {
             <p className="text-xs text-muted-foreground">$24/mo · Renews Nov 3</p>
           </div>
         </div>
-        <Badge variant="outline" className={cn('rounded-full', paused && 'border-primary/30 bg-accent text-accent-foreground')}>
+        <Badge variant="outline" className={cn('rounded-full', paused && 'border-pop/30 bg-accent text-accent-foreground')}>
           {paused ? `Paused until ${resumeDates[pause]}` : 'Active'}
         </Badge>
       </div>
 
       {cancelling ? (
-        <div className="rounded-xl border border-primary/30 bg-frost p-4">
+        <div className="rounded-xl border border-pop/30 bg-cloud p-4">
           <p className="font-display text-base font-semibold">Before you go</p>
           <p className="mt-1 text-sm text-muted-foreground">Take two months off instead. You won’t be charged while paused.</p>
           <div className="mt-4 flex flex-wrap gap-2">
@@ -209,7 +209,7 @@ function Portal() {
       ) : (
         <div className="rounded-xl border border-border bg-muted/50 p-4">
           <p className="flex items-center gap-2 text-sm font-medium">
-            <Pause className="size-4 text-primary" aria-hidden="true" /> Pause deliveries
+            <Pause className="size-4 text-pop" aria-hidden="true" /> Pause deliveries
           </p>
           <ToggleGroup
             type="single"
@@ -275,8 +275,8 @@ export default function ProductPreview() {
 
   return (
     <div className="relative w-full">
-      <div className="absolute -inset-6 -z-10 rounded-[2.5rem] bg-gradient-to-br from-mint via-white/40 to-frost blur-2xl" aria-hidden="true" />
-      <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-[0_40px_80px_-30px_rgb(5_61_41/0.35),0_2px_6px_rgb(5_61_41/0.06)]">
+      <div className="absolute -inset-6 -z-10 rounded-[2.5rem] bg-gradient-to-br from-pop-soft via-white/40 to-cloud blur-2xl" aria-hidden="true" />
+      <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-[0_40px_80px_-30px_rgb(11_11_18/0.35),0_2px_6px_rgb(11_11_18/0.06)]">
         <div className="flex items-center gap-3 border-b border-border bg-muted/40 px-4 py-2.5">
           <div className="flex gap-1.5" aria-hidden="true">
             <span className="size-2.5 rounded-full bg-border" />
@@ -296,7 +296,7 @@ export default function ProductPreview() {
                 <TabsTrigger
                   key={t.value}
                   value={t.value}
-                  className="rounded-full text-xs font-medium sm:text-sm data-[state=active]:text-primary data-[state=active]:shadow-sm"
+                  className="rounded-full text-xs font-medium sm:text-sm data-[state=active]:text-pop data-[state=active]:shadow-sm"
                 >
                   {t.label}
                 </TabsTrigger>

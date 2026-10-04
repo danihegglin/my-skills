@@ -4,7 +4,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 export default function QuoteAvatar({ initials }: { initials: string }) {
   return (
     <Avatar className="size-11 ring-2 ring-white">
-      <AvatarFallback className="bg-gradient-to-br from-mint to-frost font-mono text-xs font-medium text-accent-foreground">
+      <AvatarFallback className="bg-gradient-to-br from-pop-soft to-cloud font-mono text-xs font-medium text-accent-foreground">
         {initials}
       </AvatarFallback>
     </Avatar>
