@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0">
+<title>$GODOT_PROJECT_NAME</title>
+<style>
+html, body, #canvas { margin: 0; padding: 0; border: 0; }
+body { background: #5487d9; overflow: hidden; touch-action: none; }
+#canvas { display: block; }
+#canvas:focus { outline: none; }
+#loader {
+	position: fixed; inset: 0; display: flex; flex-direction: column;
+	align-items: center; justify-content: center; gap: 22px;
+	background: linear-gradient(#5487d9, #f2d9ad 75%, #6a9e42 75%, #6a9e42 77%, #77573a 77%);
+	font-family: Georgia, 'Times New Roman', serif; color: #fff8e6;
+	transition: opacity 0.4s;
+}
+#loader.done { opacity: 0; pointer-events: none; }
+#loader h1 { margin: 0; font-size: clamp(36px, 8vw, 72px); letter-spacing: 0.06em;
+	text-shadow: 0 3px 0 #2a1a0b, 0 0 18px rgba(0,0,0,0.25); }
+#bar { width: min(420px, 70vw); height: 18px; border-radius: 9px; overflow: hidden;
+	background: rgba(42, 26, 11, 0.75); border: 3px solid #2a1a0b; }
+#fill { width: 0; height: 100%; background: linear-gradient(#ffb84d, #e8821c); transition: width 0.15s; }
+#msg { font-size: 18px; text-shadow: 0 2px 0 #2a1a0b; min-height: 1.3em; text-align: center; padding: 0 16px; }
+#arm { transform-origin: 40px 50px; animation: swing 1.6s ease-in-out infinite; }
+@keyframes swing { 0%, 100% { transform: rotate(0deg); } 50% { transform: rotate(-70deg); } }
+</style>
+$GODOT_HEAD_INCLUDE
+</head>
+<body>
+<canvas id="canvas">Your browser does not support the canvas tag.</canvas>
+<noscript>Your browser does not support JavaScript.</noscript>
+<div id="loader">
+	<svg width="120" height="100" viewBox="0 0 120 100" aria-hidden="true">
+		<path d="M18 92 L40 50 L62 92" fill="none" stroke="#6b4422" stroke-width="7" stroke-linejoin="round"/>
+		<rect x="10" y="86" width="60" height="9" fill="#8c5a2b"/>
+		<g id="arm">
+			<line x1="18" y1="64" x2="96" y2="20" stroke="#8c5a2b" stroke-width="6" stroke-linecap="round"/>
+			<rect x="8" y="62" width="20" height="18" fill="#4a4a50"/>
+			<circle cx="96" cy="20" r="7" fill="#6e6c68"/>
+		</g>
+		<circle cx="40" cy="50" r="4" fill="#333"/>
+	</svg>
+	<h1>TREBUCHET</h1>
+	<div id="bar"><div id="fill"></div></div>
+	<div id="msg">Hauling stones to the siege…</div>
+</div>
+<script src="$GODOT_URL"></script>
+<script>
+const GODOT_CONFIG = $GODOT_CONFIG;
+const GODOT_THREADS_ENABLED = $GODOT_THREADS_ENABLED;
+const engine = new Engine(GODOT_CONFIG);
+const loader = document.getElementById('loader');
+const fill = document.getElementById('fill');
+const msg = document.getElementById('msg');
+
+function fail(err) {
+	console.error(err);
+	msg.textContent = (err && err.message) || String(err) || 'Something went wrong.';
+}
+
+const missing = Engine.getMissingFeatures({ threads: GODOT_THREADS_ENABLED });
+if (missing.length) {
+	fail('Your browser is missing features this game needs: ' + missing.join(', '));
+} else {
+	engine.startGame({
+		onProgress: (current, total) => {
+			if (total > 0) fill.style.width = Math.min(100, (current / total) * 100) + '%';
+		},
+	}).then(() => {
+		fill.style.width = '100%';
+		loader.classList.add('done');
+		setTimeout(() => loader.remove(), 500);
+	}, fail);
+}
+</script>
+</body>
+</html>
