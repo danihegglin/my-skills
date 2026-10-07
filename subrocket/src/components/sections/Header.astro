@@ -1,0 +1,22 @@
+---
+import Logo from '@/components/ui/Logo.astro'
+import Button from '@/components/ui/Button.astro'
+import { cta, nav } from '@/content/landing'
+---
+
+<header class="sticky top-0 z-50 border-b border-line bg-paper/92 backdrop-saturate-150 supports-[backdrop-filter]:bg-paper/80 supports-[backdrop-filter]:backdrop-blur-md">
+  <div class="mx-auto flex h-16 max-w-6xl items-center justify-between gap-6 px-4 sm:px-6">
+    <Logo />
+    <nav aria-label="Main" class="hidden md:block">
+      <ul class="flex items-center gap-1 text-sm text-ink-muted">
+        {nav.map((item) => (
+          <li><a href={item.href} class="rounded-full px-3.5 py-2 transition-colors hover:bg-ink/5 hover:text-ink">{item.label}</a></li>
+        ))}
+      </ul>
+    </nav>
+    <div class="flex items-center gap-2">
+      <a href="/login" class="hidden rounded-full px-3.5 py-2 text-sm text-ink-muted transition-colors hover:text-ink sm:inline-flex">Log in</a>
+      <Button href={cta.primary.href} size="sm" data-cta="header">{cta.primary.label}</Button>
+    </div>
+  </div>
+</header>
