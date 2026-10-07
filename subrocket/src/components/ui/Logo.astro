@@ -1,0 +1,17 @@
+---
+// Wordmark: the "o" is a loop (the subscription) with a dot escaping it (the launch).
+interface Props {
+  class?: string
+  tone?: 'dark' | 'light'
+}
+const { class: className = '', tone = 'dark' } = Astro.props
+---
+
+<a href="/" class:list={['group inline-flex rounded-md', className]} aria-label="subrocket home">
+  <span class:list={['whitespace-nowrap font-display text-[1.5rem] font-bold leading-none tracking-[-0.045em]', tone === 'light' ? 'text-paper' : 'text-ink']} aria-hidden="true">
+    subr<svg viewBox="0 0 24 24" class="mx-[0.01em] inline-block h-[0.56em] w-auto align-baseline text-pop" aria-hidden="true">
+      <path d="M19.6 7.2A10 10 0 1 0 21.9 13" fill="none" stroke="currentColor" stroke-width="4.2" stroke-linecap="round" />
+      <circle cx="21.6" cy="2.6" r="2.6" fill="currentColor" class="transition-transform duration-500 group-hover:-translate-y-[3px] group-hover:translate-x-[3px]" />
+    </svg>cket
+  </span>
+</a>
