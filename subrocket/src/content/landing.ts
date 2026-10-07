@@ -68,7 +68,7 @@ export const chapters = [
     stamp: 'Saved',
     title: 'Fix the card before the box can’t ship',
     body: 'Most subscribers who churn never decided to leave. Their card expired. subrocket emails each customer 30, 7 and 1 day before their card expires, with a one-tap link to update it. The reminders stop the moment the card changes.',
-    points: ['Sent from your own domain, in your brand', 'One-tap card update, handled by Stripe', 'Every save shows up in your reports'],
+    points: ['From your domain, in your words and your brand', 'One-tap card update, handled by Stripe', 'Every save shows up in your reports'],
     stat: { value: '53%', label: 'of subscription churn comes from failed payments, not from people choosing to leave.', source: 3 },
   },
   {
@@ -95,7 +95,7 @@ export const comparison = {
     {
       topic: 'Your brand',
       stripe: { text: 'Checkout and portal run on checkout.stripe.com and billing.stripe.com, or one custom domain for $10 a month. Design stops at logo, colours, a font from Stripe’s list and corner style. No custom text in the portal.', sources: [11, 12, 13, 14] },
-      subrocket: 'Checkout, account page and every email run on your own domain and look like the rest of your shop.',
+      subrocket: 'Checkout, account page and every email run on your own domain, in your own fonts and colours, with wording you write.',
     },
     {
       topic: 'Checkout',
@@ -109,8 +109,8 @@ export const comparison = {
     },
     {
       topic: 'Expiring cards',
-      stripe: { text: 'One reminder, 1 month before the card expires. Sent from stripe.com unless you verify your own email domain, in Stripe’s template.', sources: [7, 10] },
-      subrocket: 'Reminders 30, 7 and 1 day before, from your domain and in your brand. They stop the moment the card is updated.',
+      stripe: { text: 'One reminder, 1 month before the card expires. Sent from stripe.com unless you verify your own email domain. Stripe writes the email; you set the logo and colours.', sources: [7, 10] },
+      subrocket: 'Reminders 30, 7 and 1 day before, from your domain, in your words and your brand. They stop the moment the card is updated.',
     },
     {
       topic: 'Skipping a box',
@@ -168,7 +168,7 @@ export const faq = {
     { q: 'How do gift subscriptions work?', a: 'The buyer prepays 3, 6 or 12 boxes and picks a delivery date. On that date the recipient gets a claim link and can add a card to keep the boxes coming.' },
     { q: 'When do card update emails go out?', a: '30, 7 and 1 day before a card expires. They stop as soon as the card changes.' },
     { q: 'Can customers still cancel?', a: 'Always, in one click after the skip offer. Making cancelling hard costs you trust, and auto-renewal laws in many places require an easy online cancel.' },
-    { q: 'Will my customers see subrocket?', a: 'No. Checkout, the account page and every email run on your own domain, with your logo and colours. Your subscribers only ever see your brand.' },
+    { q: 'Will my customers see subrocket?', a: 'No. Checkout, the account page and every email run on your own domain, in your fonts and colours, and you write the wording of every email. Your subscribers only ever see your brand.' },
     { q: 'Is payment data safe?', a: 'Card details are collected and stored by Stripe. subrocket never sees full card numbers.' },
     { q: 'What does it cost?', a: 'Nothing up front and no monthly fee. subrocket takes a fixed $0.10 per transaction. Stripe’s usual processing fees apply, exactly as they do today.' },
   ],
