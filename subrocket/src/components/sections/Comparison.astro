@@ -1,0 +1,100 @@
+---
+import { Check, Minus } from '@lucide/astro'
+import { comparison } from '@/content/landing'
+
+const last = comparison.rows.length - 1
+---
+
+<section id="vs-stripe" class="scroll-mt-24 py-20 sm:py-28" aria-labelledby="vs-heading">
+  <div class="mx-auto max-w-6xl px-4 sm:px-6">
+    <div class="grid gap-6 lg:grid-cols-[1.1fr_1fr] lg:items-end lg:gap-16" data-reveal>
+      <div>
+        <p class="eyebrow text-ink-muted">{comparison.eyebrow}</p>
+        <h2 id="vs-heading" class="mt-4 text-[clamp(2.2rem,1.4rem+3.4vw,3.75rem)]">{comparison.heading}</h2>
+      </div>
+      <p class="max-w-[34rem] text-lg text-ink-muted">{comparison.body}</p>
+    </div>
+
+    <table class="vs mt-12 w-full border-separate border-spacing-0 text-left sm:mt-16" data-reveal style="--d: 100ms">
+      <caption class="sr-only">{comparison.eyebrow}</caption>
+      <thead>
+        <tr>
+          <th scope="col" class="w-[20%] pb-4 align-bottom"><span class="sr-only">Feature</span></th>
+          <th scope="col" class="w-[40%] px-6 pb-4 align-bottom text-sm font-medium text-ink-muted">{comparison.columns.stripe}</th>
+          <th scope="col" class="sub-col w-[40%] rounded-t-2xl px-6 pb-4 pt-5 align-bottom">
+            <span class="flex items-center gap-2 text-sm font-semibold">
+              <svg viewBox="0 0 24 24" class="size-4" aria-hidden="true"><path d="M19.73 9.93A8 8 0 1 1 14.07 4.27" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" /><circle cx="19.6" cy="4.4" r="2.5" class="fill-pop" /></svg>
+              {comparison.columns.subrocket}
+            </span>
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+        {comparison.rows.map((row, i) => (
+          <tr>
+            <th scope="row" class="border-t border-line-strong/50 py-5 pr-4 align-top text-base font-semibold tracking-tight">{row.topic}</th>
+            <td data-label={comparison.columns.stripe} class="border-t border-line-strong/50 px-6 py-5 align-top text-[0.95rem] text-ink-muted">
+              <span class="flex gap-3">
+                <Minus class="mt-1 size-4 shrink-0 text-ink-muted/60" aria-hidden="true" />
+                <span>
+                  {row.stripe.text}
+                  {row.stripe.sources.length > 0 && (
+                    <sup class="ml-0.5 text-[0.62rem] font-medium text-pop-deep">
+                      {row.stripe.sources.map((n, j) => (
+                        <>{j > 0 && ', '}<a href="#sources" class="hover:underline" aria-label={`Source ${n}`}>{n}</a></>
+                      ))}
+                    </sup>
+                  )}
+                </span>
+              </span>
+            </td>
+            <td data-label={comparison.columns.subrocket} class:list={['sub-col border-t border-line px-6 py-5 align-top text-[0.95rem] font-medium', i === last && 'rounded-b-2xl']}>
+              <span class="flex gap-3">
+                <Check class="mt-1 size-4 shrink-0 text-pop" aria-hidden="true" />
+                <span>{row.subrocket}</span>
+              </span>
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+
+    <p class="mt-6 max-w-[46rem] text-sm text-ink-muted">{comparison.note}</p>
+  </div>
+</section>
+
+<style>
+  .sub-col {
+    background: var(--color-card);
+    box-shadow: inset 1px 0 0 var(--color-line), inset -1px 0 0 var(--color-line);
+  }
+  thead .sub-col { box-shadow: inset 1px 0 0 var(--color-line), inset -1px 0 0 var(--color-line), inset 0 1px 0 var(--color-line); }
+  tbody tr:last-child .sub-col { box-shadow: inset 1px 0 0 var(--color-line), inset -1px 0 0 var(--color-line), inset 0 -1px 0 var(--color-line); }
+
+  /* Phones: each row becomes a card with labelled halves */
+  @media (max-width: 767px) {
+    .vs, .vs tbody, .vs tr, .vs th, .vs td { display: block; width: 100%; }
+    .vs thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+    .vs tbody { display: grid; gap: 0.75rem; }
+    .vs tr {
+      overflow: hidden;
+      border: 1px solid var(--color-line);
+      border-radius: 1rem;
+      background: var(--color-card);
+    }
+    .vs th[scope="row"] { border: 0; padding: 1rem 1.25rem 0.25rem; }
+    .vs td { border: 0; padding: 0.6rem 1.25rem; box-shadow: none; border-radius: 0; }
+    .vs td.sub-col { background: var(--color-pop-soft); padding-bottom: 1rem; margin-top: 0.4rem; }
+    .vs td::before {
+      content: attr(data-label);
+      display: block;
+      margin-bottom: 0.35rem;
+      font-family: var(--font-mono);
+      font-size: 0.65rem;
+      font-weight: 500;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--color-ink-muted);
+    }
+  }
+</style>

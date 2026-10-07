@@ -3,10 +3,30 @@
  * Hero product demo. Interactive with zero JavaScript: hidden radio/checkbox inputs hold the state,
  * labels act as the controls, and :has() shows the matching view.
  */
-import { Lock, Gift, CreditCard, Mail, Check, Pause, ArrowLeftRight, CalendarDays, X, RotateCcw } from '@lucide/astro'
+import { Lock, Gift, ChevronDown, Mail, Check, Pause, ArrowLeftRight, CalendarDays, X, RotateCcw } from '@lucide/astro'
 
 const PRICE = 39
 const months = [3, 6, 12]
+const sizes = [
+  { n: 6, price: 24 },
+  { n: 12, price: 39 },
+  { n: 24, price: 72 },
+]
+const freqs = [
+  { k: 1, label: 'Monthly', suffix: '/ month' },
+  { k: 2, label: 'Every 2 mo', suffix: 'every 2 months' },
+  { k: 3, label: 'Every 3 mo', suffix: 'every 3 months' },
+]
+
+// Price and button text follow the selected size, frequency and gift length (CSS only, no JS).
+const p = '.panel-gift'
+const gift = ':has(#g-gift:checked)'
+const checkoutCss = [
+  `${p} [data-pp], ${p} .total { display: none; }`,
+  ...sizes.map((s) => `${p}:has(#c-s${s.n}:checked) [data-pp="${s.n}"] { display: inline; }`),
+  ...sizes.flatMap((s) => freqs.map((f) => `${p}:not(${gift}):has(#c-s${s.n}:checked):has(#c-f${f.k}:checked) [data-t="s${s.n}-f${f.k}"] { display: inline; }`)),
+  ...sizes.flatMap((s) => months.map((m) => `${p}${gift}:has(#c-s${s.n}:checked):has(#g-m${m}:checked) [data-t="s${s.n}-g${m}"] { display: inline; }`)),
+].join('\n')
 
 const rescueSteps = [
   { day: '30 days before', label: 'Email with a one-tap update link', done: false },
@@ -39,7 +59,7 @@ const field = 'flex h-10 items-center rounded-lg border border-line bg-card px-3
     <legend class="sr-only">Choose a feature to preview</legend>
     <div class="grid grid-cols-3 gap-1 rounded-full bg-ink/[0.06] p-1 text-xs font-medium sm:text-sm">
       <input type="radio" name="demo-tab" id="t-gift" class="tab-input sr-only" checked />
-      <label for="t-gift" class="tab">Gift checkout</label>
+      <label for="t-gift" class="tab">Checkout</label>
       <input type="radio" name="demo-tab" id="t-rescue" class="tab-input sr-only" />
       <label for="t-rescue" class="tab">Card rescue</label>
       <input type="radio" name="demo-tab" id="t-skip" class="tab-input sr-only" />
@@ -47,42 +67,84 @@ const field = 'flex h-10 items-center rounded-lg border border-line bg-card px-3
     </div>
   </fieldset>
 
-  <div class="relative min-h-[26rem] p-4 pt-5 sm:p-6 sm:pt-6">
-    <!-- Gift checkout -->
-    <section class="panel panel-gift space-y-4" aria-label="Gift checkout">
+  <div class="relative min-h-[31rem] p-4 pt-5 sm:p-6 sm:pt-6">
+    <!-- Checkout: size, frequency, first delivery, or a gift -->
+    <section class="panel panel-gift space-y-4" aria-label="Checkout">
       <div class="flex items-start justify-between gap-4">
         <div>
-          <p class="eyebrow text-ink-muted">Your plan</p>
-          <p class="mt-1 font-display text-xl font-semibold tracking-tight">Hop Society, 12 craft beers</p>
+          <p class="eyebrow text-[0.66rem] text-ink-muted">Hop Society · craft beer club</p>
+          <p class="mt-1 font-display text-xl font-semibold tracking-tight">Build your box</p>
         </div>
-        <p class="font-display text-xl font-semibold">${PRICE}<span class="text-sm font-normal text-ink-muted">/mo</span></p>
+        <p class="pt-3 font-display text-xl font-semibold">
+          {sizes.map((s) => <span data-pp={s.n}>${s.price}</span>)}<span class="text-sm font-normal text-ink-muted">/box</span>
+        </p>
       </div>
 
-      <label class="gift-toggle flex cursor-pointer items-center justify-between gap-4 rounded-xl border border-line bg-paper px-4 py-3 transition-colors">
+      <fieldset>
+        <legend class="mb-1.5 text-xs text-ink-muted">Box size</legend>
+        <div class="grid grid-cols-3 gap-2">
+          {sizes.map((s) => (
+            <>
+              <input type="radio" name="c-size" id={`c-s${s.n}`} class="opt-input sr-only" checked={s.n === 12} />
+              <label for={`c-s${s.n}`} class="opt flex-col !h-auto py-2"><span class="font-medium">{s.n} beers</span><span class="text-xs opacity-75">${s.price}</span></label>
+            </>
+          ))}
+        </div>
+      </fieldset>
+
+      <div class="collapse-sub grid">
+        <div class="overflow-hidden">
+          <div class="space-y-4 pb-0.5">
+            <fieldset>
+              <legend class="mb-1.5 text-xs text-ink-muted">Ships</legend>
+              <div class="grid grid-cols-3 gap-2">
+                {freqs.map((f) => (
+                  <>
+                    <input type="radio" name="c-freq" id={`c-f${f.k}`} class="opt-input sr-only" checked={f.k === 1} />
+                    <label for={`c-f${f.k}`} class="opt">{f.label}</label>
+                  </>
+                ))}
+              </div>
+            </fieldset>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <p class="mb-1.5 text-xs text-ink-muted">First box</p>
+                <div class={`${field} gap-2`}><CalendarDays class="size-4 text-ink-muted" aria-hidden="true" />Mon, Nov 3</div>
+              </div>
+              <div>
+                <p class="mb-1.5 text-xs text-ink-muted">Delivery window</p>
+                <div class={`${field} justify-between`}>Sat 8–12 am<ChevronDown class="size-4 text-ink-muted" aria-hidden="true" /></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <label class="gift-toggle flex cursor-pointer items-center justify-between gap-4 rounded-xl border border-line bg-paper px-4 py-2.5 transition-colors">
         <span class="flex items-center gap-2.5 text-sm font-medium"><Gift class="size-4 text-pop" aria-hidden="true" /> This is a gift</span>
         <input type="checkbox" id="g-gift" class="sr-only" />
         <span class="switch" aria-hidden="true"></span>
       </label>
 
-      <div class="gift-fields grid">
+      <div class="collapse-gift grid">
         <div class="overflow-hidden">
-          <div class="space-y-3 pb-1">
+          <div class="space-y-3 pb-0.5">
             <div class="grid grid-cols-2 gap-3">
               <div>
-                <p class="mb-1 text-xs text-ink-muted">Recipient</p>
+                <p class="mb-1.5 text-xs text-ink-muted">Recipient</p>
                 <div class={field}>maya@example.com</div>
               </div>
               <div>
-                <p class="mb-1 text-xs text-ink-muted">Deliver on</p>
+                <p class="mb-1.5 text-xs text-ink-muted">Deliver on</p>
                 <div class={field}>Dec 24</div>
               </div>
             </div>
             <fieldset class="grid grid-cols-3 gap-2">
               <legend class="sr-only">Gift length</legend>
-              {months.map((m, i) => (
+              {months.map((m) => (
                 <>
-                  <input type="radio" name="g-months" id={`g-m${m}`} class="month-input sr-only" checked={i === 0} />
-                  <label for={`g-m${m}`} class="month">{m} boxes</label>
+                  <input type="radio" name="g-months" id={`g-m${m}`} class="opt-input sr-only" checked={m === 3} />
+                  <label for={`g-m${m}`} class="opt">{m} boxes</label>
                 </>
               ))}
             </fieldset>
@@ -94,12 +156,12 @@ const field = 'flex h-10 items-center rounded-lg border border-line bg-card px-3
         <span class="flex h-10 items-center justify-center rounded-lg bg-ink text-paper">Apple Pay</span>
         <span class="flex h-10 items-center justify-center rounded-lg border border-line-strong">Google Pay</span>
       </div>
-      <div class={`${field} gap-2 font-mono`}><CreditCard class="size-4 text-ink-muted" aria-hidden="true" />4242 4242 4242 4242</div>
       <p class="flex h-11 items-center justify-center rounded-lg bg-pop text-[0.95rem] font-semibold text-ink" aria-live="polite">
-        <span class="total total-sub">Subscribe for ${PRICE}/mo</span>
-        {months.map((m) => <span class={`total total-${m}`}>Send {m} boxes for ${PRICE * m}</span>)}
+        {sizes.map((s) => freqs.map((f) => <span class="total" data-t={`s${s.n}-f${f.k}`}>Subscribe · ${s.price} {f.suffix}</span>))}
+        {sizes.map((s) => months.map((m) => <span class="total" data-t={`s${s.n}-g${m}`}>Send {m} boxes · ${s.price * m}</span>))}
       </p>
       <p class="flex items-center justify-center gap-1.5 text-xs text-ink-muted"><Lock class="size-3.5" aria-hidden="true" /> Payments processed by Stripe</p>
+      <Fragment set:html={`<style>${checkoutCss}</style>`} />
     </section>
 
     <!-- Card rescue -->
@@ -207,7 +269,7 @@ const field = 'flex h-10 items-center rounded-lg border border-line bg-card px-3
     box-shadow: 0 1px 2px oklch(20% 0.02 45 / 0.12);
   }
   .tab-input:focus-visible + .tab,
-  .month-input:focus-visible + .month,
+  .opt-input:focus-visible + .opt,
   .gift-toggle:has(input:focus-visible),
   .panel-skip:has(input:focus-visible) .view { outline: 2px solid var(--color-pop); outline-offset: 2px; }
 
@@ -243,15 +305,16 @@ const field = 'flex h-10 items-center rounded-lg border border-line bg-card px-3
   .gift-toggle:has(:checked) .switch { background: var(--color-pop); }
   .gift-toggle:has(:checked) .switch::after { translate: 1rem 0; }
 
-  .gift-fields {
-    grid-template-rows: 0fr;
-    opacity: 0;
+  /* subscription fields collapse when it's a gift; gift fields expand */
+  .collapse-sub, .collapse-gift {
     transition: grid-template-rows 450ms var(--ease-out), opacity 300ms var(--ease-out);
   }
-  .panel-gift:has(#g-gift:checked) .gift-fields { grid-template-rows: 1fr; opacity: 1; }
-  .panel-gift:not(:has(#g-gift:checked)) .gift-fields { visibility: hidden; }
+  .collapse-sub { grid-template-rows: 1fr; }
+  .collapse-gift { grid-template-rows: 0fr; opacity: 0; visibility: hidden; }
+  .panel-gift:has(#g-gift:checked) .collapse-sub { grid-template-rows: 0fr; opacity: 0; visibility: hidden; }
+  .panel-gift:has(#g-gift:checked) .collapse-gift { grid-template-rows: 1fr; opacity: 1; visibility: visible; }
 
-  .month {
+  .opt {
     display: flex;
     height: 2.25rem;
     cursor: pointer;
@@ -261,20 +324,16 @@ const field = 'flex h-10 items-center rounded-lg border border-line bg-card px-3
     border: 1px solid var(--color-line);
     background: var(--color-card);
     font-size: 0.85rem;
+    line-height: 1.25;
     color: var(--color-ink-muted);
+    transition: border-color 150ms, background-color 150ms, color 150ms;
   }
-  .month-input:checked + .month {
+  .opt:hover { border-color: var(--color-line-strong); }
+  .opt-input:checked + .opt {
     border-color: var(--color-pop);
     background: var(--color-pop-soft);
     color: var(--color-pop-deep);
-    font-weight: 500;
   }
-
-  .total { display: none; }
-  .panel-gift:not(:has(#g-gift:checked)) .total-sub,
-  .panel-gift:has(#g-gift:checked):has(#g-m3:checked) .total-3,
-  .panel-gift:has(#g-gift:checked):has(#g-m6:checked) .total-6,
-  .panel-gift:has(#g-gift:checked):has(#g-m12:checked) .total-12 { display: inline; }
 
   /* skip flow */
   .view, .status { display: none; }

@@ -1,0 +1,62 @@
+---
+import Button from '@/components/ui/Button.astro'
+import { cta, pricing } from '@/content/landing'
+---
+
+<section id="pricing" class="scroll-mt-24 py-20 sm:py-28" aria-labelledby="pricing-heading">
+  <div class="mx-auto grid max-w-6xl items-center gap-12 px-4 sm:px-6 lg:grid-cols-[1.1fr_1fr] lg:gap-16">
+    <div data-reveal>
+      <p class="eyebrow text-ink-muted">Pricing</p>
+      <h2 id="pricing-heading" class="mt-4 text-[clamp(2.4rem,1.4rem+3.8vw,4rem)]">
+        <span class="block">{pricing.heading[0]}</span>
+        <span class="block text-pop">{pricing.heading[1]}</span>
+      </h2>
+      <p class="mt-5 max-w-[32rem] text-lg text-ink-muted">{pricing.body}</p>
+      <div class="mt-8">
+        <Button href={cta.primary.href} arrow data-cta="pricing">{cta.primary.label}</Button>
+      </div>
+    </div>
+
+    <!-- receipt -->
+    <div class="relative mx-auto w-full max-w-[25rem] drop-shadow-[0_18px_28px_oklch(20%_0.02_45/0.16)] lg:mr-0" data-reveal style="--d: 120ms">
+      <div class="receipt relative bg-card px-6 pb-9 pt-7 font-mono text-[0.8rem]">
+        <p class="text-center text-xs uppercase tracking-[0.2em] text-ink-muted">Your subrocket bill</p>
+        <div class="perforation my-5 h-1" aria-hidden="true"></div>
+        <p class="eyebrow text-[0.64rem] text-ink-muted">{pricing.includedLabel}</p>
+        <ul class="mt-3 space-y-2.5">
+          {pricing.included.map((item) => (
+            <li class="flex items-baseline gap-2">
+              <span>{item}</span>
+              <span class="flex-1 translate-y-[-3px] border-b border-dotted border-line-strong" aria-hidden="true"></span>
+              <span class="tabular-nums">$0.00</span>
+            </li>
+          ))}
+          <li class="flex items-baseline gap-2">
+            <span>Monthly fee</span>
+            <span class="flex-1 translate-y-[-3px] border-b border-dotted border-line-strong" aria-hidden="true"></span>
+            <span class="tabular-nums">$0.00</span>
+          </li>
+        </ul>
+        <div class="perforation my-5 h-1" aria-hidden="true"></div>
+        <p class="flex items-baseline justify-between gap-2 font-sans text-base font-semibold">
+          <span>Per transaction</span>
+          <span class="font-display text-2xl tabular-nums">$0.10</span>
+        </p>
+        <p class="mt-3 text-[0.72rem] leading-relaxed text-ink-muted">
+          {pricing.example.label}: {pricing.example.value}, {pricing.example.note}. Stripe’s processing fees apply as usual.
+        </p>
+      </div>
+      <span class="stamp absolute -right-1 -top-8 text-[1.9rem] sm:-right-5" style="--stamp-rotate: 10deg" aria-hidden="true">Free</span>
+    </div>
+  </div>
+</section>
+
+<style>
+  /* zig-zag torn edge at the bottom of the receipt */
+  .receipt {
+    --tooth: 10px;
+    mask:
+      linear-gradient(#000 0 0) top / 100% calc(100% - var(--tooth)) no-repeat,
+      conic-gradient(from -45deg at bottom, #0000, #000 1deg 89deg, #0000 90deg) bottom / calc(2 * var(--tooth)) var(--tooth) repeat-x;
+  }
+</style>

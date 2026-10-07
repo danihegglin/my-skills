@@ -5,11 +5,11 @@
  * Reader: founder or ops lead of a Stripe-billed subscription box (craft beer clubs, beauty boxes,
  *   coffee, wine, pet food) who loses boxes to expired cards and "fridge is full" cancels,
  *   and misses gift sales every December.
- * Action: start the 14-day free trial. Secondary: book a demo.
+ * Action: start for free (free to use, $0.10 per transaction). Secondary: see pricing.
  *
  * Direction: "Packing slip". Warm paper, black ink, the logo's hot pink used only as a rubber stamp.
  * Feels like: tactile, direct, a little cheeky. Never corporate SaaS.
- * Type: Bricolage Grotesque (display, opsz axis), Geist (body/UI), Geist Mono (labels).
+ * Type: Geist for headings (600, tight tracking) and body, Geist Mono for labels.
  * Colour: paper oklch(96.8% .011 78), kraft oklch(92.6% .024 74), ink oklch(20% .012 45),
  *   pop oklch(61% .215 3) for stamps, numbers and icons; pop-deep for small pink text. Flat, faint grain.
  * Signature: GIFTED / SAVED / SKIPPED stamps that thunk onto the product mockups as they scroll in.
@@ -17,14 +17,17 @@
  * Avoid: gradients, glass cards, identical card grids, sample testimonials.
  *
  * Order: hero (what, who, demo) → niches → the three leaks, one chapter each (sell, rescue, keep)
- *   → setup effort → "stays in Stripe" objection → FAQ → final CTA.
+ *   → vs. Stripe on its own (every Stripe claim sourced to Stripe's docs)
+ *   → setup effort → "stays in Stripe" objection → pricing (free + $0.10/transaction, as a receipt) → FAQ → final CTA.
  * Copy lives in src/content/landing.ts. Zero client JS frameworks; the demo runs on CSS :has().
  */
 import Layout from '@/layouts/Layout.astro'
 import Header from '@/components/sections/Header.astro'
 import Hero from '@/components/sections/Hero.astro'
 import Chapters from '@/components/sections/Chapters.astro'
+import Comparison from '@/components/sections/Comparison.astro'
 import Setup from '@/components/sections/Setup.astro'
+import Pricing from '@/components/sections/Pricing.astro'
 import FAQ from '@/components/sections/FAQ.astro'
 import FinalCTA from '@/components/sections/FinalCTA.astro'
 import Footer from '@/components/sections/Footer.astro'
@@ -36,7 +39,9 @@ import { meta } from '@/content/landing'
   <main id="main">
     <Hero />
     <Chapters />
+    <Comparison />
     <Setup />
+    <Pricing />
     <FAQ />
     <FinalCTA />
   </main>
