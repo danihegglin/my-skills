@@ -17,7 +17,9 @@ var goals: Array = []
 var hazards: Array = []
 var movers: Array = []
 var static_polys: Array = []
-var spike_spans: Array = []
+var ramps: Array = []
+var goal_mats: Array = []
+var pulse := 0.0
 var bumpers: Array = []
 var planets: Array = []
 var urchins: Array = []
@@ -40,23 +42,18 @@ func build(level: Dictionary, p_theme: Dictionary, p_style: int, p_glow: Texture
 
 	_add_static(Geom.rect_at(Rect2(-90, -800, 90, 2400)))
 	_add_static(Geom.rect_at(Rect2(720, -800, 90, 2400)))
-	for seg in level.floor:
-		var x0: float = seg[0]
-		var x1: float = seg[1]
-		match String(seg[2]):
-			"solid":
-				_add_static(Geom.rect_at(Rect2(x0, FLOOR_Y, x1 - x0, 500)))
-			"spikes":
-				_add_static(Geom.rect_at(Rect2(x0, FLOOR_Y, x1 - x0, 500)))
-				spike_spans.append(Vector2(x0, x1))
-				hazards.append({"kind": "spikes", "active": true, "rect": Rect2(x0, FLOOR_Y - 24, x1 - x0, 24),
-					"poly": Geom.rect_at(Rect2(x0, FLOOR_Y - 24, x1 - x0, 24))})
-			"lava":
-				_add_lava(x0, x1)
-			"goal":
-				goals.append(Vector2(x0, x1))
-	for g in goals:
-		_add_goal(g.x, g.y)
+	# The whole bottom is a landing zone; slippery ramps from both walls slide pieces into it.
+	var g0: float = level.goal[0]
+	var g1: float = level.goal[1]
+	var ramp_phys := PhysicsMaterial.new()
+	ramp_phys.friction = 0.08
+	var lt := Vector2(0, FLOOR_Y - g0 * 0.6)
+	var rt := Vector2(720, FLOOR_Y - (720.0 - g1) * 0.6)
+	_add_static(PackedVector2Array([lt, Vector2(g0, FLOOR_Y), Vector2(g0, FLOOR_Y + 500), Vector2(0, FLOOR_Y + 500)]), true, ramp_phys)
+	_add_static(PackedVector2Array([Vector2(g1, FLOOR_Y), rt, Vector2(720, FLOOR_Y + 500), Vector2(g1, FLOOR_Y + 500)]), true, ramp_phys)
+	ramps = [[lt, Vector2(g0, FLOOR_Y)], [rt, Vector2(g1, FLOOR_Y)]]
+	goals.append(Vector2(g0, g1))
+	_add_goal(g0, g1)
 
 	for s in level.get("statics", []):
 		match String(s.t):
@@ -79,6 +76,8 @@ func build(level: Dictionary, p_theme: Dictionary, p_style: int, p_glow: Texture
 				planets.append(s)
 			"bumper":
 				_add_bumper(s.pos, s.r)
+			"lavapool":
+				_add_lava_pool(s.rect)
 			"urchin":
 				var c: Vector2 = s.pos
 				var r: float = s.r
@@ -109,11 +108,24 @@ func build(level: Dictionary, p_theme: Dictionary, p_style: int, p_glow: Texture
 	queue_redraw()
 
 
-func is_goal_x(x: float) -> bool:
+## True once a piece reaches the landing zone: it dips into the glow above the opening,
+## or comes to rest anywhere at the bottom (on a ramp edge, straddling the lip, ...).
+func in_landing_zone(p: RigidBody2D) -> bool:
+	var pos := p.global_position
 	for g in goals:
-		if x > g.x and x < g.y:
+		if pos.y > FLOOR_Y - 22.0 and pos.x > g.x - 16.0 and pos.x < g.y + 16.0:
+			return true
+	if p.linear_velocity.length() < 45.0 and pos.y > FLOOR_Y - 160.0:
+		var lowest := -INF
+		for v in p.world_poly():
+			lowest = maxf(lowest, v.y)
+		if lowest > FLOOR_Y - 80.0:
 			return true
 	return false
+
+
+func pulse_goal() -> void:
+	pulse = 1.0
 
 
 ## Returns the hazard kind touching the piece, or "".
@@ -162,15 +174,19 @@ func _physics_process(delta: float) -> void:
 			var o: Vector2 = mv * (0.5 - 0.5 * cos(TAU * time / float(h.period)))
 			h.ca = h.a + o
 			h.cb = h.b + o
+	if pulse > 0.0:
+		pulse = maxf(0.0, pulse - delta * 2.5)
+		for m in goal_mats:
+			m.set_shader_parameter("pulse", pulse)
 	if anim:
 		anim.queue_redraw()
 
 
 # --- construction ------------------------------------------------------------------
 
-func _add_static(pts: PackedVector2Array, draw_it := true) -> void:
+func _add_static(pts: PackedVector2Array, draw_it := true, pm: PhysicsMaterial = null) -> void:
 	var body := StaticBody2D.new()
-	body.physics_material_override = phys
+	body.physics_material_override = pm if pm else phys
 	var cp := CollisionPolygon2D.new()
 	cp.polygon = pts
 	body.add_child(cp)
@@ -180,15 +196,15 @@ func _add_static(pts: PackedVector2Array, draw_it := true) -> void:
 
 
 func _add_goal(x0: float, x1: float) -> void:
-	for x in [x0, x1]:
-		_add_static(Geom.rect_at(Rect2(x - 7.0, FLOOR_Y - 12.0, 14.0, 520.0)))
 	var r := ColorRect.new()
 	r.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	r.position = Vector2(x0 + 7.0, FLOOR_Y - 170.0)
-	r.size = Vector2(x1 - x0 - 14.0, 420.0)
+	r.position = Vector2(x0, FLOOR_Y - 190.0)
+	r.size = Vector2(x1 - x0, 440.0)
 	var m := ShaderMaterial.new()
 	m.shader = GOAL_SHADER
 	m.set_shader_parameter("glow", theme.goal)
+	m.set_shader_parameter("width_px", x1 - x0)
+	goal_mats.append(m)
 	r.material = m
 	r.z_index = 1
 	add_child(r)
@@ -215,25 +231,31 @@ func _add_goal(x0: float, x1: float) -> void:
 	add_child(p)
 
 
-func _add_lava(x0: float, x1: float) -> void:
-	_add_static(Geom.rect_at(Rect2(x0, FLOOR_Y + 120.0, x1 - x0, 400)), false)
+## A basalt basin filled with lava; rect is the liquid's area.
+func _add_lava_pool(rect: Rect2) -> void:
+	var t := 16.0
+	_add_static(Geom.rect_at(Rect2(rect.position.x - t, rect.position.y - 26.0, t, rect.size.y + 26.0 + t)))
+	_add_static(Geom.rect_at(Rect2(rect.end.x, rect.position.y - 26.0, t, rect.size.y + 26.0 + t)))
+	_add_static(Geom.rect_at(Rect2(rect.position.x, rect.end.y, rect.size.x, t)))
 	var r := ColorRect.new()
 	r.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	r.position = Vector2(x0, FLOOR_Y - 60.0)
-	r.size = Vector2(x1 - x0, 560.0)
+	r.position = rect.position - Vector2(0, 50)
+	r.size = rect.size + Vector2(0, 50)
 	var m := ShaderMaterial.new()
 	m.shader = LAVA_SHADER
-	m.set_shader_parameter("top_y", FLOOR_Y - 18.0)
+	m.set_shader_parameter("top_y", rect.position.y + 6.0)
 	r.material = m
 	r.z_index = 3
 	add_child(r)
-	hazards.append({"kind": "lava", "active": true, "rect": Rect2(x0, FLOOR_Y - 14.0, x1 - x0, 600),
-		"poly": Geom.rect_at(Rect2(x0, FLOOR_Y - 14.0, x1 - x0, 600))})
+	var hz := Rect2(rect.position + Vector2(0, 10), rect.size - Vector2(0, 10))
+	hazards.append({"kind": "lava", "active": true, "rect": hz, "poly": Geom.rect_at(hz)})
+	var x0 := rect.position.x
+	var x1 := rect.end.x
 	var p := CPUParticles2D.new()
-	p.position = Vector2((x0 + x1) * 0.5, FLOOR_Y - 20.0)
+	p.position = Vector2((x0 + x1) * 0.5, rect.position.y + 4.0)
 	p.emission_shape = CPUParticles2D.EMISSION_SHAPE_RECTANGLE
 	p.emission_rect_extents = Vector2((x1 - x0) * 0.5, 4)
-	p.amount = int((x1 - x0) / 14.0)
+	p.amount = int((x1 - x0) / 10.0)
 	p.lifetime = 1.4
 	p.direction = Vector2.UP
 	p.spread = 20.0
@@ -419,14 +441,6 @@ func _draw() -> void:
 		draw_rect(Rect2(g.x, FLOOR_Y, g.y - g.x, 500), Color(0.02, 0.02, 0.04, 0.85))
 	for pts in static_polys:
 		_draw_terrain_poly(self, pts)
-	for s in spike_spans:
-		var x: float = s.x
-		while x < s.y - 2.0:
-			var w := minf(26.0, s.y - x)
-			var tri := PackedVector2Array([Vector2(x, FLOOR_Y + 2), Vector2(x + w * 0.5, FLOOR_Y - 24), Vector2(x + w, FLOOR_Y + 2)])
-			draw_colored_polygon(tri, theme.edge)
-			draw_line(Vector2(x + w * 0.5, FLOOR_Y - 24), Vector2(x + w, FLOOR_Y + 2), theme.bottom, 2.0, true)
-			x += 26.0
 	for pl in planets:
 		if pl.has("r"):
 			var c: Vector2 = pl.pos
@@ -440,11 +454,29 @@ func _draw() -> void:
 
 func _draw_anim() -> void:
 	var gc: Color = theme.goal
+	# glowing chevrons sliding down the ramps toward the landing zone
+	for rp in ramps:
+		var a: Vector2 = rp[0]
+		var b: Vector2 = rp[1]
+		var d := (b - a).normalized()
+		var n := Vector2(d.y, -d.x)
+		if n.y > 0.0:
+			n = -n
+		var length := a.distance_to(b)
+		var dist := fposmod(time * 45.0, 30.0) + 14.0
+		while dist < length - 10.0:
+			var c := a + d * dist + n * 14.0
+			var fade := clampf(dist / 40.0, 0.0, 1.0) * clampf((length - dist) / 30.0, 0.0, 1.0)
+			anim.draw_polyline(PackedVector2Array([c - d * 6.0 + n * 7.0, c + d * 4.0, c - d * 6.0 - n * 7.0]), Color(gc, 0.75 * fade), 3.0, true)
+			dist += 30.0
 	for g in goals:
+		var lip := Color(gc, 0.35 + 0.5 * pulse)
+		anim.draw_line(Vector2(g.x, FLOOR_Y), Vector2(g.y, FLOOR_Y), lip, 2.0 + 3.0 * pulse, true)
 		for x in [g.x, g.y]:
-			anim.draw_circle(Vector2(x, FLOOR_Y - 14.0), 9.0, theme.rim)
-			anim.draw_circle(Vector2(x, FLOOR_Y - 14.0), 6.0, gc)
-			anim.draw_texture_rect(glow_tex, Rect2(Vector2(x, FLOOR_Y - 14.0) - Vector2(30, 30), Vector2(60, 60)), false, Color(gc, 0.6))
+			var c := Vector2(x, FLOOR_Y - 4.0)
+			anim.draw_texture_rect(glow_tex, Rect2(c - Vector2(36, 36), Vector2(72, 72)), false, Color(gc, 0.7 + 0.3 * pulse))
+			anim.draw_circle(c, 9.0, theme.rim)
+			anim.draw_circle(c, 6.0, gc.lightened(0.3 * pulse))
 	for m in movers:
 		if m.t != "conveyor":
 			continue

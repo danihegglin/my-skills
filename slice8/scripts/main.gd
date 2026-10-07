@@ -585,7 +585,7 @@ func _physics_process(_delta: float) -> void:
 		var hz: String = env.hazard_hit(p)
 		if hz != "":
 			_destroy(p, hz)
-		elif pos.y > FLOOR_Y + 35.0 and env.is_goal_x(pos.x):
+		elif env.in_landing_zone(p):
 			_collect(p)
 		elif pos.y > 1800.0 or pos.x < -300.0 or pos.x > 1020.0:
 			_remove_piece(p)
@@ -605,15 +605,17 @@ func _collect(p: RigidBody2D) -> void:
 	combo_t = 1.0
 	sfx.play("collect", -5.0, 1.0 + 0.07 * mini(combo, 10))
 	var x: float = p.global_position.x
-	_burst(Vector2(x, FLOOR_Y + 20.0), theme.goal, 24, 320.0, 0.8, true)
-	_popup(Vector2(x, FLOOR_Y - 60.0), ("+%d%%" % roundi(share)) if share >= 1.0 else "+1%", theme.goal)
+	env.pulse_goal()
+	_burst(Vector2(x, FLOOR_Y - 10.0), theme.goal, 28, 340.0, 0.8, true)
+	_burst(Vector2(x, FLOOR_Y - 10.0), Color(1, 1, 1, 0.9), 10, 160.0, 0.5, true, Vector2(0, -300), 0.6)
+	_popup(Vector2(x, FLOOR_Y - 80.0), ("+%d%%" % roundi(share)) if share >= 1.0 else "+1%", theme.goal)
 	meter.set_target(percent())
 	p.set_deferred("collision_layer", 0)
 	p.set_deferred("collision_mask", 0)
 	var tw := p.create_tween()
 	tw.set_parallel(true)
-	tw.tween_property(p, "modulate", Color(theme.goal, 0.0), 0.4)
-	tw.tween_property(p, "scale", Vector2(0.4, 0.4), 0.4)
+	tw.tween_property(p, "modulate", Color(theme.goal.lightened(0.5), 0.0), 0.45)
+	tw.tween_property(p, "scale", Vector2(0.3, 0.3), 0.45).set_ease(Tween.EASE_IN)
 	tw.chain().tween_callback(p.queue_free)
 
 
@@ -641,7 +643,6 @@ func _destroy(p: RigidBody2D, kind: String) -> void:
 			sfx.play("crunch", -3.0)
 			_burst(pos, p.obj.cut, 24, 300.0, 0.8)
 			tint = Color(1, 1, 1, 0)
-	_popup(pos + Vector2(0, -50), "lost", Color(1.0, 0.45, 0.45))
 	var tw := p.create_tween()
 	tw.set_parallel(true)
 	tw.tween_property(p, "modulate", tint, 0.45)

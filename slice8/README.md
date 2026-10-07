@@ -1,6 +1,6 @@
 # Slice8
 
-A physics slicing game made with Godot 4.4. Each object can be cut with a straight swipe, and the pieces fall as real rigid bodies. Your score is the percentage of the total area that reaches the glowing chute at the bottom.
+A physics slicing game made with Godot 4.4. Each object can be cut with a straight swipe, and the pieces fall as real rigid bodies. Your score is the percentage of the total area that reaches the wide landing zone at the bottom. Slippery ramps along the walls slide stray pieces into it.
 
 **Play:** https://slice8.vatia.workers.dev
 
@@ -14,11 +14,11 @@ A physics slicing game made with Godot 4.4. Each object can be cut with a straig
 | # | World | What's new |
 |---|-------|------------|
 | 1 | Sunrise Meadow | Two pinned shapes and a wide chute |
-| 2 | Canyon Dusk | A ledge you have to tip pieces off, and a star pinned at its centre |
-| 3 | Frozen Cavern | Frictionless ice, so only angled cuts slide off the shelf |
-| 4 | Coral Reef | Slow underwater physics, a sideways current and sea urchins |
+| 2 | Frozen Cavern | Frictionless ice, so only angled cuts slide off the shelf |
+| 3 | Canyon Dusk | A ledge you have to tip pieces off, and a star pinned at its centre |
+| 4 | Coral Reef | Slow underwater physics, a sideways current and a sea urchin |
 | 5 | Clockwork Foundry | Spinning arms and a conveyor belt |
-| 6 | Volcano Core | Lava pools and a moving platform |
+| 6 | Volcano Core | A lava basin to steer around, and a moving platform |
 | 7 | Orbital Station | Low gravity, a planetoid's gravity well and a blinking laser |
 | 8 | Neon Megacity | A sweeping laser, bumpers, a spinner, a slider and eight slices |
 
