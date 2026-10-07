@@ -1,0 +1,87 @@
+---
+import { Check, Gift, Pause } from '@lucide/astro'
+import { chapters, checkoutNote, leaks } from '@/content/landing'
+
+const mockCard = 'relative w-full max-w-[22rem] rounded-2xl border border-line bg-card p-5 shadow-(--shadow-lift)'
+---
+
+<section class="py-20 sm:py-28" aria-labelledby="leaks-heading">
+  <div class="mx-auto max-w-6xl px-4 sm:px-6">
+    <div class="grid gap-6 lg:grid-cols-[1.1fr_1fr] lg:items-end lg:gap-16" data-reveal>
+      <h2 id="leaks-heading" class="max-w-[16ch] text-[clamp(2.2rem,1.4rem+3.4vw,3.75rem)]">{leaks.heading}</h2>
+      <p class="max-w-[34rem] text-lg text-ink-muted">{leaks.body}</p>
+    </div>
+
+    <div class="mt-16 space-y-6 sm:mt-20 lg:space-y-8">
+      {chapters.map((c, i) => (
+        <article id={c.id} class="grid scroll-mt-24 overflow-hidden rounded-[1.75rem] border border-line bg-card/70 lg:grid-cols-2">
+          <div class:list={['flex flex-col p-6 sm:p-10 lg:p-12', i % 2 === 1 && 'lg:order-2']} data-reveal>
+            <p class="flex items-baseline gap-3">
+              <span class="font-display text-sm font-bold text-pop">{c.number}</span>
+              <span class="eyebrow text-ink-muted">{c.tag}</span>
+            </p>
+            <h3 class="mt-4 max-w-[18ch] text-[clamp(1.8rem,1.3rem+1.8vw,2.6rem)]">{c.title}</h3>
+            <p class="mt-4 max-w-[38rem] text-ink-muted">{c.body}</p>
+            <ul class="mt-6 space-y-2 text-[0.95rem]">
+              {c.points.map((p) => <li class="flex gap-2.5"><Check class="mt-1 size-4 shrink-0 text-pop" aria-hidden="true" />{p}</li>)}
+            </ul>
+            <div class="mt-8 flex items-baseline gap-4 border-t border-line pt-6 lg:mt-auto">
+              <p class="shrink-0 font-display text-[2.6rem] font-bold leading-none tracking-tight text-pop">{c.stat.value}</p>
+              <p class="text-sm leading-snug text-ink-muted">
+                {c.stat.label}<a href="#sources" class="ml-0.5 align-super text-[0.65rem] font-medium text-pop-deep hover:underline" aria-label={`Source ${c.stat.source}`}>{c.stat.source}</a>
+              </p>
+            </div>
+          </div>
+
+          <div class:list={['relative flex min-h-[20rem] items-center justify-center bg-kraft px-6 py-12 sm:px-10', i % 2 === 1 && 'lg:order-1']} data-reveal style="--d: 120ms">
+            {c.id === 'gifts' && (
+              <div class={mockCard}>
+                <p class="eyebrow text-[0.64rem] text-ink-muted">From gifts@hopsociety.com · Dec 24</p>
+                <div class="mt-3 flex items-center gap-3">
+                  <span class="flex size-10 items-center justify-center rounded-full bg-pop-soft text-pop-deep"><Gift class="size-5" aria-hidden="true" /></span>
+                  <div>
+                    <p class="font-semibold leading-snug">Sam sent you 3 boxes from Hop Society</p>
+                    <p class="text-sm text-ink-muted">12 craft beers a month, paid until March.</p>
+                  </div>
+                </div>
+                <p class="mt-5 flex h-10 items-center justify-center rounded-lg bg-ink text-sm font-semibold text-paper">Claim your gift</p>
+                <p class="mt-3 text-center text-xs text-ink-muted">Want more after box 3? Add a card any time.</p>
+                <span class="stamp absolute -right-5 -top-7 text-[1.6rem]" aria-hidden="true">{c.stamp}</span>
+              </div>
+            )}
+            {c.id === 'rescue' && (
+              <div class={mockCard}>
+                <p class="eyebrow text-[0.64rem] text-ink-muted">From hello@glowbox.com · Nov 1</p>
+                <p class="mt-3 font-semibold leading-snug">Glow Box: your card ending 0341 expires this month</p>
+                <p class="mt-1.5 text-sm text-ink-muted">Update it now so your December box ships on time.</p>
+                <div class="mt-5 flex items-center justify-between gap-3">
+                  <span class="inline-flex h-10 items-center rounded-lg bg-ink px-4 text-sm font-semibold text-paper">Update card</span>
+                  <span class="flex items-center gap-1.5 text-xs font-medium text-pop-deep"><Check class="size-4" aria-hidden="true" /> Updated Nov 4</span>
+                </div>
+                <span class="stamp absolute -right-5 -top-7 text-[1.6rem]" style="--stamp-rotate: 7deg" aria-hidden="true">{c.stamp}</span>
+              </div>
+            )}
+            {c.id === 'skips' && (
+              <div class={mockCard}>
+                <p class="font-semibold">Before you go</p>
+                <p class="mt-1 text-sm text-ink-muted">Still got last month’s IPA? Skip a few boxes instead.</p>
+                <div class="mt-4 grid grid-cols-3 gap-2 text-sm" aria-hidden="true">
+                  <span class="flex h-9 items-center justify-center rounded-lg border border-line">1 box</span>
+                  <span class="flex h-9 items-center justify-center gap-1 rounded-lg border border-pop bg-pop-soft font-medium text-pop-deep"><Pause class="size-3.5" />2 boxes</span>
+                  <span class="flex h-9 items-center justify-center rounded-lg border border-line">3 boxes</span>
+                </div>
+                <p class="mt-4 flex h-10 items-center justify-center rounded-lg bg-ink text-sm font-semibold text-paper">Skip until Feb 3</p>
+                <p class="mt-3 text-center text-xs text-ink-muted underline underline-offset-2">Cancel anyway</p>
+                <span class="stamp absolute -right-5 -top-7 text-[1.6rem]" style="--stamp-rotate: -5deg" aria-hidden="true">{c.stamp}</span>
+              </div>
+            )}
+          </div>
+        </article>
+      ))}
+    </div>
+
+    <p class="mt-5 text-xs text-ink-muted">
+      {checkoutNote.text}<a href="#sources" class="ml-0.5 align-super text-[0.62rem] font-medium text-pop-deep hover:underline" aria-label={`Source ${checkoutNote.source}`}>{checkoutNote.source}</a>
+    </p>
+  </div>
+</section>

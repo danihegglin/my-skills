@@ -1,0 +1,352 @@
+---
+/*
+ * Hero product demo. Interactive with zero JavaScript: hidden radio/checkbox inputs hold the state,
+ * labels act as the controls, and :has() shows the matching view.
+ */
+import { Lock, Gift, ChevronDown, Mail, Check, Pause, ArrowLeftRight, CalendarDays, X, RotateCcw } from '@lucide/astro'
+
+const PRICE = 39
+const months = [3, 6, 12]
+const sizes = [
+  { n: 6, price: 24 },
+  { n: 12, price: 39 },
+  { n: 24, price: 72 },
+]
+const freqs = [
+  { k: 1, label: 'Monthly', suffix: '/ month' },
+  { k: 2, label: 'Every 2 mo', suffix: 'every 2 months' },
+  { k: 3, label: 'Every 3 mo', suffix: 'every 3 months' },
+]
+
+// Price and button text follow the selected size, frequency and gift length (CSS only, no JS).
+const p = '.panel-gift'
+const gift = ':has(#g-gift:checked)'
+const checkoutCss = [
+  `${p} [data-pp], ${p} .total { display: none; }`,
+  ...sizes.map((s) => `${p}:has(#c-s${s.n}:checked) [data-pp="${s.n}"] { display: inline; }`),
+  ...sizes.flatMap((s) => freqs.map((f) => `${p}:not(${gift}):has(#c-s${s.n}:checked):has(#c-f${f.k}:checked) [data-t="s${s.n}-f${f.k}"] { display: inline; }`)),
+  ...sizes.flatMap((s) => months.map((m) => `${p}${gift}:has(#c-s${s.n}:checked):has(#g-m${m}:checked) [data-t="s${s.n}-g${m}"] { display: inline; }`)),
+].join('\n')
+
+const rescueSteps = [
+  { day: '30 days before', label: 'Email with a one-tap update link', done: false },
+  { day: '7 days before', label: 'Reminder: card still unchanged', done: false },
+  { day: '3 days before', label: 'Card updated. Reminders stop.', done: true },
+  { day: 'Renewal day', label: '$29.00 charged. Glow Box ships.', done: true },
+]
+
+const field = 'flex h-10 items-center rounded-lg border border-line bg-card px-3 text-sm'
+---
+
+<div class="demo relative w-full overflow-hidden rounded-2xl border border-line-strong/60 bg-card text-left shadow-(--shadow-float)" role="group" aria-label="Interactive preview of subrocket">
+  <!-- window chrome -->
+  <div class="flex items-center gap-3 border-b border-line bg-kraft/50 px-4 py-2.5">
+    <div class="flex gap-1.5" aria-hidden="true">
+      <span class="size-2.5 rounded-full bg-line-strong/50"></span>
+      <span class="size-2.5 rounded-full bg-line-strong/50"></span>
+      <span class="size-2.5 rounded-full bg-line-strong/50"></span>
+    </div>
+    <div class="flex min-w-0 flex-1 items-center justify-center gap-1.5 truncate rounded-md bg-card px-3 py-1 font-mono text-[0.7rem] text-ink-muted">
+      <Lock class="size-3 shrink-0" aria-hidden="true" />
+      <span class="url url-gift">shop.hopsociety.com/checkout</span>
+      <span class="url url-rescue">app.subrocket.com/rescue</span>
+      <span class="url url-skip">account.hopsociety.com</span>
+    </div>
+  </div>
+
+  <!-- tabs -->
+  <fieldset class="px-4 pt-4 sm:px-6">
+    <legend class="sr-only">Choose a feature to preview</legend>
+    <div class="grid grid-cols-3 gap-1 rounded-full bg-ink/[0.06] p-1 text-xs font-medium sm:text-sm">
+      <input type="radio" name="demo-tab" id="t-gift" class="tab-input sr-only" checked />
+      <label for="t-gift" class="tab">Checkout</label>
+      <input type="radio" name="demo-tab" id="t-rescue" class="tab-input sr-only" />
+      <label for="t-rescue" class="tab">Card rescue</label>
+      <input type="radio" name="demo-tab" id="t-skip" class="tab-input sr-only" />
+      <label for="t-skip" class="tab">Skips</label>
+    </div>
+  </fieldset>
+
+  <div class="relative min-h-[31rem] p-4 pt-5 sm:p-6 sm:pt-6">
+    <!-- Checkout: size, frequency, first delivery, or a gift -->
+    <section class="panel panel-gift space-y-4" aria-label="Checkout">
+      <div class="flex items-start justify-between gap-4">
+        <div>
+          <p class="eyebrow text-[0.66rem] text-ink-muted">Hop Society · craft beer club</p>
+          <p class="mt-1 font-display text-xl font-semibold tracking-tight">Build your box</p>
+        </div>
+        <p class="pt-3 font-display text-xl font-semibold">
+          {sizes.map((s) => <span data-pp={s.n}>${s.price}</span>)}<span class="text-sm font-normal text-ink-muted">/box</span>
+        </p>
+      </div>
+
+      <fieldset>
+        <legend class="mb-1.5 text-xs text-ink-muted">Box size</legend>
+        <div class="grid grid-cols-3 gap-2">
+          {sizes.map((s) => (
+            <>
+              <input type="radio" name="c-size" id={`c-s${s.n}`} class="opt-input sr-only" checked={s.n === 12} />
+              <label for={`c-s${s.n}`} class="opt flex-col !h-auto py-2"><span class="font-medium">{s.n} beers</span><span class="text-xs opacity-75">${s.price}</span></label>
+            </>
+          ))}
+        </div>
+      </fieldset>
+
+      <div class="collapse-sub grid">
+        <div class="overflow-hidden">
+          <div class="space-y-4 pb-0.5">
+            <fieldset>
+              <legend class="mb-1.5 text-xs text-ink-muted">Ships</legend>
+              <div class="grid grid-cols-3 gap-2">
+                {freqs.map((f) => (
+                  <>
+                    <input type="radio" name="c-freq" id={`c-f${f.k}`} class="opt-input sr-only" checked={f.k === 1} />
+                    <label for={`c-f${f.k}`} class="opt">{f.label}</label>
+                  </>
+                ))}
+              </div>
+            </fieldset>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <p class="mb-1.5 text-xs text-ink-muted">First box</p>
+                <div class={`${field} gap-2`}><CalendarDays class="size-4 text-ink-muted" aria-hidden="true" />Mon, Nov 3</div>
+              </div>
+              <div>
+                <p class="mb-1.5 text-xs text-ink-muted">Delivery window</p>
+                <div class={`${field} justify-between`}>Sat 8–12 am<ChevronDown class="size-4 text-ink-muted" aria-hidden="true" /></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <label class="gift-toggle flex cursor-pointer items-center justify-between gap-4 rounded-xl border border-line bg-paper px-4 py-2.5 transition-colors">
+        <span class="flex items-center gap-2.5 text-sm font-medium"><Gift class="size-4 text-pop" aria-hidden="true" /> This is a gift</span>
+        <input type="checkbox" id="g-gift" class="sr-only" />
+        <span class="switch" aria-hidden="true"></span>
+      </label>
+
+      <div class="collapse-gift grid">
+        <div class="overflow-hidden">
+          <div class="space-y-3 pb-0.5">
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <p class="mb-1.5 text-xs text-ink-muted">Recipient</p>
+                <div class={field}>maya@example.com</div>
+              </div>
+              <div>
+                <p class="mb-1.5 text-xs text-ink-muted">Deliver on</p>
+                <div class={field}>Dec 24</div>
+              </div>
+            </div>
+            <fieldset class="grid grid-cols-3 gap-2">
+              <legend class="sr-only">Gift length</legend>
+              {months.map((m) => (
+                <>
+                  <input type="radio" name="g-months" id={`g-m${m}`} class="opt-input sr-only" checked={m === 3} />
+                  <label for={`g-m${m}`} class="opt">{m} boxes</label>
+                </>
+              ))}
+            </fieldset>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-2 text-sm font-semibold" aria-hidden="true">
+        <span class="flex h-10 items-center justify-center rounded-lg bg-ink text-paper">Apple Pay</span>
+        <span class="flex h-10 items-center justify-center rounded-lg border border-line-strong">Google Pay</span>
+      </div>
+      <p class="flex h-11 items-center justify-center rounded-lg bg-pop text-[0.95rem] font-semibold text-ink" aria-live="polite">
+        {sizes.map((s) => freqs.map((f) => <span class="total" data-t={`s${s.n}-f${f.k}`}>Subscribe · ${s.price} {f.suffix}</span>))}
+        {sizes.map((s) => months.map((m) => <span class="total" data-t={`s${s.n}-g${m}`}>Send {m} boxes · ${s.price * m}</span>))}
+      </p>
+      <p class="flex items-center justify-center gap-1.5 text-xs text-ink-muted"><Lock class="size-3.5" aria-hidden="true" /> Payments processed by Stripe</p>
+      <Fragment set:html={`<style>${checkoutCss}</style>`} />
+    </section>
+
+    <!-- Card rescue -->
+    <section class="panel panel-rescue space-y-5" aria-label="Card rescue">
+      <div class="flex items-center justify-between gap-4 rounded-xl border border-line bg-paper p-4">
+        <div class="flex items-center gap-3">
+          <div class="flex h-9 w-14 items-center justify-center rounded-md bg-ink font-mono text-[0.65rem] font-medium tracking-widest text-paper">VISA</div>
+          <div>
+            <p class="font-mono text-sm">•••• 0341</p>
+            <p class="text-xs text-ink-muted">Glow Box, beauty · Expires 11/26</p>
+          </div>
+        </div>
+        <span class="stamp demo-stamp shrink-0 text-sm" style="--stamp-rotate: -6deg">Saved</span>
+      </div>
+      <ol class="relative space-y-5 pl-1 before:absolute before:left-[17px] before:top-3 before:h-[calc(100%-1.5rem)] before:w-px before:bg-line-strong/60">
+        {rescueSteps.map((s) => (
+          <li class="relative flex gap-4">
+            <span class:list={['relative z-10 flex size-8 shrink-0 items-center justify-center rounded-full ring-4 ring-card', s.done ? 'bg-pop text-ink' : 'bg-pop-soft text-pop-deep']}>
+              {s.done ? <Check class="size-4" aria-hidden="true" /> : <Mail class="size-4" aria-hidden="true" />}
+            </span>
+            <div class="pt-0.5">
+              <p class="eyebrow text-[0.64rem] text-ink-muted">{s.day}</p>
+              <p class="mt-0.5 text-sm font-medium">{s.label}</p>
+            </div>
+          </li>
+        ))}
+      </ol>
+    </section>
+
+    <!-- Skips -->
+    <section class="panel panel-skip" aria-label="Skip instead of cancel">
+      <input type="radio" name="s-state" id="s-none" class="sr-only" checked />
+      <input type="radio" name="s-state" id="s-offer" class="sr-only" />
+      <input type="radio" name="s-state" id="s-skipped" class="sr-only" />
+      <input type="radio" name="s-state" id="s-cancelled" class="sr-only" />
+
+      <div class="flex items-center justify-between gap-4">
+        <div>
+          <p class="font-display text-lg font-semibold leading-tight tracking-tight">Hop Society</p>
+          <p class="text-xs text-ink-muted">12 craft beers · ${PRICE}/mo</p>
+        </div>
+        <span class="rounded-full border border-line-strong/60 px-2.5 py-1 text-xs font-medium">
+          <span class="status status-active">Active</span>
+          <span class="status status-skipped text-pop-deep">Skipping until Jan 3</span>
+          <span class="status status-cancelled text-ink-muted">Cancelled</span>
+        </span>
+      </div>
+
+      <div class="mt-5">
+        <!-- account view -->
+        <div class="view view-account">
+          <ul class="divide-y divide-line overflow-hidden rounded-xl border border-line text-sm">
+            <li class="flex items-center gap-3 px-4 py-3"><Pause class="size-4 text-ink-muted" aria-hidden="true" /> Skip a box</li>
+            <li class="flex items-center gap-3 px-4 py-3"><ArrowLeftRight class="size-4 text-ink-muted" aria-hidden="true" /> Switch plan</li>
+            <li class="flex items-center gap-3 px-4 py-3"><CalendarDays class="size-4 text-ink-muted" aria-hidden="true" /> Change billing date</li>
+            <li><label for="s-offer" class="ctl flex w-full cursor-pointer items-center gap-3 px-4 py-3 text-ink-muted transition-colors hover:bg-ink/[0.04] hover:text-ink"><X class="size-4" aria-hidden="true" /> Cancel subscription</label></li>
+          </ul>
+        </div>
+
+        <!-- save offer -->
+        <div class="view view-offer rounded-xl border border-pop/40 bg-pop-soft/60 p-5">
+          <p class="font-display text-lg font-semibold tracking-tight">Before you go</p>
+          <p class="mt-1 text-sm text-ink-muted">Fridge still full? Skip the next 2 boxes instead. Nothing is charged while you skip.</p>
+          <div class="mt-4 flex flex-wrap gap-2">
+            <label for="s-skipped" class="ctl inline-flex h-9 cursor-pointer items-center rounded-full bg-ink px-4 text-sm font-medium text-paper transition-colors hover:bg-pop-deep">Skip 2 boxes</label>
+            <label for="s-cancelled" class="ctl inline-flex h-9 cursor-pointer items-center rounded-full px-4 text-sm text-ink-muted underline-offset-4 hover:underline">Cancel anyway</label>
+          </div>
+        </div>
+
+        <!-- skipped -->
+        <div class="view view-skipped relative rounded-xl border border-line bg-paper p-5">
+          <span class="stamp demo-stamp absolute right-4 top-4 text-base">Skipped</span>
+          <p class="font-display text-lg font-semibold tracking-tight">Still subscribed</p>
+          <p class="mt-1 max-w-[26ch] text-sm text-ink-muted">Next box ships Jan 3. Nothing is charged until then.</p>
+          <label for="s-none" class="ctl mt-4 inline-flex cursor-pointer items-center gap-1.5 text-sm text-ink-muted underline-offset-4 hover:text-ink hover:underline"><RotateCcw class="size-3.5" aria-hidden="true" /> Start over</label>
+        </div>
+
+        <!-- cancelled -->
+        <div class="view view-cancelled rounded-xl border border-line bg-paper p-5">
+          <p class="font-display text-lg font-semibold tracking-tight">Subscription cancelled</p>
+          <p class="mt-1 text-sm text-ink-muted">Two clicks, no phone call, no more charges.</p>
+          <label for="s-none" class="ctl mt-4 inline-flex cursor-pointer items-center gap-1.5 text-sm text-ink-muted underline-offset-4 hover:text-ink hover:underline"><RotateCcw class="size-3.5" aria-hidden="true" /> Start over</label>
+        </div>
+      </div>
+    </section>
+  </div>
+</div>
+
+<style>
+  /* tabs */
+  .tab {
+    display: flex;
+    height: 2.25rem;
+    cursor: pointer;
+    align-items: center;
+    justify-content: center;
+    border-radius: 9999px;
+    color: var(--color-ink-muted);
+    transition: background-color 200ms var(--ease-out), color 200ms var(--ease-out);
+  }
+  .tab:hover { color: var(--color-ink); }
+  .tab-input:checked + .tab {
+    background: var(--color-card);
+    color: var(--color-ink);
+    box-shadow: 0 1px 2px oklch(20% 0.02 45 / 0.12);
+  }
+  .tab-input:focus-visible + .tab,
+  .opt-input:focus-visible + .opt,
+  .gift-toggle:has(input:focus-visible),
+  .panel-skip:has(input:focus-visible) .view { outline: 2px solid var(--color-pop); outline-offset: 2px; }
+
+  /* panels and urls follow the selected tab */
+  .panel, .url { display: none; }
+  .demo:has(#t-gift:checked) :is(.panel-gift, .url-gift),
+  .demo:has(#t-rescue:checked) :is(.panel-rescue, .url-rescue),
+  .demo:has(#t-skip:checked) :is(.panel-skip, .url-skip) { display: block; }
+
+  /* gift toggle */
+  .switch {
+    position: relative;
+    width: 2.4rem;
+    height: 1.4rem;
+    flex-shrink: 0;
+    border-radius: 9999px;
+    background: var(--color-line-strong);
+    transition: background-color 200ms var(--ease-out);
+  }
+  .switch::after {
+    content: "";
+    position: absolute;
+    top: 0.2rem;
+    left: 0.2rem;
+    width: 1rem;
+    height: 1rem;
+    border-radius: 9999px;
+    background: var(--color-card);
+    box-shadow: 0 1px 2px oklch(0% 0 0 / 0.2);
+    transition: translate 250ms var(--ease-out);
+  }
+  .gift-toggle:has(:checked) { border-color: color-mix(in oklch, var(--color-pop) 45%, transparent); background: var(--color-pop-soft); }
+  .gift-toggle:has(:checked) .switch { background: var(--color-pop); }
+  .gift-toggle:has(:checked) .switch::after { translate: 1rem 0; }
+
+  /* subscription fields collapse when it's a gift; gift fields expand */
+  .collapse-sub, .collapse-gift {
+    transition: grid-template-rows 450ms var(--ease-out), opacity 300ms var(--ease-out);
+  }
+  .collapse-sub { grid-template-rows: 1fr; }
+  .collapse-gift { grid-template-rows: 0fr; opacity: 0; visibility: hidden; }
+  .panel-gift:has(#g-gift:checked) .collapse-sub { grid-template-rows: 0fr; opacity: 0; visibility: hidden; }
+  .panel-gift:has(#g-gift:checked) .collapse-gift { grid-template-rows: 1fr; opacity: 1; visibility: visible; }
+
+  .opt {
+    display: flex;
+    height: 2.25rem;
+    cursor: pointer;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0.5rem;
+    border: 1px solid var(--color-line);
+    background: var(--color-card);
+    font-size: 0.85rem;
+    line-height: 1.25;
+    color: var(--color-ink-muted);
+    transition: border-color 150ms, background-color 150ms, color 150ms;
+  }
+  .opt:hover { border-color: var(--color-line-strong); }
+  .opt-input:checked + .opt {
+    border-color: var(--color-pop);
+    background: var(--color-pop-soft);
+    color: var(--color-pop-deep);
+  }
+
+  /* skip flow */
+  .view, .status { display: none; }
+  .panel-skip:has(#s-none:checked) .view-account,
+  .panel-skip:has(#s-offer:checked) .view-offer,
+  .panel-skip:has(#s-skipped:checked) .view-skipped,
+  .panel-skip:has(#s-cancelled:checked) .view-cancelled { display: block; }
+  .panel-skip:has(#s-none:checked, #s-offer:checked) .status-active,
+  .panel-skip:has(#s-skipped:checked) .status-skipped,
+  .panel-skip:has(#s-cancelled:checked) .status-cancelled { display: inline; }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .demo-stamp { animation: stamp 520ms var(--ease-stamp) 120ms both; }
+    .view, .panel { animation: rise 380ms var(--ease-out) both; }
+  }
+</style>

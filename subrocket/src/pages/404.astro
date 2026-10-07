@@ -1,0 +1,19 @@
+---
+import Layout from '@/layouts/Layout.astro'
+import Header from '@/components/sections/Header.astro'
+import Footer from '@/components/sections/Footer.astro'
+import Button from '@/components/ui/Button.astro'
+---
+
+<Layout title="Page not found · subrocket" description="This page doesn’t exist. Head back to the subrocket homepage.">
+  <Header />
+  <main id="main" class="flex min-h-[70vh] items-center py-24">
+    <div class="mx-auto max-w-xl px-4 text-center">
+      <span class="stamp text-2xl" style="--stamp-rotate: -6deg">Return to sender</span>
+      <h1 class="mt-8 text-5xl sm:text-6xl">This page didn’t ship.</h1>
+      <p class="mt-5 text-lg text-ink-muted">The link may be old, or the page isn’t live yet.</p>
+      <Button href="/" class="mt-8">Back to the homepage</Button>
+    </div>
+  </main>
+  <Footer />
+</Layout>

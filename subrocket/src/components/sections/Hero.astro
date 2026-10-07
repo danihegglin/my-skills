@@ -1,0 +1,54 @@
+---
+import { Check } from '@lucide/astro'
+import Button from '@/components/ui/Button.astro'
+import Demo from './Demo.astro'
+import { cta, hero, niches } from '@/content/landing'
+---
+
+<section class="relative pb-16 pt-14 sm:pt-20 lg:pb-24 lg:pt-24">
+  <div class="mx-auto grid max-w-6xl items-center gap-12 px-4 sm:px-6 lg:grid-cols-[1.2fr_1fr] lg:gap-12">
+    <div>
+      <p class="eyebrow flex items-center gap-2 text-pop-deep" data-rise>
+        <span class="inline-block size-1.5 rounded-full bg-pop" aria-hidden="true"></span>
+        {hero.eyebrow}
+      </p>
+
+      <h1 class="mt-6 text-[clamp(2.7rem,1.5rem+4.6vw,4.6rem)] leading-[1.02]">
+        <span class="block" data-rise style="--d: 70ms">{hero.headline[0]}</span>
+        <span class="block text-ink-muted/80" data-rise style="--d: 170ms">{hero.headline[1]}</span>
+      </h1>
+
+      <p class="mt-6 max-w-[34rem] text-lg text-ink-muted sm:text-[1.2rem] sm:leading-relaxed" data-rise style="--d: 270ms">
+        {hero.subhead}
+      </p>
+
+      <div class="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center" data-rise style="--d: 360ms">
+        <Button href={cta.primary.href} arrow data-cta="hero">{cta.primary.label}</Button>
+        <Button href={cta.secondary.href} variant="outline" data-cta="hero-pricing">{cta.secondary.label}</Button>
+      </div>
+
+      <ul class="mt-6 flex flex-wrap gap-x-5 gap-y-2 text-sm text-ink-muted" data-rise style="--d: 430ms">
+        {hero.perks.map((p) => <li class="flex items-center gap-1.5"><Check class="size-4 text-pop" aria-hidden="true" />{p}</li>)}
+      </ul>
+    </div>
+
+    <div class="relative mx-auto w-full max-w-[31rem] lg:mr-0" data-rise style="--d: 220ms">
+      <div class="absolute -right-3 -top-3 -z-10 h-[88%] w-[90%] rounded-[1.4rem] bg-kraft sm:-right-5 sm:-top-5" aria-hidden="true"></div>
+      <Demo />
+      <p class="mt-4 text-center text-xs text-ink-muted">{hero.demoHint}</p>
+    </div>
+  </div>
+
+  <!-- niche strip: who it's for, said plainly -->
+  <div class="mx-auto mt-16 max-w-6xl px-4 sm:px-6 lg:mt-20">
+    <div class="perforation h-1" aria-hidden="true"></div>
+    <div class="flex flex-col gap-4 py-6 md:flex-row md:items-center md:gap-8">
+      <p class="eyebrow shrink-0 text-ink-muted">{niches.label}</p>
+      <ul class="flex flex-wrap items-center gap-2">
+        {niches.items.map((n) => <li class="rounded-full border border-line-strong/60 bg-card px-3.5 py-1.5 text-sm font-medium">{n}</li>)}
+        <li class="w-full pt-1 text-sm text-ink-muted sm:w-auto sm:pl-2 sm:pt-0">{niches.tail}</li>
+      </ul>
+    </div>
+    <div class="perforation h-1" aria-hidden="true"></div>
+  </div>
+</section>

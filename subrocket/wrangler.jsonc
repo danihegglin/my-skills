@@ -1,9 +1,11 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "subrocket",
+  "name": "subrocket-landing",
   "compatibility_date": "2026-10-01",
   "assets": {
     "directory": "./dist",
     "not_found_handling": "404-page"
-  }
+  },
+  "workers_dev": true,
+  "observability": { "enabled": true }
 }
