@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0">
+<meta name="theme-color" content="#14062a">
+<title>$GODOT_PROJECT_NAME</title>
+<style>
+html, body, #canvas { margin: 0; padding: 0; border: 0; }
+body { background: #14062a; overflow: hidden; touch-action: none; }
+#canvas { display: block; }
+#canvas:focus { outline: none; }
+#loader {
+	position: fixed; inset: 0; display: flex; flex-direction: column;
+	align-items: center; justify-content: center; gap: 26px;
+	background: radial-gradient(ellipse at 50% 110%, #b2186f 0%, #4a0d5a 35%, #14062a 75%);
+	font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; color: #fff;
+	transition: opacity 0.45s;
+}
+#loader.done { opacity: 0; pointer-events: none; }
+.logo { position: relative; font-weight: 900; font-size: clamp(56px, 15vw, 120px); letter-spacing: 0.02em; line-height: 1; }
+.logo .eight { color: #ff52b8; }
+.logo::after {
+	content: ""; position: absolute; left: -12%; top: 50%; width: 124%; height: 4px;
+	background: #fff; box-shadow: 0 0 12px #6ff, 0 0 26px #6ff;
+	transform: rotate(-14deg) scaleX(0); transform-origin: left center;
+	animation: slash 2.2s ease-in-out infinite;
+}
+@keyframes slash {
+	0%, 15% { transform: rotate(-14deg) scaleX(0); opacity: 1; }
+	35% { transform: rotate(-14deg) scaleX(1); opacity: 1; }
+	70%, 100% { transform: rotate(-14deg) scaleX(1); opacity: 0; }
+}
+#bar { width: min(420px, 72vw); height: 14px; border-radius: 7px; overflow: hidden; background: rgba(255,255,255,0.12); box-shadow: inset 0 0 0 2px rgba(255,255,255,0.18); }
+#fill { width: 0; height: 100%; background: linear-gradient(90deg, #4ff2e6, #ff52b8); box-shadow: 0 0 14px #ff52b8; transition: width 0.15s; }
+#msg { font-size: 17px; opacity: 0.85; min-height: 1.3em; text-align: center; padding: 0 16px; }
+</style>
+$GODOT_HEAD_INCLUDE
+</head>
+<body>
+<canvas id="canvas">Your browser does not support the canvas tag.</canvas>
+<noscript>Your browser does not support JavaScript.</noscript>
+<div id="loader">
+	<div class="logo">SLICE<span class="eight">8</span></div>
+	<div id="bar"><div id="fill"></div></div>
+	<div id="msg">Sharpening the blade…</div>
+</div>
+<script src="$GODOT_URL"></script>
+<script>
+const GODOT_CONFIG = $GODOT_CONFIG;
+const GODOT_THREADS_ENABLED = $GODOT_THREADS_ENABLED;
+const engine = new Engine(GODOT_CONFIG);
+const loader = document.getElementById('loader');
+const fill = document.getElementById('fill');
+const msg = document.getElementById('msg');
+
+function fail(err) {
+	console.error(err);
+	msg.textContent = (err && err.message) || String(err) || 'Something went wrong.';
+}
+
+const missing = Engine.getMissingFeatures({ threads: GODOT_THREADS_ENABLED });
+if (missing.length) {
+	fail('Your browser is missing features this game needs: ' + missing.join(', '));
+} else {
+	engine.startGame({
+		onProgress: (current, total) => {
+			if (total > 0) fill.style.width = Math.min(100, (current / total) * 100) + '%';
+		},
+	}).then(() => {
+		fill.style.width = '100%';
+		loader.classList.add('done');
+		setTimeout(() => loader.remove(), 600);
+	}, fail);
+}
+</script>
+</body>
+</html>
