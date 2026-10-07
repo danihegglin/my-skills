@@ -13,7 +13,7 @@ import { cta, hero, niches } from '@/content/landing'
         {hero.eyebrow}
       </p>
 
-      <h1 class="mt-6 text-[clamp(2.7rem,1.5rem+4.6vw,4.6rem)] leading-[0.96]" style="font-variation-settings: 'opsz' 96">
+      <h1 class="mt-6 text-[clamp(2.7rem,1.5rem+4.6vw,4.6rem)] leading-[1.02]">
         <span class="block" data-rise style="--d: 70ms">{hero.headline[0]}</span>
         <span class="block text-ink-muted/80" data-rise style="--d: 170ms">{hero.headline[1]}</span>
       </h1>
@@ -24,7 +24,7 @@ import { cta, hero, niches } from '@/content/landing'
 
       <div class="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center" data-rise style="--d: 360ms">
         <Button href={cta.primary.href} arrow data-cta="hero">{cta.primary.label}</Button>
-        <Button href={cta.secondary.href} variant="outline" data-cta="hero-demo">{cta.secondary.label}</Button>
+        <Button href={cta.secondary.href} variant="outline" data-cta="hero-pricing">{cta.secondary.label}</Button>
       </div>
 
       <ul class="mt-6 flex flex-wrap gap-x-5 gap-y-2 text-sm text-ink-muted" data-rise style="--d: 430ms">

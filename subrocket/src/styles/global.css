@@ -7,7 +7,7 @@
  */
 
 @theme {
-  --font-display: "Bricolage Grotesque Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Geist Variable", ui-sans-serif, system-ui, sans-serif;
   --font-sans: "Geist Variable", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "Geist Mono Variable", ui-monospace, monospace;
 
@@ -57,9 +57,9 @@
   }
   h1, h2, h3 {
     font-family: var(--font-display);
-    font-weight: 650;
-    letter-spacing: -0.035em;
-    line-height: 1.02;
+    font-weight: 600;
+    letter-spacing: -0.04em;
+    line-height: 1.05;
     text-wrap: balance;
   }
   p { text-wrap: pretty; }

@@ -19,7 +19,7 @@ export const meta = {
 
 export const cta = {
   primary: { label: 'Start for free', href: '/signup' },
-  secondary: { label: 'Book a demo', href: '/demo' },
+  secondary: { label: 'See pricing', href: '#pricing' },
   reassurance: 'Free to use. $0.10 per transaction.',
 }
 
