@@ -14,19 +14,20 @@ export const site = {
 export const meta = {
   title: 'subrocket: more sales and less churn for subscription boxes',
   description:
-    'Gift checkout, expiring-card rescue and skip-a-month for craft beer clubs, beauty boxes and every subscription on Stripe. 14 days free, no card.',
+    'Box checkout with gifting, expiring-card rescue and skip-a-month for craft beer clubs, beauty boxes and every subscription on Stripe. Free to use, $0.10 per transaction.',
 }
 
 export const cta = {
-  primary: { label: 'Start free trial', href: '/signup' },
+  primary: { label: 'Start for free', href: '/signup' },
   secondary: { label: 'Book a demo', href: '/demo' },
-  reassurance: '14 days free. No card needed.',
+  reassurance: 'Free to use. $0.10 per transaction.',
 }
 
 export const nav = [
   { label: 'Gifts', href: '#gifts' },
   { label: 'Card rescue', href: '#rescue' },
   { label: 'Skips', href: '#skips' },
+  { label: 'Pricing', href: '#pricing' },
   { label: 'FAQ', href: '#faq' },
 ]
 
@@ -34,9 +35,9 @@ export const hero = {
   eyebrow: 'For subscription boxes on Stripe',
   headline: ['Sell more boxes.', 'Lose fewer subscribers.'],
   subhead:
-    'subrocket adds gift checkout, expiring-card rescue and skip-a-month to your Stripe subscriptions. Made for craft beer clubs, beauty boxes and anything else that ships every month.',
-  perks: ['14 days free', 'No card needed', 'Subscribers stay in Stripe'],
-  demoHint: 'Try it: tick “This is a gift”, or press cancel.',
+    'subrocket gives your Stripe subscriptions a proper box checkout with gifting, expiring-card rescue and skip-a-month. Made for craft beer clubs, beauty boxes and anything else that ships every month.',
+  perks: ['Free to use', '$0.10 per transaction', 'Subscribers stay in Stripe'],
+  demoHint: 'Try it: change the box size, tick “This is a gift”, or press cancel.',
 }
 
 export const niches = {
@@ -56,9 +57,9 @@ export const chapters = [
     number: '01',
     tag: 'Sell',
     stamp: 'Gifted',
-    title: 'Turn December into your biggest month',
-    body: 'Add a gift option to your checkout. Buyers prepay 3, 6 or 12 boxes and pick a delivery date. On that day the recipient gets a claim link, and can add their own card to keep the boxes coming after the gift runs out.',
-    points: ['Prepaid 3, 6 or 12-box gifts', 'Apple Pay and Google Pay at checkout', 'Gift recipients convert to paying subscribers'],
+    title: 'A box checkout that sells gifts too',
+    body: 'Subscribers pick the box size, how often it ships and when the first one arrives, then pay with Apple Pay, Google Pay or card. Tick “This is a gift” and the buyer prepays 3, 6 or 12 boxes instead. On the delivery date the recipient gets a claim link, and can add their own card to keep the boxes coming.',
+    points: ['Box size, frequency and first delivery date', 'Prepaid 3, 6 or 12-box gifts with a claim link', 'Apple Pay and Google Pay built in'],
     stat: { value: '53%', label: 'of shoppers want to give a subscription as a gift. Only 27% ever have.', source: 1 },
   },
   {
@@ -85,12 +86,20 @@ export const chapters = [
 
 export const checkoutNote = { text: 'Apple Pay at checkout lifts conversion by 22% on average.', source: 2 }
 
+export const pricing = {
+  heading: ['Free to use.', '10¢ per transaction.'],
+  body: 'No monthly fee, no tiers, no share of your revenue. subrocket charges a fixed $0.10 on each transaction it handles. Stripe’s own processing fees stay exactly as they are today.',
+  example: { label: 'On a $39 box', value: '$0.10', note: 'about 0.26% of the order' },
+  includedLabel: 'Every feature, on every account',
+  included: ['Box checkout with gifting', 'Expiring-card rescue', 'Skips and account page', 'Webhooks and churn reports'],
+}
+
 export const setup = {
   heading: 'Live in an afternoon',
   body: 'No changes to your Stripe products, prices or existing subscribers.',
   steps: [
     { title: 'Connect Stripe', body: 'Products and prices import on their own.' },
-    { title: 'Choose what to switch on', body: 'Gift checkout, card rescue, skips. Any one, or all three.' },
+    { title: 'Choose what to switch on', body: 'Box checkout, card rescue, skips. Any one, or all three.' },
     { title: 'Swap two links', body: 'Point your Subscribe button and account page at subrocket. That’s the install.' },
   ],
 }
@@ -120,21 +129,20 @@ export const faq = {
     { q: 'When do card update emails go out?', a: '30, 7 and 1 day before a card expires. They stop as soon as the card changes.' },
     { q: 'Can customers still cancel?', a: 'Always, in one click after the skip offer. Making cancelling hard costs you trust, and auto-renewal laws in many places require an easy online cancel.' },
     { q: 'Is payment data safe?', a: 'Card details are collected and stored by Stripe. subrocket never sees full card numbers.' },
-    // [NEED: real prices. Visible pricing converts better than "scales with MRR".]
-    { q: 'What does it cost?', a: 'Every plan starts with a 14-day free trial, no card needed. After that, pricing scales with your monthly recurring revenue.' },
+    { q: 'What does it cost?', a: 'Nothing up front and no monthly fee. subrocket takes a fixed $0.10 per transaction. Stripe’s usual processing fees apply, exactly as they do today.' },
   ],
 }
 
 export const finalCta = {
   heading: 'Keep every box shipping.',
-  body: 'Start with gifts, card rescue or skips. Switch on the rest when you’re ready.',
+  body: 'Free to start. Switch on the checkout, card rescue or skips today, and the rest when you’re ready.',
 }
 
 export const footer = {
-  blurb: 'Gift checkout, card rescue and skip-a-month for subscription boxes on Stripe.',
+  blurb: 'Box checkout with gifting, card rescue and skip-a-month for subscription boxes on Stripe.',
   // [NEED: these pages don't exist yet. /privacy, /terms, /dpa and /imprint are required before launch.]
   columns: [
-    { title: 'Product', links: [{ label: 'Gift checkout', href: '/#gifts' }, { label: 'Card rescue', href: '/#rescue' }, { label: 'Skips', href: '/#skips' }, { label: 'Pricing', href: '/pricing' }] },
+    { title: 'Product', links: [{ label: 'Checkout & gifts', href: '/#gifts' }, { label: 'Card rescue', href: '/#rescue' }, { label: 'Skips', href: '/#skips' }, { label: 'Pricing', href: '/#pricing' }] },
     { title: 'Company', links: [{ label: 'About', href: '/about' }, { label: 'Blog', href: '/blog' }, { label: 'Contact', href: 'mailto:hello@subrocket.com' }] },
     { title: 'Legal', links: [{ label: 'Privacy policy', href: '/privacy' }, { label: 'Terms of service', href: '/terms' }, { label: 'Data processing', href: '/dpa' }, { label: 'Imprint', href: '/imprint' }] },
   ],

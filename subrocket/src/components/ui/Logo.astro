@@ -1,5 +1,6 @@
 ---
-// Wordmark: the "o" is a loop (the subscription) with a dot escaping it (the launch).
+// Mark: an open ring (the subscription loop) with a dot breaking out of the gap (the launch).
+// Wordmark: Geist, lowercase, tight.
 interface Props {
   class?: string
   tone?: 'dark' | 'light'
@@ -7,11 +8,10 @@ interface Props {
 const { class: className = '', tone = 'dark' } = Astro.props
 ---
 
-<a href="/" class:list={['group inline-flex rounded-md', className]} aria-label="subrocket home">
-  <span class:list={['whitespace-nowrap font-display text-[1.5rem] font-bold leading-none tracking-[-0.045em]', tone === 'light' ? 'text-paper' : 'text-ink']} aria-hidden="true">
-    subr<svg viewBox="0 0 24 24" class="mx-[0.01em] inline-block h-[0.56em] w-auto align-baseline text-pop" aria-hidden="true">
-      <path d="M19.6 7.2A10 10 0 1 0 21.9 13" fill="none" stroke="currentColor" stroke-width="4.2" stroke-linecap="round" />
-      <circle cx="21.6" cy="2.6" r="2.6" fill="currentColor" class="transition-transform duration-500 group-hover:-translate-y-[3px] group-hover:translate-x-[3px]" />
-    </svg>cket
-  </span>
+<a href="/" class:list={['group inline-flex items-center gap-2 rounded-md', tone === 'light' ? 'text-paper' : 'text-ink', className]} aria-label="subrocket home">
+  <svg viewBox="0 0 24 24" class="size-[1.45rem] shrink-0" aria-hidden="true">
+    <path d="M19.73 9.93A8 8 0 1 1 14.07 4.27" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" />
+    <circle cx="19.6" cy="4.4" r="2.5" class="fill-pop transition-transform duration-500 ease-out group-hover:translate-x-[1.5px] group-hover:-translate-y-[1.5px]" />
+  </svg>
+  <span class="font-sans text-[1.3rem] font-semibold leading-none tracking-[-0.045em]" aria-hidden="true">subrocket</span>
 </a>
