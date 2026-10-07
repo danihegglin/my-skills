@@ -35,7 +35,7 @@ export const hero = {
   headline: ['Sell more boxes.', 'Lose fewer subscribers.'],
   subhead:
     'subrocket gives your Stripe subscriptions a proper box checkout with gifting, expiring-card rescue and skip-a-month. Made for craft beer clubs, beauty boxes and anything else that ships every month.',
-  perks: ['Free to use', '$0.10 per transaction', 'Subscribers stay in Stripe'],
+  perks: ['Free to use', '$0.10 per transaction', 'Your domain, your brand'],
   demoHint: 'Try it: change the box size, tick “This is a gift”, or press cancel.',
 }
 
@@ -68,7 +68,7 @@ export const chapters = [
     stamp: 'Saved',
     title: 'Fix the card before the box can’t ship',
     body: 'Most subscribers who churn never decided to leave. Their card expired. subrocket emails each customer 30, 7 and 1 day before their card expires, with a one-tap link to update it. The reminders stop the moment the card changes.',
-    points: ['One-tap card update, handled by Stripe', 'Reminders stop once the card changes', 'Every save shows up in your reports'],
+    points: ['Sent from your own domain, in your brand', 'One-tap card update, handled by Stripe', 'Every save shows up in your reports'],
     stat: { value: '53%', label: 'of subscription churn comes from failed payments, not from people choosing to leave.', source: 3 },
   },
   {
@@ -89,9 +89,14 @@ export const checkoutNote = { text: 'Apple Pay at checkout lifts conversion by 2
 export const comparison = {
   eyebrow: 'subrocket vs. Stripe on its own',
   heading: 'What Stripe leaves to you',
-  body: 'Stripe is great at moving money, and subrocket runs on it. Its subscription tools are general-purpose, though, so the jobs a box business needs are either missing or need your own code.',
+  body: 'Stripe is great at moving money, and subrocket runs on it. But its checkout, account pages and emails look like Stripe, and the jobs a box business needs are either missing or need your own code.',
   columns: { stripe: 'Stripe on its own', subrocket: 'With subrocket' },
   rows: [
+    {
+      topic: 'Your brand',
+      stripe: { text: 'Checkout and portal run on checkout.stripe.com and billing.stripe.com, or one custom domain for $10 a month. Design stops at logo, colours, a font from Stripe’s list and corner style. No custom text in the portal.', sources: [11, 12, 13, 14] },
+      subrocket: 'Checkout, account page and every email run on your own domain and look like the rest of your shop.',
+    },
     {
       topic: 'Checkout',
       stripe: { text: 'No-code pricing table shows up to 4 products and 3 billing intervals. The start date is set in your code, not picked by the subscriber.', sources: [5, 6] },
@@ -104,8 +109,8 @@ export const comparison = {
     },
     {
       topic: 'Expiring cards',
-      stripe: { text: 'One reminder email, sent 1 month before the card expires.', sources: [7] },
-      subrocket: 'Reminders 30, 7 and 1 day before. They stop the moment the card is updated.',
+      stripe: { text: 'One reminder, 1 month before the card expires. Sent from stripe.com unless you verify your own email domain, in Stripe’s template.', sources: [7, 10] },
+      subrocket: 'Reminders 30, 7 and 1 day before, from your domain and in your brand. They stop the moment the card is updated.',
     },
     {
       topic: 'Skipping a box',
@@ -163,6 +168,7 @@ export const faq = {
     { q: 'How do gift subscriptions work?', a: 'The buyer prepays 3, 6 or 12 boxes and picks a delivery date. On that date the recipient gets a claim link and can add a card to keep the boxes coming.' },
     { q: 'When do card update emails go out?', a: '30, 7 and 1 day before a card expires. They stop as soon as the card changes.' },
     { q: 'Can customers still cancel?', a: 'Always, in one click after the skip offer. Making cancelling hard costs you trust, and auto-renewal laws in many places require an easy online cancel.' },
+    { q: 'Will my customers see subrocket?', a: 'No. Checkout, the account page and every email run on your own domain, with your logo and colours. Your subscribers only ever see your brand.' },
     { q: 'Is payment data safe?', a: 'Card details are collected and stored by Stripe. subrocket never sees full card numbers.' },
     { q: 'What does it cost?', a: 'Nothing up front and no monthly fee. subrocket takes a fixed $0.10 per transaction. Stripe’s usual processing fees apply, exactly as they do today.' },
   ],
@@ -194,4 +200,9 @@ export const sources = [
   { label: 'Stripe Docs, Automate customer emails: expiring card email sent 1 month before expiry', href: 'https://docs.stripe.com/billing/revenue-recovery/customer-emails#expiring-card-notifications' },
   { label: 'Stripe Docs, Pause subscriptions: subscribers can’t use the portal to pause subscriptions themselves', href: 'https://docs.stripe.com/billing/subscriptions/pause' },
   { label: 'Stripe Docs, Configure the customer portal: cancellation reasons and retention coupons', href: 'https://docs.stripe.com/customer-management/configure-portal' },
+  { label: 'Stripe Docs, Custom email domain: customer emails are sent from stripe.com by default', href: 'https://docs.stripe.com/get-started/account/email-domain' },
+  { label: 'Stripe Docs, Use your custom domain: one custom domain per account for Checkout, Payment Links and the customer portal', href: 'https://docs.stripe.com/payments/checkout/custom-domains' },
+  { label: 'Stripe pricing: custom domains for Checkout and Payment Links, $10.00 per month', href: 'https://stripe.com/pricing' },
+  { label: 'Stripe Docs, Customize Checkout appearance: logo or icon, background colour, button colour, font and shapes', href: 'https://docs.stripe.com/payments/checkout/customization/appearance' },
+  { label: 'Stripe Support, Billing customer portal: it isn’t possible to add custom text to the portal', href: 'https://support.stripe.com/questions/billing-customer-portal' },
 ]

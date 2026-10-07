@@ -41,7 +41,7 @@ const last = comparison.rows.length - 1
                   {row.stripe.sources.length > 0 && (
                     <sup class="ml-0.5 text-[0.62rem] font-medium text-pop-deep">
                       {row.stripe.sources.map((n, j) => (
-                        <>{j > 0 && ','}<a href="#sources" class="hover:underline" aria-label={`Source ${n}`}>{n}</a></>
+                        <>{j > 0 && ', '}<a href="#sources" class="hover:underline" aria-label={`Source ${n}`}>{n}</a></>
                       ))}
                     </sup>
                   )}
