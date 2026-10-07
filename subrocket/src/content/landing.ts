@@ -24,9 +24,8 @@ export const cta = {
 }
 
 export const nav = [
-  { label: 'Gifts', href: '#gifts' },
-  { label: 'Card rescue', href: '#rescue' },
-  { label: 'Skips', href: '#skips' },
+  { label: 'Features', href: '#gifts' },
+  { label: 'vs. Stripe', href: '#vs-stripe' },
   { label: 'Pricing', href: '#pricing' },
   { label: 'FAQ', href: '#faq' },
 ]
@@ -86,6 +85,42 @@ export const chapters = [
 
 export const checkoutNote = { text: 'Apple Pay at checkout lifts conversion by 22% on average.', source: 2 }
 
+// Every Stripe claim is checked against Stripe's own docs (October 2026) and cites `sources`.
+export const comparison = {
+  eyebrow: 'subrocket vs. Stripe on its own',
+  heading: 'What Stripe leaves to you',
+  body: 'Stripe is great at moving money, and subrocket runs on it. Its subscription tools are general-purpose, though, so the jobs a box business needs are either missing or need your own code.',
+  columns: { stripe: 'Stripe on its own', subrocket: 'With subrocket' },
+  rows: [
+    {
+      topic: 'Checkout',
+      stripe: { text: 'No-code pricing table shows up to 4 products and 3 billing intervals. The start date is set in your code, not picked by the subscriber.', sources: [5, 6] },
+      subrocket: 'Subscribers pick box size, how often it ships, the first box date and a delivery window.',
+    },
+    {
+      topic: 'Gift subscriptions',
+      stripe: { text: 'No built-in gifting. You stitch it together from one-off payments, coupons and your own code.', sources: [] },
+      subrocket: 'Prepaid 3, 6 or 12-box gifts with a claim link. Recipients can keep going on their own card.',
+    },
+    {
+      topic: 'Expiring cards',
+      stripe: { text: 'One reminder email, sent 1 month before the card expires.', sources: [7] },
+      subrocket: 'Reminders 30, 7 and 1 day before. They stop the moment the card is updated.',
+    },
+    {
+      topic: 'Skipping a box',
+      stripe: { text: 'Subscribers can’t pause or skip in the customer portal. Only you can pause, from the Dashboard or API.', sources: [8] },
+      subrocket: 'Subscribers skip 1, 2 or 3 boxes themselves, from their account page.',
+    },
+    {
+      topic: 'Before a cancel',
+      stripe: { text: 'An optional coupon offer and a reason survey.', sources: [9] },
+      subrocket: 'A skip offer first, for the full fridge. Cancelling stays one click away.',
+    },
+  ],
+  note: 'Compared with Stripe Billing’s built-in settings and no-code tools. Keep Stripe’s Smart Retries on: they work after a payment fails, subrocket works before it.',
+} as const
+
 export const pricing = {
   heading: ['Free to use.', '10¢ per transaction.'],
   body: 'No monthly fee, no tiers, no share of your revenue. subrocket charges a fixed $0.10 on each transaction it handles. Stripe’s own processing fees stay exactly as they are today.',
@@ -142,7 +177,7 @@ export const footer = {
   blurb: 'Box checkout with gifting, card rescue and skip-a-month for subscription boxes on Stripe.',
   // [NEED: these pages don't exist yet. /privacy, /terms, /dpa and /imprint are required before launch.]
   columns: [
-    { title: 'Product', links: [{ label: 'Checkout & gifts', href: '/#gifts' }, { label: 'Card rescue', href: '/#rescue' }, { label: 'Skips', href: '/#skips' }, { label: 'Pricing', href: '/#pricing' }] },
+    { title: 'Product', links: [{ label: 'Checkout & gifts', href: '/#gifts' }, { label: 'Card rescue', href: '/#rescue' }, { label: 'Skips', href: '/#skips' }, { label: 'vs. Stripe', href: '/#vs-stripe' }, { label: 'Pricing', href: '/#pricing' }] },
     { title: 'Company', links: [{ label: 'About', href: '/about' }, { label: 'Blog', href: '/blog' }, { label: 'Contact', href: 'mailto:hello@subrocket.com' }] },
     { title: 'Legal', links: [{ label: 'Privacy policy', href: '/privacy' }, { label: 'Terms of service', href: '/terms' }, { label: 'Data processing', href: '/dpa' }, { label: 'Imprint', href: '/imprint' }] },
   ],
@@ -154,4 +189,9 @@ export const sources = [
   { label: 'Stripe, payment method study: 22.3% average conversion lift when offering Apple Pay', href: 'https://stripe.com/blog/testing-the-conversion-impact-of-50-plus-global-payment-methods' },
   { label: 'Recurly, churn rate guide: 53% of churn is involuntary', href: 'https://recurly.com/blog/churn-rate-guide/' },
   { label: 'Recharge: 9.6% average save rate across 1,700+ merchants offering pause', href: 'https://getrecharge.com/blog/reduce-your-cancellations-by-10-with-pause-subscriptions/' },
+  { label: 'Stripe Docs, Embeddable pricing table: up to four products, three prices per product, three unique intervals', href: 'https://docs.stripe.com/payments/checkout/pricing-table#limitations' },
+  { label: 'Stripe Docs, Set the billing cycle date: the anchor is set when you create the Checkout Session', href: 'https://docs.stripe.com/payments/checkout/billing-cycle' },
+  { label: 'Stripe Docs, Automate customer emails: expiring card email sent 1 month before expiry', href: 'https://docs.stripe.com/billing/revenue-recovery/customer-emails#expiring-card-notifications' },
+  { label: 'Stripe Docs, Pause subscriptions: subscribers can’t use the portal to pause subscriptions themselves', href: 'https://docs.stripe.com/billing/subscriptions/pause' },
+  { label: 'Stripe Docs, Configure the customer portal: cancellation reasons and retention coupons', href: 'https://docs.stripe.com/customer-management/configure-portal' },
 ]

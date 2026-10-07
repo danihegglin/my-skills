@@ -17,6 +17,7 @@
  * Avoid: gradients, glass cards, identical card grids, sample testimonials.
  *
  * Order: hero (what, who, demo) → niches → the three leaks, one chapter each (sell, rescue, keep)
+ *   → vs. Stripe on its own (every Stripe claim sourced to Stripe's docs)
  *   → setup effort → "stays in Stripe" objection → pricing (free + $0.10/transaction, as a receipt) → FAQ → final CTA.
  * Copy lives in src/content/landing.ts. Zero client JS frameworks; the demo runs on CSS :has().
  */
@@ -24,6 +25,7 @@ import Layout from '@/layouts/Layout.astro'
 import Header from '@/components/sections/Header.astro'
 import Hero from '@/components/sections/Hero.astro'
 import Chapters from '@/components/sections/Chapters.astro'
+import Comparison from '@/components/sections/Comparison.astro'
 import Setup from '@/components/sections/Setup.astro'
 import Pricing from '@/components/sections/Pricing.astro'
 import FAQ from '@/components/sections/FAQ.astro'
@@ -37,6 +39,7 @@ import { meta } from '@/content/landing'
   <main id="main">
     <Hero />
     <Chapters />
+    <Comparison />
     <Setup />
     <Pricing />
     <FAQ />
