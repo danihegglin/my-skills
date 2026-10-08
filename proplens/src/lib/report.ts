@@ -15,12 +15,14 @@ import type { Building, Skyline } from "./skyline";
 import { buildSkyline, parseBuildings } from "./skyline";
 import type { SunResult } from "./sunlight";
 import { analyzeSun } from "./sunlight";
+import type { Municipality } from "./municipality";
+import { fetchMunicipality } from "./municipality";
 import type { OfficialNoise } from "./swissNoise";
 import { fetchOfficialNoise, inSwitzerland } from "./swissNoise";
 import type { TerrainSamples } from "./terrain";
 import { fetchTerrain } from "./terrain";
 
-export type StepId = QueryName | "climate" | "terrain" | "official";
+export type StepId = QueryName | "climate" | "terrain" | "official" | "municipality";
 export type StepState = "pending" | "done" | "failed" | "skipped";
 
 export const STEP_LABELS: Record<StepId, string> = {
@@ -29,6 +31,7 @@ export const STEP_LABELS: Record<StepId, string> = {
   places: "Finding schools, shops and restaurants",
   buildings: "Measuring the surrounding skyline",
   official: "Reading official Swiss noise maps",
+  municipality: "Looking up the municipality",
   terrain: "Following hills and mountains on the horizon",
   climate: "Reviewing a year of sunshine records",
 };
@@ -43,6 +46,7 @@ type Raw = {
   climate?: Climate | null;
   terrain?: TerrainSamples | null;
   official?: OfficialNoise | null;
+  municipality?: Municipality | null;
 };
 
 export type Report = {
@@ -57,6 +61,8 @@ export type Report = {
   climate: Climate | null;
   terrain: TerrainSamples | null;
   timeZone: string | undefined;
+  /** Swiss municipality and canton, when the address is in Switzerland. */
+  municipality: Municipality | null;
 };
 
 export function useReport(place: Place | null, attempt: number) {
@@ -70,7 +76,10 @@ export function useReport(place: Place | null, attempt: number) {
     setRaw({});
     const swiss = inSwitzerland(p.lat, p.lon);
     setSteps(Object.fromEntries(
-      (["buildings", "places", "streets", "air", "official", "terrain", "climate"] as StepId[]).map((s) => [s, s === "official" && !swiss ? "skipped" : "pending"]),
+      (["buildings", "places", "streets", "air", "official", "municipality", "terrain", "climate"] as StepId[]).map((s) => [
+        s,
+        (s === "official" || s === "municipality") && !swiss ? "skipped" : "pending",
+      ]),
     ));
 
     function track<T>(id: StepId, key: keyof Raw, run: () => Promise<T>) {
@@ -91,6 +100,7 @@ export function useReport(place: Place | null, attempt: number) {
 
     for (const q of ["buildings", "places", "streets", "air"] as QueryName[]) track(q, q, () => overpass(q, p, ctrl.signal));
     if (swiss) track("official", "official", () => fetchOfficialNoise(p.lat, p.lon, ctrl.signal));
+    if (swiss) track("municipality", "municipality", () => fetchMunicipality(p.lat, p.lon, ctrl.signal));
     track("terrain", "terrain", () => fetchTerrain(p, ctrl.signal));
     track("climate", "climate", () => fetchClimate(p.lat, p.lon, ctrl.signal));
     return () => ctrl.abort();
@@ -118,6 +128,7 @@ export function useReport(place: Place | null, attempt: number) {
       climate: raw.climate ?? null,
       terrain: raw.terrain ?? null,
       timeZone: raw.climate?.timezone,
+      municipality: raw.municipality ?? null,
     };
   }, [place, coreSettled, coreFailed, raw]);
 

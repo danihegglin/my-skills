@@ -10,6 +10,7 @@ import FlightsSection from "./FlightsSection";
 import Logo from "./Logo";
 import MapPanel from "./MapPanel";
 import NoiseSection from "./NoiseSection";
+import PriceSection from "./PriceSection";
 import SearchBox from "./SearchBox";
 import SunSection from "./SunSection";
 import { ScoreRing, scoreWord } from "./ui";
@@ -20,6 +21,8 @@ type Props = {
   onFloor: (f: number) => void;
   onSelect: (p: Place | null) => void;
 };
+
+const MAP_LAYERS: LayerId[] = ["noise", "flights", "schools", "shopping", "sun"];
 
 const SECTION_LABELS: Record<SectionId, string> = { noise: "Quiet", schools: "Schools", shopping: "Shopping", sun: "Sunlight" };
 
@@ -40,8 +43,9 @@ export default function ReportView({ place, floor, onFloor, onSelect }: Props) {
         // Only where the map stays beside the text; on phones it scrolls away, so keep the chosen layer.
         if (!matchMedia("(min-width: 1024px)").matches) return;
         const visible = entries.filter((e) => e.isIntersecting).sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
-        const id = visible?.target.getAttribute("data-section") as LayerId | undefined;
-        if (id) setLayer(id);
+        const id = visible?.target.getAttribute("data-section");
+        // Sections without a map layer (the price estimate) leave the map as it is.
+        if (id && MAP_LAYERS.includes(id as LayerId)) setLayer(id as LayerId);
       },
       { rootMargin: "-35% 0px -45% 0px", threshold: [0, 0.25, 0.5] },
     );
@@ -126,6 +130,7 @@ export default function ReportView({ place, floor, onFloor, onSelect }: Props) {
                 <SchoolsSection ref={(el) => { refs.current.schools = el; }} schools={report.schools} />
                 <ShoppingSection ref={(el) => { refs.current.shopping = el; }} shopping={report.shopping} />
                 {sun && <SunSection ref={(el) => { refs.current.sun = el; }} report={report} sun={sun} floor={floor} onFloor={onFloor} />}
+                <PriceSection report={report} sun={sun} floor={floor} onFloor={onFloor} />
                 <Partial steps={steps} />
               </>
             )}

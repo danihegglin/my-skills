@@ -67,8 +67,8 @@ export default function Landing({ onSelect }: { onSelect: (p: Place) => void }) 
               Know the neighbourhood before you know the <span className="relative whitespace-nowrap">neighbours<Underline /></span>.
             </h1>
             <p className="mt-6 max-w-xl text-[18px] leading-relaxed text-ink-2 text-pretty">
-              Type any address. PropLens estimates the noise from roads, trains, aircraft and nightlife, finds the nearest schools and shops, and
-              works out how many hours of direct sun reach each floor.
+              Type any address. PropLens estimates the noise from roads, trains, aircraft and nightlife, finds the nearest schools and shops,
+              works out how many hours of direct sun reach each floor, and estimates what a home there should cost to rent or buy.
             </p>
             <div className="mt-8 max-w-xl">
               <SearchBox onSelect={onSelect} autoFocus />
@@ -126,6 +126,7 @@ export default function Landing({ onSelect }: { onSelect: (p: Place) => void }) 
               ["Noise model", "Road emission after RLS-90 with typical traffic per road class, attenuation after ISO 9613-2, shielding from the real buildings around you. Levels are given at 4 m height, the reference height used by EU noise mapping."],
               ["Official noise maps", "For Swiss addresses, road and rail levels come from sonBASE, the national noise database of the Federal Office for the Environment."],
               ["Sun and sky", "The sun's position is calculated every five minutes across the year. Building heights come from OpenStreetMap, terrain from the Copernicus elevation model, and real sunshine hours from ERA5 climate data via Open-Meteo."],
+              ["Price estimates", "Rents start from federal statistics per canton and room count, lifted to advertised levels and adjusted for the home and its location. Purchase prices use price-to-rent ratios calibrated on actual sales in canton Zurich. The engine runs in your browser on bundled data."],
             ].map(([title, body], i) => (
               <li key={title} className="flex gap-5 bg-card p-6">
                 <span className="font-display text-[15px] font-bold text-muted tabular">0{i + 1}</span>
