@@ -21,6 +21,26 @@ const PERIODS: { id: Period; label: string }[] = [
   { id: "<1919", label: "Before 1919" },
 ];
 
+/** What each fittings level means, and its effect on the estimate (see QUALITY in valuation.ts). */
+const FITTINGS: Record<Quality, { effect: string; text: string }> = {
+  simple: {
+    effect: "−10%",
+    text: "Basic, dated or worn: older laminate or lino floors, a simple kitchen without dishwasher, a small bathroom with shower only, single or old double glazing, no washing machine in the flat.",
+  },
+  standard: {
+    effect: "No adjustment",
+    text: "Typical for the area: parquet or tiles, a fitted kitchen with dishwasher, one modern bathroom, double glazing, shared laundry in the building.",
+  },
+  upscale: {
+    effect: "+10%",
+    text: "Above average: quality parquet throughout, a kitchen with stone worktop and branded appliances, two bathrooms or an en-suite, own washer and dryer, underfloor heating, good sound insulation.",
+  },
+  luxury: {
+    effect: "+25%",
+    text: "High-end: designer kitchen and bathrooms, natural stone or solid wood floors, generous ceiling height, smart-home controls, private lift access or concierge, top energy standard (e.g. Minergie).",
+  },
+};
+
 type Draft = Omit<Property, "floor"> & { mode: Mode; asking: string; refRent: string; refPrice: string };
 
 const STORE = "proplens.property";
@@ -154,7 +174,11 @@ const PriceSection = forwardRef<HTMLElement, Props>(function PriceSection({ repo
             options={[["simple", "Simple"], ["standard", "Standard"], ["upscale", "Upscale"], ["luxury", "Luxury"]] as [Quality, string][]}
             label="Fittings"
             full
+            titles={Object.fromEntries(Object.entries(FITTINGS).map(([k, v]) => [k, `${v.effect}: ${v.text}`]))}
           />
+          <p className="mt-2 text-[13px] leading-snug text-ink-2" aria-live="polite">
+            <span className="font-semibold text-ink">{FITTINGS[d.quality].effect}.</span> {FITTINGS[d.quality].text}
+          </p>
         </Field>
         {d.period !== "new" && (
           <Field label="Condition" wide>
@@ -293,7 +317,21 @@ function NumberInput({ value, onChange, suffix, min, max }: { value: number; onC
   );
 }
 
-function Segmented<T extends string>({ value, onChange, options, label, full }: { value: T; onChange: (v: T) => void; options: [T, string][]; label: string; full?: boolean }) {
+function Segmented<T extends string>({
+  value,
+  onChange,
+  options,
+  label,
+  full,
+  titles,
+}: {
+  value: T;
+  onChange: (v: T) => void;
+  options: [T, string][];
+  label: string;
+  full?: boolean;
+  titles?: Partial<Record<string, string>>;
+}) {
   return (
     <div role="radiogroup" aria-label={label} className={`inline-flex rounded-full bg-paper p-1 ${full ? "flex w-full" : ""}`}>
       {options.map(([v, text]) => (
@@ -302,6 +340,7 @@ function Segmented<T extends string>({ value, onChange, options, label, full }: 
           type="button"
           role="radio"
           aria-checked={value === v}
+          title={titles?.[v]}
           onClick={() => onChange(v)}
           className={`whitespace-nowrap rounded-full px-2.5 py-1.5 text-[13px] font-medium transition sm:px-3.5 sm:text-[14px] ${full ? "flex-1" : ""} ${value === v ? "bg-ink text-white" : "text-ink-2 hover:text-ink"}`}
         >
