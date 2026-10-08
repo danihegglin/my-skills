@@ -3,15 +3,15 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Check, X } from '@lucide/astro'
 
 const them = ['Monthly fee from day one', 'You pay in slow months too', 'Pricier plans as you grow']
-const us = ['$0 per month, no setup fee', 'A small fee per successful payment', 'Nothing when no money comes in']
+const us = ['$0 per month, no setup fee', '$0.10 per transaction', 'Nothing when no money comes in']
 ---
 
 <section id="pricing" class="scroll-mt-24 border-y border-border bg-white py-24 sm:py-28">
   <div class="mx-auto grid max-w-6xl gap-12 px-4 sm:px-6 lg:grid-cols-[0.9fr_1.1fr] lg:items-center lg:gap-16">
     <div data-reveal>
       <p class="eyebrow text-pop">Pricing</p>
-      <h2 class="mt-4 text-4xl font-semibold sm:text-5xl">No monthly fee. <span class="accent-text">You pay when you get paid.</span></h2>
-      <p class="mt-5 max-w-md text-lg text-muted-foreground">Our fee comes out of money you’re already collecting. Quiet month, zero cost.</p>
+      <h2 class="mt-4 text-4xl font-semibold sm:text-5xl">No monthly fee. <span class="accent-text">10¢ when you get paid.</span></h2>
+      <p class="mt-5 max-w-md text-lg text-muted-foreground">A fixed $0.10 per transaction, out of money you’re already collecting. On a $39 box that’s about 0.26%. Stripe’s own processing fees stay as they are.</p>
     </div>
 
     <div class="grid gap-4 sm:grid-cols-2" data-reveal style="transition-delay: 100ms">
