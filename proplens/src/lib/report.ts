@@ -189,7 +189,7 @@ export function insights(report: Report, sun: SunResult | null): { good: Insight
     if (!market || market.distance > 1200) bad.push({ section: "shopping", text: market ? `Nearest supermarket is ${formatDistance(market.distance)} away` : "No supermarket within 1.5 km" });
   }
 
-  if (sun) {
+  if (sun && report.skyline) {
     const winter = sun.keyDays[0];
     const floor = sun.floor === 0 ? "the ground floor" : `floor ${sun.floor}`;
     if (winter.direct >= 5) good.push({ section: "sun", text: `${winter.direct.toFixed(1)} h of direct winter sun on ${floor}` });

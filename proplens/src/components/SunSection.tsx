@@ -1,4 +1,4 @@
-import { Building, CloudSun, Minus, Plus, Sun } from "lucide-react";
+import { Building, CloudSun, Minus, Plus, Sun, TriangleAlert } from "lucide-react";
 import { forwardRef } from "react";
 import type { Report } from "../lib/report";
 import type { SunResult } from "../lib/sunlight";
@@ -14,15 +14,23 @@ const SunSection = forwardRef<HTMLElement, Props>(function SunSection({ report, 
   const winter = sun.keyDays[0];
   const share = sun.annualDaylight ? sun.annualDirect / sun.annualDaylight : 0;
   const ownLevels = report.skyline?.own?.levels;
-  const verdict =
-    winter.direct >= 5
+  const openSky = !report.skyline;
+  const verdict = openSky
+    ? "Nearby building data couldn't be loaded, so these figures assume an open sky and aren't scored."
+    : winter.direct >= 5
       ? `Bright: ${winter.direct.toFixed(1)} h of direct sun even on the shortest day at ${floorName(floor).toLowerCase()}.`
       : winter.direct >= 2
         ? `Decent light: ${winter.direct.toFixed(1)} h of direct winter sun at ${floorName(floor).toLowerCase()}, plenty in summer.`
         : `Shaded in winter: ${winter.direct.toFixed(1)} h of direct sun on the shortest day at ${floorName(floor).toLowerCase()}. Higher floors may do better.`;
 
   return (
-    <Section ref={ref} id="sun" icon={Sun} accent="var(--color-sun)" title="Sunlight" score={sun.score} verdict={verdict}>
+    <Section ref={ref} id="sun" icon={Sun} accent="var(--color-sun)" title="Sunlight" score={openSky ? null : sun.score} verdict={verdict}>
+      {openSky && (
+        <p className="mb-4 flex items-start gap-2 rounded-2xl bg-warning/15 px-4 py-3 text-[14px] text-ink-2">
+          <TriangleAlert className="mt-0.5 size-4 shrink-0 text-ink" aria-hidden />
+          Surrounding buildings are missing from this result. Reload the page to try again; the map servers are sometimes busy.
+        </p>
+      )}
       <div className="flex flex-wrap items-center gap-x-5 gap-y-3 rounded-3xl bg-paper p-3 pl-5">
         <div className="mr-auto">
           <div className="text-[13px] font-medium text-ink-2">Check it from</div>

@@ -63,7 +63,8 @@ export default function ReportView({ place, floor, onFloor, onSelect }: Props) {
     noise: report?.noise?.score,
     schools: report?.schools?.score,
     shopping: report?.shopping?.score,
-    sun: sun?.score,
+    // Without nearby buildings the sun model assumes open sky, so it shouldn't score.
+    sun: report?.skyline ? sun?.score : undefined,
   };
   const overall = report ? overallScore(scores) : null;
 
