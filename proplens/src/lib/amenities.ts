@@ -50,16 +50,16 @@ function toPois(elements: OsmElement[], proj: Projection, kindOf: (t: Record<str
   }
   // Places are often mapped twice (node + building): keep the closer of same-name pairs.
   out.sort((a, b) => a.poi.distance - b.poi.distance);
-  const kept: Tagged[] = [];
+  const kept: (Tagged & { lower: string })[] = [];
   for (const item of out) {
     const p = item.poi;
+    const lower = p.name.toLowerCase();
     const dup = kept.some(
-      ({ poi: k }) =>
-        k.kind === p.kind && k.name.toLowerCase() === p.name.toLowerCase() && Math.abs(k.distance - p.distance) < 150 && Math.abs(k.bearing - p.bearing) < 30,
+      (k) => k.poi.kind === p.kind && k.lower === lower && Math.abs(k.poi.distance - p.distance) < 150 && Math.abs(k.poi.bearing - p.bearing) < 30,
     );
-    if (!dup) kept.push(item);
+    if (!dup) kept.push({ ...item, lower });
   }
-  return kept;
+  return kept.map(({ poi, tags }) => ({ poi, tags }));
 }
 
 /* ---------- schools ---------- */

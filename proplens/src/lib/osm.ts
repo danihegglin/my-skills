@@ -18,11 +18,11 @@ const ENDPOINTS = [
   "https://overpass.kumi.systems/api/interpreter",
 ];
 
-const ROADS =
+export const ROADS_RE =
   "^(motorway|motorway_link|trunk|trunk_link|primary|primary_link|secondary|secondary_link|tertiary|tertiary_link|unclassified|residential|living_street)$";
-const RAILS = "^(rail|light_rail|tram|subway|narrow_gauge|monorail)$";
-const DINING = "^(bar|pub|nightclub|restaurant|cafe|fast_food|biergarten|food_court)$";
-const EDUCATION = "^(kindergarten|childcare|school|college|university)$";
+export const RAILS_RE = "^(rail|light_rail|tram|subway|narrow_gauge|monorail)$";
+export const DINING_RE = "^(bar|pub|nightclub|restaurant|cafe|fast_food|biergarten|food_court)$";
+export const EDUCATION_RE = "^(kindergarten|childcare|school|college|university)$";
 const SHOPS =
   "^(supermarket|convenience|bakery|pastry|butcher|greengrocer|deli|organic|general|cheese|health_food|seafood|farm|beverages|chemist|mall|department_store|kiosk)$";
 
@@ -50,8 +50,8 @@ function bbox(p: LatLon, r: number) {
 export const queries = {
   streets: (p: LatLon) => `[out:json][timeout:45];
 (
-  way["highway"~"${ROADS}"]${around(RADIUS.roads, p)};
-  way["railway"~"${RAILS}"]${around(RADIUS.rails, p)};
+  way["highway"~"${ROADS_RE}"]${around(RADIUS.roads, p)};
+  way["railway"~"${RAILS_RE}"]${around(RADIUS.rails, p)};
   way["landuse"="industrial"]${around(RADIUS.industry, p)};
 );
 out tags geom;
@@ -69,8 +69,8 @@ out tags center;`,
 
   places: (p: LatLon) => `[out:json][timeout:45];
 (
-  nwr["amenity"~"${DINING}"]${around(RADIUS.dining, p)};
-  nwr["amenity"~"${EDUCATION}"]${around(RADIUS.education, p)};
+  nwr["amenity"~"${DINING_RE}"]${around(RADIUS.dining, p)};
+  nwr["amenity"~"${EDUCATION_RE}"]${around(RADIUS.education, p)};
   nwr["shop"~"${SHOPS}"]${around(RADIUS.shops, p)};
   nwr["amenity"~"^(pharmacy|marketplace|post_office)$"]${around(RADIUS.shops, p)};
 );
@@ -99,8 +99,8 @@ async function slot<T>(fn: () => Promise<T>): Promise<T> {
   }
 }
 
-async function post(endpoint: string, query: string, signal?: AbortSignal): Promise<OsmElement[]> {
-  const timeout = AbortSignal.timeout(40000);
+async function post(endpoint: string, query: string, signal: AbortSignal | undefined, timeoutMs: number): Promise<Response> {
+  const timeout = AbortSignal.timeout(timeoutMs);
   const res = await fetch(endpoint, {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
@@ -108,38 +108,65 @@ async function post(endpoint: string, query: string, signal?: AbortSignal): Prom
     signal: signal ? AbortSignal.any([signal, timeout]) : timeout,
   });
   if (!res.ok) throw new Error(`${new URL(endpoint).host} answered ${res.status}`);
+  return res;
+}
+
+// A runtime error inside Overpass still returns 200 with a remark and partial data.
+const FAILED_REMARK = /runtime error|timed out|out of memory/i;
+
+async function readElements(res: Response): Promise<OsmElement[]> {
   const json = (await res.json()) as { elements?: OsmElement[]; remark?: string };
   if (!json.elements) throw new Error("Malformed Overpass response");
-  // A runtime error inside Overpass still returns 200 with a remark and partial data.
-  if (json.remark && /runtime error|timed out|out of memory/i.test(json.remark)) throw new Error(json.remark);
+  if (json.remark && FAILED_REMARK.test(json.remark)) throw new Error(json.remark);
   return json.elements;
+}
+
+async function readBuffer(res: Response): Promise<ArrayBuffer> {
+  const buf = await res.arrayBuffer();
+  const decoder = new TextDecoder();
+  if (!decoder.decode(buf.slice(0, 64)).trimStart().startsWith("{")) throw new Error("Malformed Overpass response");
+  // The remark, if any, follows the elements at the very end of the response.
+  const tail = decoder.decode(buf.slice(Math.max(0, buf.byteLength - 2048)));
+  const remark = tail.match(/"remark"\s*:\s*"([^"]*)"/)?.[1];
+  if (remark && FAILED_REMARK.test(remark)) throw new Error(remark);
+  return buf;
+}
+
+async function viaMirrors<T>(query: string, signal: AbortSignal, timeoutMs: number, read: (res: Response) => Promise<T>): Promise<T> {
+  let lastError: unknown;
+  for (const endpoint of ENDPOINTS) {
+    if (signal.aborted) throw signal.reason;
+    try {
+      return await read(await post(endpoint, query, signal, timeoutMs));
+    } catch (err) {
+      if (signal.aborted) throw err;
+      lastError = err;
+    }
+  }
+  throw lastError instanceof Error ? lastError : new Error("All Overpass mirrors failed");
+}
+
+/**
+ * Runs a large query and returns the raw JSON, unparsed, so it can be handed to workers cheaply.
+ * Used by the area ranking, whose responses run to several megabytes.
+ */
+export function overpassBuffer(query: string, signal: AbortSignal, timeoutMs = 150000): Promise<ArrayBuffer> {
+  return slot(() => viaMirrors(query, signal, timeoutMs, readBuffer));
 }
 
 type Entry = { promise: Promise<OsmElement[]>; ctrl: AbortController; refs: number; timer?: ReturnType<typeof setTimeout> };
 const cache = new Map<string, Entry>();
 
 /**
- * Runs an Overpass query, falling back through public mirrors. Identical queries share one request,
- * which is only cancelled once every caller has aborted.
+ * Runs one of the named per-address queries around `p`, falling back through public mirrors.
+ * Identical queries share one request, which is only cancelled once every caller has aborted.
  */
 export function overpass(name: QueryName, p: LatLon, signal?: AbortSignal): Promise<OsmElement[]> {
   const query = queries[name](p);
   let entry = cache.get(query);
   if (!entry) {
     const ctrl = new AbortController();
-    const promise = slot(async () => {
-      let lastError: unknown;
-      for (const endpoint of ENDPOINTS) {
-        if (ctrl.signal.aborted) throw ctrl.signal.reason;
-        try {
-          return await post(endpoint, query, ctrl.signal);
-        } catch (err) {
-          if (ctrl.signal.aborted) throw err;
-          lastError = err;
-        }
-      }
-      throw lastError instanceof Error ? lastError : new Error("All Overpass mirrors failed");
-    });
+    const promise = slot(() => viaMirrors(query, ctrl.signal, 40000, readElements));
     const created: Entry = { promise, ctrl, refs: 0 };
     promise.catch(() => {
       if (cache.get(query) === created) cache.delete(query);

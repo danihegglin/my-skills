@@ -1,7 +1,11 @@
-import { GraduationCap, Plane, ShoppingBasket, Sun, TrainFront, UtensilsCrossed, Volume2 } from "lucide-react";
+import { BellRing, GraduationCap, Map as MapIcon, Plane, ShoppingBasket, Sun, TrainFront, Trophy, UtensilsCrossed, Volume2 } from "lucide-react";
 import { useState } from "react";
+import type { AreaRef } from "../lib/area";
+import { searchAreas } from "../lib/area";
+import type { LatLon } from "../lib/geo";
 import type { Place } from "../lib/geocode";
 import { searchPlaces } from "../lib/geocode";
+import AreaSearch from "./AreaSearch";
 import Logo from "./Logo";
 import SearchBox from "./SearchBox";
 
@@ -34,7 +38,7 @@ const LENSES = [
   },
 ];
 
-export default function Landing({ onSelect }: { onSelect: (p: Place) => void }) {
+export default function Landing({ onSelect, onArea }: { onSelect: (p: Place) => void; onArea: (a: AreaRef, focus?: LatLon) => void }) {
   const [busy, setBusy] = useState<string | null>(null);
 
   async function tryExample(q: string) {
@@ -112,12 +116,15 @@ export default function Landing({ onSelect }: { onSelect: (p: Place) => void }) 
           </div>
         </section>
 
+        <AreaTeaser onArea={onArea} />
+
         <section id="how" className="mx-auto grid max-w-7xl gap-12 px-5 py-16 sm:px-8 lg:grid-cols-[1fr_1.2fr] lg:py-24">
           <div>
             <h2 className="font-display text-[36px] font-bold leading-[1.02] tracking-[-0.03em] sm:text-[48px]">Open data, honest estimates</h2>
             <p className="mt-5 max-w-md text-[16px] leading-relaxed text-ink-2">
-              PropLens runs entirely in your browser. It pulls live open data for the address you enter and models the rest with standard
-              engineering methods. Every number is an estimate made to compare places, not a certified measurement.
+              Reports and area rankings run in your browser: PropLens pulls live open data and models the rest with standard engineering
+              methods. Only alert signups are stored on our server. Every number is an estimate made to compare places, not a certified
+              measurement.
             </p>
           </div>
           <ol className="grid gap-px overflow-hidden rounded-[28px] border border-line bg-line">
@@ -126,6 +133,7 @@ export default function Landing({ onSelect }: { onSelect: (p: Place) => void }) 
               ["Noise model", "Road emission after RLS-90 with typical traffic per road class, attenuation after ISO 9613-2, shielding from the real buildings around you. Levels are given at 4 m height, the reference height used by EU noise mapping."],
               ["Official noise maps", "For Swiss addresses, road and rail levels come from sonBASE, the national noise database of the Federal Office for the Environment."],
               ["Sun and sky", "The sun's position is calculated every five minutes across the year. Building heights come from OpenStreetMap, terrain from the Copernicus elevation model, and real sunshine hours from ERA5 climate data via Open-Meteo."],
+              ["Area ranking and alerts", "An area ranking scores every residential address with a house number in OpenStreetMap, using the same models. Alerts match new Flatfox listings to those addresses every three hours."],
               ["Price estimates", "Rents start from federal statistics per canton and room count, lifted to advertised levels and adjusted for the home and its location. Purchase prices use price-to-rent ratios calibrated on actual sales in canton Zurich. The engine runs in your browser on bundled data."],
             ].map(([title, body], i) => (
               <li key={title} className="flex gap-5 bg-card p-6">
@@ -147,6 +155,74 @@ export default function Landing({ onSelect }: { onSelect: (p: Place) => void }) 
         </div>
       </footer>
     </div>
+  );
+}
+
+const AREA_EXAMPLES = ["8005 Zürich", "Opfikon", "8400 Winterthur", "Kriens"];
+
+/** Entry to the area ranking and listing alerts. */
+function AreaTeaser({ onArea }: { onArea: (a: AreaRef) => void }) {
+  const [busy, setBusy] = useState<string | null>(null);
+  async function tryExample(q: string) {
+    setBusy(q);
+    try {
+      const [first] = await searchAreas(q);
+      if (first) onArea(first);
+    } finally {
+      setBusy(null);
+    }
+  }
+  const points = [
+    { icon: Trophy, title: "Rank a whole area", body: "Every residential address in a postcode or town, scored and sorted. Sort by quiet, sun, schools or shops." },
+    { icon: MapIcon, title: "See it on a map", body: "Each address is a dot coloured by its score, so the quiet streets and sunny blocks stand out at a glance." },
+    { icon: BellRing, title: "Get listing alerts", body: "We check new listings every three hours and email you the ones at addresses that meet your minimum score." },
+  ];
+  return (
+    <section className="bg-forest text-white">
+      <div className="mx-auto grid max-w-7xl gap-12 px-5 py-16 sm:px-8 lg:grid-cols-[1.1fr_1fr] lg:items-center lg:py-24">
+        <div className="min-w-0">
+          <p className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-[13px] font-medium text-white/80">
+            <span className="size-1.5 rounded-full bg-lime" aria-hidden /> New: area ranking and alerts
+          </p>
+          <h2 className="mt-5 font-display text-[36px] font-bold leading-[1.02] tracking-[-0.03em] text-balance sm:text-[48px]">
+            Find the best addresses in a whole postcode
+          </h2>
+          <p className="mt-4 max-w-xl text-[17px] leading-relaxed text-white/75">
+            Pick a postcode, town or district. PropLens scores every home in it with the same models as a full report and tells you when one of the
+            best comes on the market.
+          </p>
+          <div className="mt-8 max-w-xl text-ink">
+            <AreaSearch onSelect={onArea} />
+          </div>
+          <div className="mt-4 flex max-w-xl flex-wrap items-center gap-2 text-[13px]">
+            <span className="text-white/60">Try</span>
+            {AREA_EXAMPLES.map((q) => (
+              <button
+                key={q}
+                onClick={() => tryExample(q)}
+                disabled={!!busy}
+                className="rounded-full border border-white/20 px-3 py-1 text-white/80 transition hover:border-white/50 hover:text-white disabled:opacity-60"
+              >
+                {busy === q ? "Locating…" : q}
+              </button>
+            ))}
+          </div>
+        </div>
+        <ul className="grid gap-3">
+          {points.map(({ icon: Icon, title, body }) => (
+            <li key={title} className="flex gap-4 rounded-[24px] bg-white/[0.06] p-5">
+              <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-lime">
+                <Icon className="size-5 text-ink" aria-hidden />
+              </span>
+              <div>
+                <h3 className="font-display text-[19px] font-bold">{title}</h3>
+                <p className="mt-1 text-[15px] leading-relaxed text-white/70">{body}</p>
+              </div>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </section>
   );
 }
 

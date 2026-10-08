@@ -411,15 +411,16 @@ function nearestPath(ports: Airport[]): { distance: number; airport: string; lan
   return best;
 }
 
-export function analyzeFlights(elements: OsmElement[], proj: Projection, maxDistance = 40000): FlightAnalysis {
+/** `withHeatmap: false` skips the heatmap (and the exposure share) when only the flyover rating is needed. */
+export function analyzeFlights(elements: OsmElement[], proj: Projection, maxDistance = 40000, withHeatmap = true): FlightAnalysis {
   const all = parseAirports(elements, proj);
   const airports = summarize(all, proj, maxDistance);
   const kept = new Set(airports.map((a) => a.id));
   const ports = all.filter((p) => kept.has(p.id));
   const focus = relevantAirport(airports);
   const half = Math.min(30000, Math.max(12000, focus ? focus.distance + 8000 : 15000));
-  const heatmap = flightHeatmap(ports, proj, half);
-  const here = overflight(lanes(ports), 0, 0);
+  const heatmap = withHeatmap ? flightHeatmap(ports, proj, half) : null;
+  const here = heatmap ? overflight(lanes(ports), 0, 0) : 0;
   const rel = focus?.relation ?? null;
   const path = nearestPath(ports);
   const level: FlyoverLevel = !focus

@@ -28,10 +28,10 @@ type PhotonFeature = {
   };
 };
 
-const PHOTON = "https://photon.komoot.io";
+export const PHOTON = "https://photon.komoot.io";
 const LANGS = ["de", "en", "fr", "it"];
 
-function lang() {
+export function lang() {
   const l = (navigator.language || "en").slice(0, 2).toLowerCase();
   return LANGS.includes(l) ? l : "en";
 }

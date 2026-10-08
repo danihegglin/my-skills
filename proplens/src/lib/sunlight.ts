@@ -56,10 +56,13 @@ export type SunInput = {
   terrain: TerrainSamples | null;
   climate: Climate | null;
   year?: number;
+  /** Sun positions per day; pass a memoised `daySamples` when analysing many nearby points. */
+  sampler?: typeof daySamples;
 };
 
 export function analyzeSun(input: SunInput): SunResult {
   const { lat, lon, floor } = input;
+  const samplesFor = input.sampler ?? daySamples;
   const year = input.year ?? new Date().getFullYear();
   const h = observerHeight(floor);
   const buildings = input.skyline ? buildingHorizon(input.skyline, h) : new Float32Array(360);
@@ -73,7 +76,7 @@ export function analyzeSun(input: SunInput): SunResult {
   let annualDirect = 0;
   let annualDaylight = 0;
   for (let m = 0; m < 12; m++) {
-    const samples = daySamples(year, m, 15, lat, lon, STEP_MIN);
+    const samples = samplesFor(year, m, 15, lat, lon, STEP_MIN);
     const daylight = samples.filter((s) => s.altitude > HORIZON_ALT).length * STEP_H;
     const direct = samples.filter(lit).length * STEP_H;
     const days = new Date(Date.UTC(year, m + 1, 0)).getUTCDate();
@@ -90,7 +93,7 @@ export function analyzeSun(input: SunInput): SunResult {
   };
   const keyDays: KeyDay[] = (Object.keys(dates) as KeyDayId[]).map((id) => {
     const [m, d, label] = dates[id];
-    const samples = daySamples(year, m, d, lat, lon, STEP_MIN).map((s) => ({ ...s, lit: lit(s) }));
+    const samples = samplesFor(year, m, d, lat, lon, STEP_MIN).map((s) => ({ ...s, lit: lit(s) }));
     const litSamples = samples.filter((s) => s.lit);
     return {
       id,

@@ -20,6 +20,7 @@ import { fetchMunicipality } from "./municipality";
 import type { OfficialNoise } from "./swissNoise";
 import { fetchOfficialNoise, inSwitzerland } from "./swissNoise";
 import type { TerrainSamples } from "./terrain";
+import type { SectionId } from "./score";
 import { fetchTerrain } from "./terrain";
 
 export type StepId = QueryName | "climate" | "terrain" | "official" | "municipality";
@@ -151,22 +152,10 @@ export function useSun(report: Report | null, floor: number): SunResult | null {
 
 /* ---------- summary ---------- */
 
-export type SectionId = "noise" | "schools" | "shopping" | "sun";
+export type { SectionId } from "./score";
+export { WEIGHTS, overallScore } from "./score";
 /** Map layers: one per scored section, plus flight routes. */
 export type LayerId = SectionId | "flights";
-export const WEIGHTS: Record<SectionId, number> = { noise: 0.3, sun: 0.25, shopping: 0.25, schools: 0.2 };
-
-export function overallScore(scores: Partial<Record<SectionId, number>>): number | null {
-  let total = 0;
-  let weight = 0;
-  for (const [id, w] of Object.entries(WEIGHTS) as [SectionId, number][]) {
-    const s = scores[id];
-    if (s == null) continue;
-    total += s * w;
-    weight += w;
-  }
-  return weight ? Math.round(total / weight) : null;
-}
 
 export type Insight = { section: LayerId; text: string };
 

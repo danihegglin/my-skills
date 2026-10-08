@@ -1,5 +1,5 @@
 import type { LatLon, Projection, XY } from "./geo";
-import { bearing, closestOnSegment, densify, dist, distanceToPolygon, distanceToPolyline, len } from "./geo";
+import { bearing, closestOnSegment, dist, distanceToPolygon, distanceToPolyline, len } from "./geo";
 import type { Airport, AirportKind } from "./airports";
 import { mainRelation, mainRunways, parseAirports } from "./airports";
 import type { OsmElement } from "./osm";
@@ -79,12 +79,26 @@ function makePath(sky: Skyline | null) {
 
 type Piece = { e: number; azFrom: number; azTo: number; closest: XY; r: number; shielded: boolean };
 
+/** Splits a line into pieces of 15 m near the address, growing to 5% of the distance further out. */
+function adaptivePieces(line: XY[]): XY[] {
+  const origin = { x: 0, y: 0 };
+  const out: XY[] = [line[0]];
+  for (let i = 0; i < line.length - 1; i++) {
+    const a = line[i];
+    const b = line[i + 1];
+    const step = Math.max(15, 0.05 * closestOnSegment(origin, a, b).d);
+    const n = Math.max(1, Math.ceil(dist(a, b) / step));
+    for (let k = 1; k <= n; k++) out.push({ x: a.x + ((b.x - a.x) * k) / n, y: a.y + ((b.y - a.y) * k) / n });
+  }
+  return out;
+}
+
 /**
  * Splits a line source into short pieces and returns each piece's energy factor relative to an
  * infinite straight line at 25 m (the reference distance of the emission levels below).
  */
-function linePieces(line: XY[], path: (p: XY) => Path): Piece[] {
-  const pts = densify(line, 15);
+function linePieces(line: XY[], path: (p: XY) => Path, withAzimuth = false): Piece[] {
+  const pts = adaptivePieces(line);
   const origin = { x: 0, y: 0 };
   const out: Piece[] = [];
   for (let i = 0; i < pts.length - 1; i++) {
@@ -102,8 +116,9 @@ function linePieces(line: XY[], path: (p: XY) => Path): Piece[] {
     const { att, shielded } = path(c.point);
     out.push({
       e: 10 ** (-att / 10) * (25 / dPerp) * (dTheta / Math.PI),
-      azFrom: bearing(origin, a),
-      azTo: bearing(origin, b),
+      // Only rail needs the directions (to merge parallel tracks); skip the trigonometry for roads.
+      azFrom: withAzimuth ? bearing(origin, a) : 0,
+      azTo: withAzimuth ? bearing(origin, b) : 0,
       closest: c.point,
       r: c.d,
       shielded,
@@ -307,6 +322,7 @@ export function analyzeNoise(input: NoiseInput): NoiseResult {
   const lineWays: (NoiseSource & { group: string })[] = [];
   const railBinsDay = new Float64Array(360);
   const railBinsNight = new Float64Array(360);
+  const wayDay = new Float64Array(360);
   const railGroups = new Map<string, NoiseSource & { eDay: number; eNight: number }>();
 
   for (const e of input.streets ?? []) {
@@ -318,13 +334,14 @@ export function analyzeNoise(input: NoiseInput): NoiseResult {
     if (t.highway) {
       const lv = roadLevels(t);
       if (!lv) continue;
+      const [dayE, nightE] = [energy(lv.day), energy(lv.night)];
       let eDay = 0;
       let eNight = 0;
       let closest: Piece | null = null;
       for (const line of xy)
         for (const piece of linePieces(line, path)) {
-          eDay += energy(lv.day) * piece.e;
-          eNight += energy(lv.night) * piece.e;
+          eDay += dayE * piece.e;
+          eNight += nightE * piece.e;
           if (!closest || piece.r < closest.r) closest = piece;
         }
       if (!closest) continue;
@@ -350,23 +367,25 @@ export function analyzeNoise(input: NoiseInput): NoiseResult {
       const lv = railLevels(t);
       if (!lv) continue;
       // Parallel tracks share one line's traffic: per direction, keep the loudest track only.
-      const wayDay = new Float64Array(360);
+      const [dayE, nightE] = [energy(lv.day), energy(lv.night)];
+      wayDay.fill(0);
       let eDay = 0;
       let eNight = 0;
       let closest: Piece | null = null;
       for (const line of xy)
-        for (const piece of linePieces(line, path)) {
-          spread(wayDay, piece, energy(lv.day) * piece.e);
-          eDay += energy(lv.day) * piece.e;
-          eNight += energy(lv.night) * piece.e;
+        for (const piece of linePieces(line, path, true)) {
+          spread(wayDay, piece, dayE * piece.e);
+          eDay += dayE * piece.e;
+          eNight += nightE * piece.e;
           if (!closest || piece.r < closest.r) closest = piece;
         }
       if (!closest) continue;
-      const ratio = lv.night - lv.day;
+      const ratio = 10 ** ((lv.night - lv.day) / 10);
       for (let b = 0; b < 360; b++) {
-        if (wayDay[b] > railBinsDay[b]) railBinsDay[b] = wayDay[b];
-        const n = wayDay[b] * 10 ** (ratio / 10);
-        if (n > railBinsNight[b]) railBinsNight[b] = n;
+        const w = wayDay[b];
+        if (w === 0) continue;
+        if (w > railBinsDay[b]) railBinsDay[b] = w;
+        if (w * ratio > railBinsNight[b]) railBinsNight[b] = w * ratio;
       }
       const name = t.name || lv.label;
       const key = `${name}|${lv.label}`;

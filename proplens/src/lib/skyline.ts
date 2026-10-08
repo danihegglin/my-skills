@@ -88,9 +88,11 @@ export type Skyline = {
   radius: number;
 };
 
-export function buildSkyline(buildings: Building[], radius: number): Skyline {
+/** `ownId` names the address's own building when it is already known (as in the area ranking). */
+export function buildSkyline(buildings: Building[], radius: number, ownId?: number): Skyline {
   const origin = { x: 0, y: 0 };
-  let own: Building | null = buildings.find((b) => pointInPolygon(origin, b.ring)) ?? null;
+  let own: Building | null =
+    (ownId != null ? buildings.find((b) => b.id === ownId) : buildings.find((b) => pointInPolygon(origin, b.ring))) ?? null;
   if (!own) {
     // Address points usually sit inside the footprint or on its entrance; allow a small offset.
     let best = 6;

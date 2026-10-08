@@ -1,10 +1,14 @@
-import { AlertTriangle, Check, CircleCheck, CircleDashed, Link2, LoaderCircle, MapPin, RotateCcw, TriangleAlert, X } from "lucide-react";
+import { AlertTriangle, ArrowRight, Check, CircleCheck, CircleDashed, Link2, LoaderCircle, Map as MapIcon, MapPin, RotateCcw, TriangleAlert, X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import type { AreaRef } from "../lib/area";
+import { areasAt } from "../lib/area";
+import type { LatLon } from "../lib/geo";
 import type { Place } from "../lib/geocode";
 import { reversePlace } from "../lib/geocode";
 import type { LayerId, Report, SectionId, StepId } from "../lib/report";
 import { STEP_LABELS, insights, overallScore, useReport, useSun } from "../lib/report";
 import type { SunResult } from "../lib/sunlight";
+import AlertSignup from "./AlertSignup";
 import { SchoolsSection, ShoppingSection } from "./AmenitySections";
 import FlightsSection from "./FlightsSection";
 import Logo from "./Logo";
@@ -20,13 +24,14 @@ type Props = {
   floor: number;
   onFloor: (f: number) => void;
   onSelect: (p: Place | null) => void;
+  onArea: (area: AreaRef, focus?: LatLon) => void;
 };
 
 const MAP_LAYERS: LayerId[] = ["noise", "flights", "schools", "shopping", "sun"];
 
 const SECTION_LABELS: Record<SectionId, string> = { noise: "Quiet", schools: "Schools", shopping: "Shopping", sun: "Sunlight" };
 
-export default function ReportView({ place, floor, onFloor, onSelect }: Props) {
+export default function ReportView({ place, floor, onFloor, onSelect, onArea }: Props) {
   const [attempt, setAttempt] = useState(0);
   const { report, steps, failed } = useReport(place, attempt);
   const sun = useSun(report, floor);
@@ -132,6 +137,7 @@ export default function ReportView({ place, floor, onFloor, onSelect }: Props) {
                 {sun && <SunSection ref={(el) => { refs.current.sun = el; }} report={report} sun={sun} floor={floor} onFloor={onFloor} />}
                 <PriceSection report={report} sun={sun} floor={floor} onFloor={onFloor} />
                 <Partial steps={steps} />
+                <AreaAlerts place={place} onArea={onArea} />
               </>
             )}
           </div>
@@ -293,5 +299,44 @@ function CopyLink() {
       {done ? <Check className="size-3.5" aria-hidden /> : <Link2 className="size-3.5" aria-hidden />}
       {done ? "Link copied" : "Copy link"}
     </button>
+  );
+}
+
+/** Links to the area rankings this address belongs to, and the alert signup for them. */
+function AreaAlerts({ place, onArea }: { place: Place; onArea: (area: AreaRef, focus?: LatLon) => void }) {
+  const [areas, setAreas] = useState<AreaRef[] | null>(null);
+  useEffect(() => {
+    const ctrl = new AbortController();
+    setAreas(null);
+    areasAt(place.lat, place.lon, place.title, ctrl.signal).then((a) => setAreas(a), () => {});
+    return () => ctrl.abort();
+  }, [place]);
+  if (!areas?.length) return null;
+  // Large areas are ranked in a window; centre it on this address.
+  const focus = { lat: place.lat, lon: place.lon };
+  return (
+    <>
+      <section className="rounded-[28px] bg-forest p-5 text-white animate-rise sm:p-8" aria-label="Area ranking">
+        <h2 className="font-display text-[26px] font-bold leading-tight tracking-tight">Find the best addresses nearby</h2>
+        <p className="mt-1 max-w-xl text-[15px] leading-relaxed text-white/75">
+          Rank every home in the area by the PropLens score and compare them on one map: quietest streets, sunniest buildings, shortest walks.
+        </p>
+        <div className="mt-5 flex flex-wrap gap-2">
+          {areas.map((a) => (
+            <button
+              key={a.id}
+              onClick={() => onArea(a, focus)}
+              className="group inline-flex items-center gap-2.5 rounded-full bg-white/10 py-2 pl-3 pr-4 text-left transition hover:bg-white/20"
+            >
+              <MapIcon className="size-4 text-lime" aria-hidden />
+              <span className="text-[15px] font-medium">{a.label}</span>
+              <span className="text-[13px] text-white/60">{a.detail.split(" · ")[0]}</span>
+              <ArrowRight className="size-4 text-lime transition-transform group-hover:translate-x-0.5" aria-hidden />
+            </button>
+          ))}
+        </div>
+      </section>
+      <AlertSignup areas={areas} focus={focus} onExplore={(a) => onArea(a, focus)} />
+    </>
   );
 }

@@ -121,7 +121,7 @@ export default function MapPanel({ place, report, sun, layer, onLayer, onPick }:
 }
 
 /** Vector basemap from OpenFreeMap (no API key), rendered by MapLibre inside Leaflet. */
-function BaseMap() {
+export function BaseMap() {
   const map = useMap();
   useEffect(() => {
     const layer = maplibreGL({ style: "https://tiles.openfreemap.org/styles/positron" });
