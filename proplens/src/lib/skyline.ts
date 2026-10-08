@@ -1,0 +1,174 @@
+import type { LatLon, Projection, XY } from "./geo";
+import { bearing, distanceToPolygon, len, pointInPolygon, polygonArea, rayHit } from "./geo";
+import type { OsmElement } from "./osm";
+import { elementLines } from "./osm";
+
+export type Building = {
+  id: number;
+  ring: XY[];
+  latlngs: LatLon[];
+  height: number;
+  /** Floors from OSM, when mapped. */
+  levels: number | null;
+  /** True when neither height nor floors were mapped and we fell back to a typical value. */
+  estimated: boolean;
+  /** Open structures (canopies, carports) cast shade but don't block sound. */
+  solid: boolean;
+  kind: string;
+};
+
+const TYPICAL_HEIGHT: Record<string, number> = {
+  house: 8, detached: 8, semidetached_house: 8, terrace: 8, bungalow: 4.5, farm: 8, cabin: 4,
+  residential: 11, apartments: 14, dormitory: 14, hotel: 15,
+  commercial: 12, office: 14, retail: 8, supermarket: 7, kiosk: 3,
+  industrial: 9, warehouse: 9, manufacture: 9, hangar: 10,
+  church: 16, cathedral: 25, chapel: 8, mosque: 12, synagogue: 12, temple: 10,
+  school: 12, kindergarten: 6, university: 16, college: 14, hospital: 18, public: 12, civic: 12, government: 14,
+  train_station: 12, transportation: 8, stadium: 18, sports_hall: 10, parking: 9,
+  garage: 3, garages: 3, shed: 3, hut: 3, carport: 3, roof: 4, greenhouse: 3, service: 3,
+  toilets: 3, container: 3, allotment_house: 3, static_caravan: 3, construction: 9,
+};
+const OPEN_STRUCTURES = new Set(["roof", "carport"]);
+
+function parseMetres(v?: string): number | null {
+  if (!v) return null;
+  const m = v.replace(",", ".").match(/^\s*([\d.]+)\s*(m|ft|')?/);
+  if (!m) return null;
+  const n = Number(m[1]);
+  if (!Number.isFinite(n) || n <= 0) return null;
+  return m[2] === "ft" || m[2] === "'" ? n * 0.3048 : n;
+}
+
+export function buildingHeight(tags: Record<string, string>): { height: number; levels: number | null; estimated: boolean } {
+  const levels = parseMetres(tags["building:levels"]);
+  const height = parseMetres(tags.height);
+  if (height) return { height: Math.min(height, 400), levels, estimated: false };
+  if (levels) {
+    const roof = parseMetres(tags["roof:levels"]) ?? 0;
+    return { height: levels * 3 + roof * 1.5 + 1, levels, estimated: false };
+  }
+  return { height: TYPICAL_HEIGHT[tags.building] ?? 10, levels: null, estimated: true };
+}
+
+export function parseBuildings(elements: OsmElement[], proj: Projection): Building[] {
+  const out: Building[] = [];
+  for (const e of elements) {
+    const tags = e.tags ?? {};
+    if (!tags.building || tags.building === "no") continue;
+    const line = elementLines(e)[0];
+    if (!line || line.length < 4) continue;
+    const { height, levels, estimated } = buildingHeight(tags);
+    out.push({
+      id: e.id,
+      ring: line.map((p) => proj.toXY(p.lat, p.lon)),
+      latlngs: line,
+      height,
+      levels,
+      estimated,
+      solid: !OPEN_STRUCTURES.has(tags.building),
+      kind: tags.building,
+    });
+  }
+  return out;
+}
+
+type Hit = { d: number; h: number; solid: boolean };
+
+export type Skyline = {
+  /** The building the address sits in (or right next to), excluded from shading/shielding. */
+  own: Building | null;
+  others: Building[];
+  /** Share of ground covered by buildings within the scan radius. */
+  coverage: number;
+  /** Share of surrounding buildings whose height had to be guessed. */
+  estimatedShare: number;
+  /** Per 1° azimuth bin: distance to the first solid building at least 3 m tall. */
+  screenDist: Float32Array;
+  hits: Hit[][];
+  radius: number;
+};
+
+export function buildSkyline(buildings: Building[], radius: number): Skyline {
+  const origin = { x: 0, y: 0 };
+  let own: Building | null = buildings.find((b) => pointInPolygon(origin, b.ring)) ?? null;
+  if (!own) {
+    // Address points usually sit inside the footprint or on its entrance; allow a small offset.
+    let best = 6;
+    for (const b of buildings) {
+      const d = distanceToPolygon(origin, b.ring);
+      if (d < best) {
+        best = d;
+        own = b;
+      }
+    }
+  }
+  const others = buildings.filter((b) => b !== own);
+  const hits: Hit[][] = Array.from({ length: 360 }, () => []);
+  const screenDist = new Float32Array(360).fill(Infinity);
+  let area = 0;
+
+  for (const b of buildings) {
+    const c = b.ring.reduce((acc, p) => ({ x: acc.x + p.x / b.ring.length, y: acc.y + p.y / b.ring.length }), origin);
+    if (len(c) <= radius) area += polygonArea(b.ring);
+  }
+
+  for (const b of others) {
+    const base = bearing(origin, b.ring[0]);
+    let lo = 0;
+    let hi = 0;
+    for (const p of b.ring) {
+      const rel = ((bearing(origin, p) - base + 540) % 360) - 180;
+      lo = Math.min(lo, rel);
+      hi = Math.max(hi, rel);
+    }
+    if (hi - lo >= 180) continue;
+    let found = false;
+    const first = Math.floor(base + lo);
+    const last = Math.floor(base + hi);
+    for (let k = first; k <= last; k++) {
+      const bin = ((k % 360) + 360) % 360;
+      let d = Infinity;
+      for (let i = 0; i < b.ring.length - 1; i++) {
+        const t = rayHit(bin + 0.5, b.ring[i], b.ring[i + 1]);
+        if (t != null && t < d) d = t;
+      }
+      if (d === Infinity) continue;
+      found = true;
+      record(bin, d, b);
+    }
+    if (!found) {
+      // Tiny or distant footprint that slips between bin centres: count it once.
+      const bin = Math.floor(bearing(origin, b.ring[0])) % 360;
+      record(bin, Math.min(...b.ring.map(len)), b);
+    }
+  }
+
+  function record(bin: number, d: number, b: Building) {
+    hits[bin].push({ d, h: b.height, solid: b.solid });
+    if (b.solid && b.height >= 3 && d < screenDist[bin]) screenDist[bin] = d;
+  }
+
+  return {
+    own,
+    others,
+    coverage: Math.min(0.9, area / (Math.PI * radius * radius)),
+    estimatedShare: others.length ? others.filter((b) => b.estimated).length / others.length : 0,
+    screenDist,
+    hits,
+    radius,
+  };
+}
+
+/** Elevation angle (degrees) of the building skyline per 1° azimuth bin, for an eye at `observerHeight` m. */
+export function buildingHorizon(s: Skyline, observerHeight: number): Float32Array {
+  const out = new Float32Array(360);
+  for (let b = 0; b < 360; b++) {
+    let best = 0;
+    for (const hit of s.hits[b]) {
+      const angle = (Math.atan2(hit.h - observerHeight, Math.max(hit.d, 1)) * 180) / Math.PI;
+      if (angle > best) best = angle;
+    }
+    out[b] = best;
+  }
+  return out;
+}
