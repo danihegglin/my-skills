@@ -6,11 +6,10 @@ import {
   type CheckResult,
   DEFAULT_TLDS,
   FREE,
-  expand,
   normalizeDomain,
 } from "../shared/names";
 import { check, getConfig, suggest } from "./api";
-import { Results } from "./Results";
+import { DomainList, Results } from "./Results";
 
 type Mode = "idea" | "check";
 type Phase = "idle" | "thinking" | "checking" | "done";
@@ -24,7 +23,7 @@ interface Query {
 const RECENT_KEY = "domainikus:recent";
 const EXAMPLES = ["a bakery in Zürich that delivers fresh bread", "app to book dog walkers nearby", "calm meditation timer"];
 
-const splitList = (s: string, sep: RegExp = /,/) => s.split(sep).map((x) => x.trim()).filter(Boolean);
+const splitList = (s: string) => s.split(",").map((x) => x.trim()).filter(Boolean);
 
 function readUrl(): Query {
   const p = new URLSearchParams(location.search);
@@ -68,7 +67,9 @@ async function mapLimit<T>(items: T[], limit: number, fn: (item: T) => Promise<v
 export default function App() {
   const initial = useMemo(readUrl, []);
   const [mode, setMode] = useState<Mode>(initial.mode);
-  const [text, setText] = useState(initial.text);
+  const [ideaText, setIdeaText] = useState(initial.mode === "idea" ? initial.text : "");
+  const [domainText, setDomainText] = useState(initial.mode === "check" ? initial.text : "");
+  const text = mode === "idea" ? ideaText : domainText;
   const [tlds, setTlds] = useState<string[]>(initial.tlds);
   const [extra, setExtra] = useState("");
   const [synonyms, setSynonyms] = useState(true);
@@ -80,6 +81,7 @@ export default function App() {
   const [results, setResults] = useState<Record<string, CheckResult>>({});
   const [total, setTotal] = useState(0);
   const [phase, setPhase] = useState<Phase>("idle");
+  const [runMode, setRunMode] = useState<Mode>(initial.mode);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [recent, setRecent] = useState<Query[]>(loadRecent);
@@ -102,7 +104,7 @@ export default function App() {
     setResults({});
     setRows([]);
 
-    const query = { ...q, text: q.text.trim() };
+    const query = { ...q, text: q.mode === "idea" ? q.text.trim() : q.text.replace(/\s+/g, "") };
     if (!query.text) return setError(query.mode === "idea" ? "Describe your idea first." : "Enter a domain or a name.");
     if (!query.tlds.length) return setError("Pick at least one domain ending.");
     writeUrl(query);
@@ -121,16 +123,16 @@ export default function App() {
         cols = query.tlds;
         domains = names.flatMap((n) => cols.map((t) => `${n.name}.${t}`));
       } else {
-        const targets = expand(splitList(query.text, /[\s,]+/), query.tlds);
-        const valid = targets.map(normalizeDomain).filter((d): d is string => d !== null);
-        const invalid = targets.filter((t) => normalizeDomain(t) === null);
-        if (invalid.length) setNotice(`Skipped ${invalid.length === 1 ? "an invalid name" : "invalid names"}: ${invalid.join(", ")}`);
-        domains = [...new Set(valid)].slice(0, 300);
-        const split = domains.map((d) => [d.slice(0, d.indexOf(".")), d.slice(d.indexOf(".") + 1)]);
-        names = [...new Set(split.map(([n]) => n))].map((name) => ({ name, source: "input", note: "" }));
-        cols = [...new Set(split.map(([, t]) => t))];
+        // One name or domain: "brotli" checks every selected ending, "brotli.ch" checks .ch first, then the rest.
+        const typed = query.text.includes(".") ? normalizeDomain(query.text) : normalizeDomain(`${query.text}.com`);
+        if (!typed) throw new Error("That isn’t a valid domain name. Use letters, digits and hyphens, like brotli or brotli.ch.");
+        const name = typed.slice(0, typed.indexOf("."));
+        cols = [...new Set([...(query.text.includes(".") ? [typed.slice(name.length + 1)] : []), ...query.tlds])];
+        names = [{ name, source: "input", note: "" }];
+        domains = cols.map((t) => `${name}.${t}`);
       }
       if (ctrl.signal.aborted) return;
+      setRunMode(query.mode);
       setRows(names);
       setColumns(cols);
       setTotal(domains.length);
@@ -169,7 +171,7 @@ export default function App() {
 
   function pick(q: Query) {
     setMode(q.mode);
-    setText(q.text);
+    (q.mode === "idea" ? setIdeaText : setDomainText)(q.text);
     setTlds(q.tlds);
     void run(q);
   }
@@ -214,29 +216,46 @@ export default function App() {
                 className={mode === m ? "tab active" : "tab"}
                 onClick={() => setMode(m)}
               >
-                {m === "idea" ? "Describe an idea" : "Check domains"}
+                {m === "idea" ? "Describe an idea" : "Search a domain"}
               </button>
             ))}
           </div>
 
           <div className="field">
             <label htmlFor="q" className="sr-only">
-              {mode === "idea" ? "Your idea" : "Domains or names"}
+              {mode === "idea" ? "Your idea" : "Domain or name"}
             </label>
-            <textarea
-              id="q"
-              rows={2}
-              value={text}
-              maxLength={mode === "idea" ? 300 : 4000}
-              placeholder={mode === "idea" ? "e.g. a bakery in Zürich that delivers fresh bread" : "e.g. brotli.ch, quickstay, bäckerei.ch"}
-              onChange={(e) => setText(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                  e.preventDefault();
-                  void run({ mode, text, tlds });
-                }
-              }}
-            />
+            {mode === "idea" ? (
+              <textarea
+                id="q"
+                rows={2}
+                value={ideaText}
+                maxLength={300}
+                placeholder="e.g. a bakery in Zürich that delivers fresh bread"
+                onChange={(e) => setIdeaText(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    void run({ mode, text, tlds });
+                  }
+                }}
+              />
+            ) : (
+              <input
+                id="q"
+                type="search"
+                className="domain-input"
+                value={domainText}
+                maxLength={253}
+                placeholder="brotli or brotli.ch"
+                inputMode="url"
+                autoCapitalize="off"
+                autoCorrect="off"
+                autoComplete="off"
+                spellCheck={false}
+                onChange={(e) => setDomainText(e.target.value.replace(/\s+/g, ""))}
+              />
+            )}
             <button type="submit" className="go" disabled={phase === "thinking" || phase === "checking"}>
               {phase === "thinking" || phase === "checking" ? "Searching…" : "Search"}
             </button>
@@ -309,7 +328,12 @@ export default function App() {
           </section>
         )}
 
-        {rows.length > 0 && <Results rows={rows} columns={columns} results={results} pending={phase === "checking"} />}
+        {rows.length > 0 &&
+          (runMode === "check" ? (
+            <DomainList name={rows[0].name} endings={columns} results={results} pending={phase === "checking"} />
+          ) : (
+            <Results rows={rows} columns={columns} results={results} pending={phase === "checking"} />
+          ))}
       </main>
 
       <footer className="foot">

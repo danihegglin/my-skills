@@ -21,20 +21,86 @@ interface Props {
   pending: boolean;
 }
 
-export function Results({ rows, columns, results, pending }: Props) {
-  const [freeOnly, setFreeOnly] = useState(false);
-  const [allFree, setAllFree] = useState(false);
+/** Copies a domain to the clipboard; `toast` is the confirmation to render. */
+function useCopy() {
   const [copied, setCopied] = useState<string | null>(null);
-
   useEffect(() => {
     if (!copied) return;
     const t = setTimeout(() => setCopied(null), 1600);
     return () => clearTimeout(t);
   }, [copied]);
-
   const copy = (domain: string) => {
     navigator.clipboard?.writeText(display(domain)).then(() => setCopied(display(domain)), () => {});
   };
+  const toast = (
+    <div className={copied ? "toast show" : "toast"} role="status">
+      {copied && <>Copied {copied}</>}
+    </div>
+  );
+  return { copy, toast };
+}
+
+const STATUS_TEXT: Record<CheckResult["status"], string> = {
+  available: "Free",
+  likely_available: "Probably free",
+  taken: "Taken",
+  invalid: "Invalid",
+  unknown: "Couldn’t check",
+};
+
+/** Results for one name across endings, as a simple list. */
+export function DomainList({ name, endings, results, pending }: { name: string; endings: string[]; results: Record<string, CheckResult>; pending: boolean }) {
+  const { copy, toast } = useCopy();
+  return (
+    <section className="results">
+      <ul className="domain-list">
+        {endings.map((t) => {
+          const domain = `${name}.${t}`;
+          const r = results[domain];
+          const status = r?.status;
+          const isFree = status !== undefined && FREE.includes(status);
+          return (
+            <li key={t} className={`row ${status ?? "pending"}`}>
+              <span className="domain">
+                {display(name)}
+                <span className="ending">.{t}</span>
+              </span>
+              <span className="state">
+                {r ? (
+                  <span className={`badge ${status}`} title={r.detail || undefined}>
+                    {STATUS_TEXT[r.status]}
+                  </span>
+                ) : (
+                  <span className={pending ? "cell pending" : "badge unknown"} aria-label="checking">
+                    {pending ? null : STATUS_TEXT.unknown}
+                  </span>
+                )}
+              </span>
+              <span className="action">
+                {isFree && (
+                  <button type="button" className="link-btn" onClick={() => copy(domain)}>
+                    Copy
+                  </button>
+                )}
+                {status === "taken" && (
+                  <a className="link-btn" href={`https://${domain}`} target="_blank" rel="noopener noreferrer">
+                    Visit
+                  </a>
+                )}
+              </span>
+            </li>
+          );
+        })}
+      </ul>
+      {toast}
+    </section>
+  );
+}
+
+export function Results({ rows, columns, results, pending }: Props) {
+  const [freeOnly, setFreeOnly] = useState(false);
+  const [allFree, setAllFree] = useState(false);
+  const { copy, toast } = useCopy();
 
   const free = Object.values(results)
     .filter((r) => FREE.includes(r.status))
@@ -118,9 +184,7 @@ export function Results({ rows, columns, results, pending }: Props) {
         <li><span className="cell unknown">?</span> couldn’t check</li>
       </ul>
 
-      <div className={copied ? "toast show" : "toast"} role="status">
-        {copied && <>Copied {copied}</>}
-      </div>
+      {toast}
     </section>
   );
 }
