@@ -16,7 +16,18 @@ Layer 'ch.bafu.laerm-strassenlaerm_tag_full'
   Feature 0: 
     ch.bafu.laerm-strassenlaerm_tag.value_0.name = '60.4'
 `;
-    expect(parseFeatureInfo(text)).toEqual({ road: { day: 60.4, night: null }, rail: { day: null, night: 4 } });
+    expect(parseFeatureInfo(text)).toEqual({ road: { day: 60.4, night: null }, rail: { day: null, night: 4 }, air: { day: null, night: null } });
+  });
+
+  it("reads the aircraft noise cadastre's assessment level", () => {
+    const text = `GetFeatureInfo results:
+
+Layer 'ch.bazl.laermbelastungskataster-zivilflugplaetze_klein-grossflugzeuge_gfi'
+  Feature 48794: 
+    Beurteilungspegel_dBA = '58'
+    Lärmbelastungstyp = 'OverallTrafficDay_Lr'
+`;
+    expect(parseFeatureInfo(text).air).toEqual({ day: 58, night: null });
   });
 });
 

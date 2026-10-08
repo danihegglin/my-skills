@@ -87,7 +87,7 @@ describe("noise propagation", () => {
 
   it("lets official values override modelled road and rail levels", () => {
     const modelled = run([way(primary, eastWest(25))]);
-    const official = withOfficial(modelled, { road: { day: 70, night: 61 }, rail: { day: null, night: null } });
+    const official = withOfficial(modelled, { road: { day: 70, night: 61 }, rail: { day: null, night: null }, air: { day: null, night: null } });
     expect(category(official, "road").official).toEqual(expect.objectContaining({ day: 70, night: 61 }));
     expect(official.day).toBeGreaterThan(69.9);
     expect(category(official, "rail").official).toBeUndefined();

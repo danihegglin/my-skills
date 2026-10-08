@@ -1,9 +1,17 @@
 import { toLv95 } from "./geo";
 
-/** Official Swiss noise exposure (sonBASE, Federal Office for the Environment), dB(A). */
-export type OfficialNoise = {
-  road: { day: number | null; night: number | null };
-  rail: { day: number | null; night: number | null };
+type Levels = { day: number | null; night: number | null };
+
+/**
+ * Official Swiss noise exposure, dB(A): road and rail from sonBASE (Federal Office for the Environment),
+ * aircraft from the noise cadastres of the Federal Office of Civil Aviation (daytime only).
+ */
+export type OfficialNoise = { road: Levels; rail: Levels; air: Levels };
+
+export const OFFICIAL_SOURCE = {
+  road: "sonBASE · Swiss Federal Office for the Environment",
+  rail: "sonBASE · Swiss Federal Office for the Environment",
+  air: "aircraft noise cadastre · Swiss Federal Office of Civil Aviation",
 };
 
 const LAYERS = {
@@ -11,6 +19,7 @@ const LAYERS = {
   "ch.bafu.laerm-strassenlaerm_nacht": ["road", "night"],
   "ch.bafu.laerm-bahnlaerm_tag": ["rail", "day"],
   "ch.bafu.laerm-bahnlaerm_nacht": ["rail", "night"],
+  "ch.bazl.laermbelastungskataster-zivilflugplaetze_klein-grossflugzeuge": ["air", "day"],
 } as const;
 
 /** Rough bounding box of Switzerland, so we only ask geo.admin.ch about Swiss points. */
@@ -19,11 +28,12 @@ export function inSwitzerland(lat: number, lon: number) {
 }
 
 export function parseFeatureInfo(text: string): OfficialNoise {
-  const out: OfficialNoise = { road: { day: null, night: null }, rail: { day: null, night: null } };
+  const out: OfficialNoise = { road: { day: null, night: null }, rail: { day: null, night: null }, air: { day: null, night: null } };
   const blocks = text.split(/Layer '/).slice(1);
   for (const block of blocks) {
-    const layer = block.slice(0, block.indexOf("'")).replace(/_full$/, "") as keyof typeof LAYERS;
-    const match = block.match(/value_0\.name = '([\d.]+)'/);
+    const layer = block.slice(0, block.indexOf("'")).replace(/_(full|gfi)$/, "") as keyof typeof LAYERS;
+    // Raster layers report a pixel value; the aircraft cadastre reports the contour's assessment level.
+    const match = block.match(/value_0\.name = '([\d.]+)'/) ?? block.match(/Beurteilungspegel_dBA = '([\d.]+)'/);
     const target = LAYERS[layer];
     if (!target || !match) continue;
     const [kind, period] = target;

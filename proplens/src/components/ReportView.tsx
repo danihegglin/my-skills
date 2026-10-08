@@ -2,10 +2,11 @@ import { AlertTriangle, Check, CircleCheck, CircleDashed, Link2, LoaderCircle, M
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Place } from "../lib/geocode";
 import { reversePlace } from "../lib/geocode";
-import type { Report, SectionId, StepId } from "../lib/report";
+import type { LayerId, Report, SectionId, StepId } from "../lib/report";
 import { STEP_LABELS, insights, overallScore, useReport, useSun } from "../lib/report";
 import type { SunResult } from "../lib/sunlight";
 import { SchoolsSection, ShoppingSection } from "./AmenitySections";
+import FlightsSection from "./FlightsSection";
 import Logo from "./Logo";
 import MapPanel from "./MapPanel";
 import NoiseSection from "./NoiseSection";
@@ -26,8 +27,8 @@ export default function ReportView({ place, floor, onFloor, onSelect }: Props) {
   const [attempt, setAttempt] = useState(0);
   const { report, steps, failed } = useReport(place, attempt);
   const sun = useSun(report, floor);
-  const [layer, setLayer] = useState<SectionId>("noise");
-  const refs = useRef<Partial<Record<SectionId, HTMLElement | null>>>({});
+  const [layer, setLayer] = useState<LayerId>("noise");
+  const refs = useRef<Partial<Record<LayerId, HTMLElement | null>>>({});
   const manual = useRef(0);
 
   // Follow the section in view with the map layer.
@@ -36,8 +37,10 @@ export default function ReportView({ place, floor, onFloor, onSelect }: Props) {
     const obs = new IntersectionObserver(
       (entries) => {
         if (Date.now() - manual.current < 900) return;
+        // Only where the map stays beside the text; on phones it scrolls away, so keep the chosen layer.
+        if (!matchMedia("(min-width: 1024px)").matches) return;
         const visible = entries.filter((e) => e.isIntersecting).sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
-        const id = visible?.target.getAttribute("data-section") as SectionId | undefined;
+        const id = visible?.target.getAttribute("data-section") as LayerId | undefined;
         if (id) setLayer(id);
       },
       { rootMargin: "-35% 0px -45% 0px", threshold: [0, 0.25, 0.5] },
@@ -46,10 +49,19 @@ export default function ReportView({ place, floor, onFloor, onSelect }: Props) {
     return () => obs.disconnect();
   }, [report]);
 
-  const jump = useCallback((id: SectionId) => {
+  const jump = useCallback((id: LayerId) => {
     manual.current = Date.now();
     setLayer(id);
     refs.current[id]?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, []);
+
+  // Switch the map to a layer and, on narrow screens where the map isn't sticky, bring it into view.
+  const mapRef = useRef<HTMLElement>(null);
+  const showOnMap = useCallback((id: LayerId) => {
+    manual.current = Date.now();
+    setLayer(id);
+    const box = mapRef.current?.getBoundingClientRect();
+    if (box && (box.bottom < 80 || box.top > innerHeight)) mapRef.current!.scrollIntoView({ behavior: "smooth", block: "start" });
   }, []);
 
   const pick = useCallback(
@@ -98,7 +110,7 @@ export default function ReportView({ place, floor, onFloor, onSelect }: Props) {
         </section>
 
         <div className="grid gap-6 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)]">
-          <aside className="h-[52vh] min-h-[320px] lg:sticky lg:top-[84px] lg:h-[calc(100dvh-108px)]">
+          <aside ref={mapRef} className="scroll-mt-20 h-[52vh] min-h-[320px] lg:sticky lg:top-[84px] lg:h-[calc(100dvh-108px)]">
             <MapPanel place={place} report={report} sun={sun} layer={layer} onLayer={jump} onPick={pick} />
           </aside>
           <div className="min-w-0 space-y-6">
@@ -110,6 +122,7 @@ export default function ReportView({ place, floor, onFloor, onSelect }: Props) {
               <>
                 <Insights report={report} sun={sun} onJump={jump} />
                 <NoiseSection ref={(el) => { refs.current.noise = el; }} noise={report.noise} />
+                <FlightsSection ref={(el) => { refs.current.flights = el; }} report={report} onShowMap={() => showOnMap("flights")} />
                 <SchoolsSection ref={(el) => { refs.current.schools = el; }} schools={report.schools} />
                 <ShoppingSection ref={(el) => { refs.current.shopping = el; }} shopping={report.shopping} />
                 {sun && <SunSection ref={(el) => { refs.current.sun = el; }} report={report} sun={sun} floor={floor} onFloor={onFloor} />}
@@ -154,7 +167,7 @@ function ScoreCard({ overall, scores, loading, onJump }: { overall: number | nul
   );
 }
 
-function Insights({ report, sun, onJump }: { report: Report; sun: SunResult | null; onJump: (id: SectionId) => void }) {
+function Insights({ report, sun, onJump }: { report: Report; sun: SunResult | null; onJump: (id: LayerId) => void }) {
   const { good, bad } = insights(report, sun);
   if (!good.length && !bad.length) return null;
   return (

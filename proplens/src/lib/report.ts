@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import type { ShoppingResult, SchoolsResult } from "./amenities";
 import { analyzeSchools, analyzeShopping } from "./amenities";
+import type { FlightAnalysis } from "./airports";
+import { analyzeFlights } from "./airports";
 import type { Climate } from "./climate";
 import { fetchClimate } from "./climate";
 import type { Place } from "./geocode";
@@ -46,6 +48,8 @@ type Raw = {
 export type Report = {
   place: Place;
   noise: NoiseResult | null;
+  /** Airports within 40 km, flight corridors and the flyover heatmap; null when airport data failed to load. */
+  flights: FlightAnalysis | null;
   schools: SchoolsResult | null;
   shopping: ShoppingResult | null;
   skyline: Skyline | null;
@@ -106,6 +110,7 @@ export function useReport(place: Place | null, attempt: number) {
     return {
       place,
       noise: modelled ? withOfficial(modelled, raw.official ?? null) : null,
+      flights: raw.air ? analyzeFlights(raw.air, proj) : null,
       schools: raw.places ? analyzeSchools(raw.places, proj) : null,
       shopping: raw.places ? analyzeShopping(raw.places, proj, countFrom(raw.places)) : null,
       skyline,
@@ -136,6 +141,8 @@ export function useSun(report: Report | null, floor: number): SunResult | null {
 /* ---------- summary ---------- */
 
 export type SectionId = "noise" | "schools" | "shopping" | "sun";
+/** Map layers: one per scored section, plus flight routes. */
+export type LayerId = SectionId | "flights";
 export const WEIGHTS: Record<SectionId, number> = { noise: 0.3, sun: 0.25, shopping: 0.25, schools: 0.2 };
 
 export function overallScore(scores: Partial<Record<SectionId, number>>): number | null {
@@ -150,7 +157,7 @@ export function overallScore(scores: Partial<Record<SectionId, number>>): number
   return weight ? Math.round(total / weight) : null;
 }
 
-export type Insight = { section: SectionId; text: string };
+export type Insight = { section: LayerId; text: string };
 
 export function insights(report: Report, sun: SunResult | null): { good: Insight[]; bad: Insight[] } {
   const good: Insight[] = [];
@@ -168,9 +175,19 @@ export function insights(report: Report, sun: SunResult | null): { good: Insight
       bad.push({ section: "noise", text: `Busy road: ${road.sources[0].name}, ${formatDistance(road.sources[0].distance)} away (≈${Math.round(level(road))} dB)` });
     if (level(rail) >= 55 && rail.sources[0])
       bad.push({ section: "noise", text: `${rail.sources[0].detail} ${formatDistance(rail.sources[0].distance)} away (≈${Math.round(level(rail))} dB)` });
-    if (air.day >= 50 && air.sources[0])
-      bad.push({ section: "noise", text: `Aircraft noise from ${air.sources[0].name} (≈${Math.round(air.day)} dB)` });
-    else if (air.day < 40 && noise.day < 55) good.push({ section: "noise", text: "Away from airport flight paths" });
+    const exposure = report.flights?.exposure;
+    const port = exposure?.airport;
+    const rel = exposure?.relation;
+    if (exposure?.level === "direct" && port && rel?.arrivalAltitude != null)
+      bad.push({ section: "flights", text: `Direct flyover: under the runway ${rel.landing} approach to ${port.name}, planes ≈ ${rel.arrivalAltitude} m overhead` });
+    else if (exposure?.level === "near" && port)
+      bad.push({
+        section: "flights",
+        text: rel?.position === "alongside" ? `Next to the runway of ${port.name}` : `Near the runway ${rel?.landing} flight path of ${port.name}, ${formatDistance(exposure.pathDistance ?? 0)} to the side`,
+      });
+    else if (level(air) >= 50 && air.sources[0]) bad.push({ section: "flights", text: `Aircraft noise from ${air.sources[0].name} (≈${Math.round(level(air))} dB)` });
+    else if (exposure && (exposure.level === "distant" || exposure.level === "none") && level(air) < 45)
+      good.push({ section: "flights", text: exposure.pathDistance != null ? `Away from flight paths (nearest ${formatDistance(exposure.pathDistance)})` : "No airport flight paths nearby" });
     const lateVenues = night.sources.filter((s) => s.distance < 120 && /Bar|Pub|Nightclub/.test(s.detail)).length;
     if (night.night >= 45 && lateVenues) bad.push({ section: "noise", text: `${lateVenues} bar${lateVenues > 1 ? "s" : ""} or club${lateVenues > 1 ? "s" : ""} within 120 m: lively evenings` });
   }

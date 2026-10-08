@@ -1,9 +1,12 @@
 import type { LatLon, Projection, XY } from "./geo";
 import { bearing, closestOnSegment, densify, dist, distanceToPolygon, distanceToPolyline, len } from "./geo";
+import type { Airport, AirportKind } from "./airports";
+import { mainRelation, mainRunways, parseAirports } from "./airports";
 import type { OsmElement } from "./osm";
 import { elementLines, elementPoint } from "./osm";
 import type { Skyline } from "./skyline";
 import type { OfficialNoise } from "./swissNoise";
+import { OFFICIAL_SOURCE } from "./swissNoise";
 
 export type NoiseCategoryId = "road" | "rail" | "air" | "nightlife" | "other";
 
@@ -210,7 +213,6 @@ export function railLevels(tags: Record<string, string>): { day: number; night: 
 
 /* ---------- aircraft ---------- */
 
-type AirportKind = "major" | "regional" | "military" | "small";
 const AIR_REF: Record<AirportKind, { day: number; night: number }> = {
   // Level at 300 m slant distance from the flight track, day/night.
   major: { day: 66, night: 57 },
@@ -218,94 +220,6 @@ const AIR_REF: Record<AirportKind, { day: number; night: number }> = {
   military: { day: 58, night: 35 },
   small: { day: 50, night: 30 },
 };
-
-type Runway = { a: XY; b: XY; length: number; ref?: string };
-type Airport = {
-  id: string;
-  name: string;
-  code?: string;
-  center: XY;
-  point: LatLon;
-  kind: AirportKind;
-  runways: Runway[];
-  heliport: boolean;
-  paved: boolean;
-  tags: Record<string, string>;
-};
-
-function airports(elements: OsmElement[], proj: Projection): Airport[] {
-  const ports: Airport[] = [];
-  const rawRunways: (Runway & { surface?: string; latlngs: LatLon[] })[] = [];
-  for (const e of elements) {
-    const t = e.tags ?? {};
-    if (t.aeroway === "runway") {
-      const line = elementLines(e)[0];
-      if (!line || line.length < 2) continue;
-      const pts = line.map((p) => proj.toXY(p.lat, p.lon));
-      // Runways are straight: use the two endpoints furthest apart.
-      let a = pts[0];
-      let b = pts[pts.length - 1];
-      for (const p of pts) if (dist(p, a) > dist(a, b)) b = p;
-      for (const p of pts) if (dist(p, b) > dist(a, b)) a = p;
-      rawRunways.push({ a, b, length: dist(a, b), ref: t.ref, surface: t.surface, latlngs: line });
-    } else if (t.aeroway === "aerodrome" || t.aeroway === "heliport") {
-      const pt = elementPoint(e);
-      if (!pt) continue;
-      if (t.disused === "yes" || t.abandoned === "yes") continue;
-      ports.push({
-        id: `${e.type}${e.id}`,
-        name: t["name:en"] || t.name || (t.aeroway === "heliport" ? "Heliport" : "Airfield"),
-        code: t.iata || t.icao,
-        center: proj.toXY(pt.lat, pt.lon),
-        point: pt,
-        kind: t.military === "airfield" || t["aerodrome:type"] === "military" || t.landuse === "military" ? "military" : "small",
-        runways: [],
-        heliport: t.aeroway === "heliport",
-        paved: false,
-        tags: t,
-      });
-    }
-  }
-  // Merge runway pieces that share an airport and designation.
-  for (const r of rawRunways) {
-    const mid = { x: (r.a.x + r.b.x) / 2, y: (r.a.y + r.b.y) / 2 };
-    let owner: Airport | null = null;
-    let best = 5000;
-    for (const p of ports) {
-      if (p.heliport) continue;
-      const d = dist(p.center, mid);
-      if (d < best) {
-        best = d;
-        owner = p;
-      }
-    }
-    if (!owner) {
-      owner = { id: `rwy${ports.length}`, name: "Airstrip", center: mid, point: proj.toLatLon(mid), kind: "small", runways: [], heliport: false, paved: false, tags: {} };
-      ports.push(owner);
-    }
-    const same = r.ref ? owner.runways.find((x) => x.ref === r.ref) : undefined;
-    if (same) {
-      const ends = [same.a, same.b, r.a, r.b];
-      let pair: [XY, XY] = [same.a, same.b];
-      for (const p of ends) for (const q of ends) if (dist(p, q) > dist(pair[0], pair[1])) pair = [p, q];
-      same.a = pair[0];
-      same.b = pair[1];
-      same.length = dist(pair[0], pair[1]);
-    } else {
-      owner.runways.push({ a: r.a, b: r.b, length: r.length, ref: r.ref });
-      owner.paved ||= !/grass|dirt|gravel|ground|sand/.test(r.surface ?? "");
-    }
-  }
-  for (const p of ports) {
-    if (p.heliport || p.kind === "military") continue;
-    const t = p.tags;
-    const longest = Math.max(0, ...p.runways.map((r) => r.length));
-    const international = t["aerodrome:type"] === "international" || t.aerodrome === "international";
-    if (longest >= 2400 && (t.iata || international)) p.kind = "major";
-    else if (p.paved && (t.iata || longest >= 1500)) p.kind = "regional";
-  }
-  return ports;
-}
 
 function airportNoise(port: Airport): { day: number; night: number; distance: number; detail: string } {
   const origin = { x: 0, y: 0 };
@@ -315,9 +229,9 @@ function airportNoise(port: Airport): { day: number; night: number; distance: nu
     return { day: 52 - fall, night: 40 - fall, distance: d, detail: "Heliport" };
   }
   const ref = AIR_REF[port.kind];
-  const runways = port.runways.filter((r) => r.length >= (port.kind === "major" ? 1500 : 300));
-  const nearest = Math.min(dist(origin, port.center), ...runways.map((r) => closestOnSegment(origin, r.a, r.b).d));
-  if (!runways.length || port.kind === "small") {
+  const nearest = Math.min(dist(origin, port.center), ...port.runways.map((r) => closestOnSegment(origin, r.a, r.b).d));
+  const runways = mainRunways(port);
+  if (!runways.length) {
     // Small fields fly circuits around the field: treat as spread around the runway.
     const d = Math.max(nearest, 150);
     const fall = 20 * Math.log10(d / 300) + 0.004 * Math.max(0, d - 300);
@@ -326,8 +240,6 @@ function airportNoise(port: Airport): { day: number; night: number; distance: nu
   // Traffic is shared between runways.
   const share = 10 * Math.log10(runways.length);
   let total = 0;
-  let bestE = 0;
-  let detail = "Airport";
   for (const r of runways) {
     const mx = (r.a.x + r.b.x) / 2;
     const my = (r.a.y + r.b.y) / 2;
@@ -344,18 +256,17 @@ function airportNoise(port: Airport): { day: number; night: number; distance: nu
       slant = Math.hypot(corridor, altitude);
     }
     const fall = slant >= 300 ? 17 * Math.log10(slant / 300) + 0.003 * (slant - 300) : -Math.min(6, 17 * Math.log10(300 / slant));
-    const level = ref.day - fall - share;
-    total += energy(level);
-    if (energy(level) > bestE) {
-      bestE = energy(level);
-      detail =
-        beyond > 0 && Math.max(0, lateral - 0.08 * beyond) < 1200
-          ? `Under the ${r.ref ? `runway ${r.ref} ` : ""}flight path`
-          : beyond <= 0
-            ? "Alongside the runway"
-            : "Off the main flight paths";
-    }
+    total += energy(ref.day - fall - share);
   }
+  const rel = mainRelation(port);
+  const detail =
+    rel?.position === "under"
+      ? `Under the runway ${rel.landing} approach`
+      : rel?.position === "near"
+        ? `Near the runway ${rel.landing} approach`
+        : rel?.position === "alongside"
+          ? "Alongside the runway"
+          : "Off the main flight paths";
   const day = toDb(total);
   return { day, night: day - (ref.day - ref.night), distance: nearest, detail };
 }
@@ -514,7 +425,7 @@ export function analyzeNoise(input: NoiseInput): NoiseResult {
 
   // Aircraft.
   if (input.air) {
-    for (const port of airports(input.air, proj)) {
+    for (const port of parseAirports(input.air, proj)) {
       if (port.heliport && len(port.center) > 3000) continue;
       const n = airportNoise(port);
       if (n.day < 25) continue;
@@ -605,15 +516,19 @@ export function withOfficial(result: NoiseResult, official: OfficialNoise | null
   if (!official) return result;
   const shift = new Map<NoiseCategoryId, { day: number; night: number }>();
   const categories = result.categories.map((c) => {
-    if (c.id !== "road" && c.id !== "rail") return c;
+    if (c.id !== "road" && c.id !== "rail" && c.id !== "air") return c;
     const o = official[c.id];
-    if (o.day == null || o.night == null) return c;
-    if (Number.isFinite(c.day) && Number.isFinite(c.night)) shift.set(c.id, { day: o.day - c.day, night: o.night - c.night });
+    if (o.day == null) return c;
+    const modelled = Number.isFinite(c.day) && Number.isFinite(c.night);
+    // Without an official night value, keep the modelled day-night difference.
+    const night = o.night ?? (modelled ? c.night + (o.day - c.day) : null);
+    if (night == null) return c;
+    if (modelled) shift.set(c.id, { day: o.day - c.day, night: night - c.night });
     const adjust = (s: NoiseSource) => {
       const d = shift.get(c.id);
       return d ? { ...s, day: s.day + d.day, night: s.night + d.night } : s;
     };
-    return { ...c, sources: c.sources.map(adjust), official: { day: o.day, night: o.night, source: "sonBASE · Swiss Federal Office for the Environment" } };
+    return { ...c, sources: c.sources.map(adjust), official: { day: o.day, night, source: OFFICIAL_SOURCE[c.id] } };
   });
   const mapSources = result.mapSources.map((s) => {
     const d = shift.get(s.category);

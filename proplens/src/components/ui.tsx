@@ -76,7 +76,8 @@ type SectionProps = {
   icon: LucideIcon;
   accent: string;
   title: string;
-  score: number | null;
+  /** Omit for sections that don't carry their own score. */
+  score?: number | null;
   verdict: ReactNode;
   children: ReactNode;
 };
@@ -92,10 +93,12 @@ export const Section = forwardRef<HTMLElement, SectionProps>(function Section({ 
           <h2 className="font-display text-[26px] font-bold leading-tight tracking-tight">{title}</h2>
           <p className="mt-1 text-[15px] leading-relaxed text-ink-2">{verdict}</p>
         </div>
-        <div className="flex flex-col items-center gap-1">
-          <ScoreRing score={score} size={56} stroke={6} label={`${title} score`} />
-          {score != null && <span className="text-[11px] font-medium uppercase tracking-wider text-muted">{scoreWord(score)}</span>}
-        </div>
+        {score !== undefined && (
+          <div className="flex flex-col items-center gap-1">
+            <ScoreRing score={score} size={56} stroke={6} label={`${title} score`} />
+            {score != null && <span className="text-[11px] font-medium uppercase tracking-wider text-muted">{scoreWord(score)}</span>}
+          </div>
+        )}
       </header>
       <div className="mt-7">{children}</div>
     </section>

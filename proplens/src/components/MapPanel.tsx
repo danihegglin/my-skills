@@ -7,19 +7,23 @@ import type { LucideIcon } from "lucide-react";
 import { Crosshair, GraduationCap, Plane, ShoppingBasket, Sun, UtensilsCrossed, Volume2, Factory } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { Circle, CircleMarker, MapContainer, Marker, Polygon, Polyline, Popup, Tooltip, useMap, useMapEvents } from "react-leaflet";
+import { Circle, CircleMarker, ImageOverlay, MapContainer, Marker, Polygon, Polyline, Popup, Tooltip, useMap, useMapEvents } from "react-leaflet";
 import type { Poi } from "../lib/amenities";
-import { formatDistance, makeProjection, walkMinutes } from "../lib/geo";
+import { formatDistance, haversine, makeProjection, walkMinutes } from "../lib/geo";
 import type { Place } from "../lib/geocode";
 import type { NoiseSource } from "../lib/noise";
 import { rateNoise } from "../lib/noise";
-import type { Report, SectionId } from "../lib/report";
+import type { FlightHeatmap } from "../lib/airports";
+import { relevantAirport } from "../lib/airports";
+import type { LayerId, Report } from "../lib/report";
 import type { SunResult } from "../lib/sunlight";
+import { HEAT_STOPS } from "./FlightsSection";
 import { DAY_COLOR, fmtTime } from "./SunCharts";
 import { CATEGORY_HEX, TONE_COLOR, TONE_HEX } from "./ui";
 
-const LAYERS: { id: SectionId; label: string; icon: LucideIcon }[] = [
+const LAYERS: { id: LayerId; label: string; icon: LucideIcon }[] = [
   { id: "noise", label: "Noise", icon: Volume2 },
+  { id: "flights", label: "Flights", icon: Plane },
   { id: "schools", label: "Schools", icon: GraduationCap },
   { id: "shopping", label: "Shopping", icon: ShoppingBasket },
   { id: "sun", label: "Sun", icon: Sun },
@@ -60,8 +64,8 @@ type Props = {
   place: Place;
   report: Report | null;
   sun: SunResult | null;
-  layer: SectionId;
-  onLayer: (l: SectionId) => void;
+  layer: LayerId;
+  onLayer: (l: LayerId) => void;
   onPick: (lat: number, lon: number) => void;
 };
 
@@ -77,6 +81,7 @@ export default function MapPanel({ place, report, sun, layer, onLayer, onPick }:
         {report && layer === "schools" && <PoiLayer pois={report.schools?.all ?? []} icon={GraduationCap} color={CATEGORY_HEX.school} limit={40} />}
         {report && layer === "shopping" && <PoiLayer pois={report.shopping?.all ?? []} icon={ShoppingBasket} color={CATEGORY_HEX.shop} limit={60} />}
         {report && layer === "sun" && <SunLayer report={report} sun={sun} />}
+        {report && layer === "flights" && <FlightsLayer report={report} />}
         {(layer === "schools" || layer === "shopping") && (
           <>
             <Circle center={center} radius={500} pathOptions={{ color: "#10140f", weight: 1, opacity: 0.25, fill: false }} />
@@ -107,6 +112,7 @@ export default function MapPanel({ place, report, sun, layer, onLayer, onPick }:
         </div>
       </div>
       {layer === "noise" && report?.noise && <NoiseLegend />}
+      {layer === "flights" && report?.flights?.heatmap && <FlightsLegend />}
       <p className="pointer-events-none absolute bottom-3 left-3 z-[500] hidden rounded-full bg-card/90 px-3 py-1 text-[12px] text-ink-2 shadow-sm backdrop-blur sm:flex sm:items-center sm:gap-1.5">
         <Crosshair className="size-3.5" aria-hidden /> Click the map to check another spot
       </p>
@@ -150,7 +156,7 @@ function NoiseLegend() {
   );
 }
 
-function Recenter({ place, layer, report }: { place: Place; layer: SectionId; report: Report | null }) {
+function Recenter({ place, layer, report }: { place: Place; layer: LayerId; report: Report | null }) {
   const map = useMap();
   // Late data (climate, terrain) rebuilds the report; only re-frame when the layer or place changes.
   const latest = useRef(report);
@@ -168,6 +174,11 @@ function Recenter({ place, layer, report }: { place: Place; layer: SectionId; re
     else if (layer === "schools") fit(r.schools?.all ?? [], 8, 16);
     else if (layer === "shopping") fit(r.shopping?.all ?? [], 10, 17);
     else if (layer === "sun") map.flyTo(here, 18, { duration: 0.6 });
+    else if (layer === "flights") {
+      const port = r.flights ? relevantAirport(r.flights.airports) : null;
+      if (port) map.flyToBounds(L.latLngBounds([here, L.latLng(port.point.lat, port.point.lon)]).pad(0.35), { maxZoom: 13, duration: 0.8 });
+      else map.flyTo(here, 11, { duration: 0.8 });
+    }
     else map.flyTo(here, 16, { duration: 0.6 });
   }, [map, place, layer, ready]);
   return null;
@@ -293,6 +304,125 @@ function SunLayer({ report, sun }: { report: Report; sun: SunResult | null }) {
           </Tooltip>
         </Polyline>
       ))}
+    </>
+  );
+}
+
+/* ---------- flights ---------- */
+
+const heatGradient = `linear-gradient(to right, ${HEAT_STOPS.map(([t, [r, g, b, a]]) => `rgb(${r} ${g} ${b} / ${Math.max(a, 0.08)}) ${t * 100}%`).join(", ")})`;
+
+function FlightsLegend() {
+  return (
+    <div className="absolute bottom-3 right-3 z-[500] w-44 rounded-2xl sm:w-56 border border-line bg-card/95 px-3 py-2 text-[11px] shadow-sm backdrop-blur">
+      <div className="mb-1.5 font-medium text-ink-2">Flyover intensity</div>
+      <div className="h-2 rounded-full" style={{ background: heatGradient }} aria-hidden />
+      <div className="mt-1 flex justify-between text-muted">
+        <span>Rarely</span>
+        <span>Often and low</span>
+      </div>
+    </div>
+  );
+}
+
+/** Paints the heatmap grid to an image: log-scaled so distant, high traffic still shows faintly. */
+function heatmapImage(h: FlightHeatmap): string {
+  const canvas = document.createElement("canvas");
+  canvas.width = canvas.height = h.size;
+  const ctx = canvas.getContext("2d")!;
+  const img = ctx.createImageData(h.size, h.size);
+  const floor = h.max / 300;
+  const span = Math.log(h.max / floor);
+  for (let k = 0; k < h.values.length; k++) {
+    const v = h.values[k];
+    const t = v <= floor ? 0 : Math.min(1, Math.log(v / floor) / span);
+    let i = 1;
+    while (i < HEAT_STOPS.length - 1 && HEAT_STOPS[i][0] < t) i++;
+    const [t0, c0] = HEAT_STOPS[i - 1];
+    const [t1, c1] = HEAT_STOPS[i];
+    const f = (t - t0) / (t1 - t0 || 1);
+    for (let c = 0; c < 4; c++) {
+      const value = c0[c] + (c1[c] - c0[c]) * f;
+      img.data[k * 4 + c] = c === 3 ? Math.round(value * 255) : Math.round(value);
+    }
+  }
+  ctx.putImageData(img, 0, 0);
+  return canvas.toDataURL();
+}
+
+const markIcons = new Map<string, L.DivIcon>();
+function markIcon(text: string) {
+  let icon = markIcons.get(text);
+  if (!icon) {
+    icon = L.divIcon({
+      className: "pl-marker",
+      iconSize: [64, 20],
+      iconAnchor: [32, 10],
+      html: `<div style="display:flex;align-items:center;justify-content:center;width:64px;height:20px"><span class="pl-mark">${text}</span></div>`,
+    });
+    markIcons.set(text, icon);
+  }
+  return icon;
+}
+
+function FlightsLayer({ report }: { report: Report }) {
+  const flights = report.flights;
+  const heat = flights?.heatmap;
+  const url = useMemo(() => (heat ? heatmapImage(heat) : null), [heat]);
+  // Height labels along the main airport's paths, skipping ones that would overlap.
+  const marks = useMemo(() => {
+    const focus = flights ? relevantAirport(flights.airports) : null;
+    const out: { key: string; point: { lat: number; lon: number }; altitude: number }[] = [];
+    for (const c of focus?.corridors ?? [])
+      for (const m of c.marks)
+        if (!out.some((o) => haversine(o.point, m.point) < 1800)) out.push({ key: `${c.id}-${m.distance}`, point: m.point, altitude: m.altitude });
+    return out;
+  }, [flights]);
+  if (!flights) return null;
+  return (
+    <>
+      {heat && url && (
+        <ImageOverlay
+          url={url}
+          bounds={[
+            [heat.south, heat.west],
+            [heat.north, heat.east],
+          ]}
+          className="pl-heat"
+          interactive={false}
+        />
+      )}
+      {flights.airports.flatMap((a) =>
+        a.corridors.map((c) => (
+          <Polyline key={`${c.id}-cl`} positions={c.centerline.map((p) => [p.lat, p.lon] as [number, number])} pathOptions={{ color: "#92281a", weight: 1, opacity: 0.55, dashArray: "4 6" }}>
+            <Tooltip sticky className="pl-tip">
+              <strong>{a.name}</strong>
+              <br />
+              Runway {c.landing} arrivals · runway {c.departing} departures
+            </Tooltip>
+          </Polyline>
+        )),
+      )}
+      {marks.map((m) => (
+        <Marker key={m.key} position={[m.point.lat, m.point.lon]} icon={markIcon(`≈ ${m.altitude} m`)} interactive={false} />
+      ))}
+      {flights.airports.flatMap((a) =>
+        a.runways.map((r, i) => (
+          <Polyline key={`${a.id}-rwy${i}`} positions={r.map((p) => [p.lat, p.lon] as [number, number])} pathOptions={{ color: "#10140f", weight: 5, opacity: 0.85, lineCap: "butt" }} />
+        )),
+      )}
+      {flights.airports
+        .filter((a) => !a.heliport)
+        .map((a) => (
+          <Marker key={a.id} position={[a.point.lat, a.point.lon]} icon={poiIcon(Plane, "#10140f", 30)}>
+            <Tooltip direction="top" offset={[0, -14]} className="pl-tip">
+              <strong>{a.name}</strong>
+              {a.code ? ` (${a.code})` : ""}
+              <br />
+              {formatDistance(a.distance)} away
+            </Tooltip>
+          </Marker>
+        ))}
     </>
   );
 }

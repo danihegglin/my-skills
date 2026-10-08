@@ -45,7 +45,7 @@ const NoiseSection = forwardRef<HTMLElement, { noise: NoiseResult | null }>(func
       </Section>
     );
   }
-  const official = noise.categories.find((c) => c.official)?.official;
+  const officials = noise.categories.filter((c) => c.official);
   return (
     <Section ref={ref} id="noise" icon={Volume2} accent="var(--color-noise)" title="Noise" score={noise.score} verdict={verdict(noise)}>
       <div className="grid grid-cols-2 gap-3">
@@ -84,8 +84,8 @@ const NoiseSection = forwardRef<HTMLElement, { noise: NoiseResult | null }>(func
       </div>
 
       <p className="mt-6 text-[13px] leading-relaxed text-muted">
-        {official
-          ? `Road and rail levels are official values from ${official.source}. Other sources are modelled. `
+        {officials.length
+          ? `Official values: ${officials.map((c) => `${c.label.toLowerCase()} from the ${c.official!.source}`).join("; ")}. Other sources are modelled. `
           : "Levels are modelled from mapped roads, rail lines, airports and venues, with typical traffic for each road class. "}
         Values are equivalent continuous levels at the loudest façade, 4 m above ground. Expect ±5 dB; real traffic counts, noise barriers
         and road surfaces can shift them.

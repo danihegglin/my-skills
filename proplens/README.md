@@ -1,6 +1,6 @@
 # PropLens
 
-Check any address before you rent or buy. PropLens estimates **noise** (roads, trains and trams, aircraft, restaurants and bars, industry), finds nearby **schools** and **shops**, and works out the hours of direct **sunlight** at any floor.
+Check any address before you rent or buy. PropLens estimates **noise** (roads, trains and trams, aircraft, restaurants and bars, industry), maps **flight routes** to show whether planes fly directly over or pass at a distance, finds nearby **schools** and **shops**, and works out the hours of direct **sunlight** at any floor.
 
 Live at **https://proplens.vatia.workers.dev**
 
@@ -19,6 +19,7 @@ npm run deploy     # build and deploy to Cloudflare Workers (static assets)
 | Lens | What it shows |
 | --- | --- |
 | Noise | Day (6–22 h) and night (22–6 h) levels in dB(A) by source, the loudest roads, rail lines, airports and venues, and a map coloured by each source's contribution. |
+| Flight routes | A flyover heatmap of where aircraft regularly pass and how low, and whether the address gets direct flyovers, sits near a flight path or is distant from them, with the height planes pass at. |
 | Schools | Nearest childcare and kindergartens, schools (primary/secondary where tagged) and colleges, with walking times. |
 | Shopping | Nearest supermarket, fresh food, bakery, pharmacy, post and mall, plus the supermarket chains within 1 km. |
 | Sunlight | Sun paths for winter, spring and summer drawn against the real skyline and terrain, direct-sun hours per month, per window direction, and per floor (0–20). |
@@ -28,7 +29,7 @@ Each lens gets a 0–100 score; the PropLens score weights noise 30%, sunlight 2
 ## Data sources
 
 - **OpenStreetMap** via the Overpass API (with fallback mirrors): roads, rail, airports and runways, buildings and heights, schools, shops, restaurants.
-- **sonBASE** (Swiss Federal Office for the Environment, via geo.admin.ch): official road and rail noise for Swiss addresses. These replace the modelled values and are marked "Official".
+- **sonBASE** (Swiss Federal Office for the Environment) and the **aircraft noise cadastres** of the Swiss Federal Office of Civil Aviation, via geo.admin.ch: official road, rail and daytime aircraft noise for Swiss addresses. These replace the modelled values and are marked "Official".
 - **Open-Meteo**: ERA5 sunshine records for the last full year, the local time zone, and Copernicus GLO-90 elevations for the terrain horizon.
 - **Photon** (komoot) for address search; **OpenFreeMap** vector tiles for the basemap.
 
@@ -38,6 +39,7 @@ Each lens gets a 0–100 score; the PropLens score weights noise 30%, sunlight 2
 - **Propagation**: ISO 9613-2 ground and air absorption; shielding from actual building footprints around the address (12 dB or more behind a building) and ISO 9613-2 Annex A built-up attenuation beyond the scanned radius. The receiver is at 4 m, the EU noise-mapping height.
 - **Rail**: reference levels per line type (main, branch, tram, light rail). Parallel tracks of one line are counted once per direction.
 - **Aircraft**: runway geometry with a climb and descent of about 4° and a widening corridor along the extended centreline; airports are classed from runway length and IATA status.
+- **Flight routes**: traffic per airport class (international, regional, military, airfield circuits) is split across its runways and spread along each extended centreline, widening with distance and fading after about 30 km. The heatmap weights it by how low aircraft fly there (3° glide slope, 8% climb). An address inside the inner corridor is a direct flyover; within the wider band, or beside the runway, it is near a flight path; anything else is distant. Real procedures curve and change with wind and runway use.
 - **Dining and nightlife**: point sources per venue type, with extra weight for terraces and late opening hours.
 - **Sunlight**: solar position every 5 minutes on the 15th of each month and on the solstices and equinox, tested against a 1° horizon built from building heights (OSM `height`, `building:levels` or a typical height per building type) and terrain up to 20 km, from the chosen floor's eye height.
 
@@ -49,6 +51,7 @@ Treat the noise figures as a screening estimate of about ±5 dB, not a measureme
 src/lib/        data fetching and models (pure TypeScript, unit-tested)
   osm.ts        Overpass queries, mirror fallback, shared requests
   noise.ts      noise model and ratings
+  airports.ts   airports, runways, flight corridors, flyover heatmap and exposure
   skyline.ts    building heights, own-building detection, horizon and shielding
   sunlight.ts   sun hours per floor, month and window direction
   amenities.ts  schools and shopping
