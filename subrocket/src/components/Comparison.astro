@@ -1,0 +1,140 @@
+---
+import { Check, Minus } from '@lucide/astro'
+
+// Every Stripe claim is checked against Stripe's own docs (October 2026) and cites the footer sources by number.
+const comparison = {
+  eyebrow: 'subrocket vs. Stripe on its own',
+  heading: 'What Stripe leaves to you',
+  body: 'Stripe is great at moving money, and subrocket runs on it. But its checkout, account pages and emails look like Stripe, and the jobs a box business needs are either missing or need your own code.',
+  columns: { stripe: 'Stripe on its own', subrocket: 'With subrocket' },
+  rows: [
+    {
+      topic: 'Your brand',
+      stripe: { text: 'Checkout and portal run on checkout.stripe.com and billing.stripe.com, or one custom domain for $10 a month. Design stops at logo, colours, a font from Stripe’s list and corner style. No custom text in the portal.', sources: [11, 12, 13, 14] },
+      subrocket: 'Checkout, account page and every email run on your own domain, in your own fonts and colours, with wording you write.',
+    },
+    {
+      topic: 'Checkout',
+      stripe: { text: 'No-code pricing table shows up to 4 products and 3 billing intervals. The start date is set in your code, not picked by the subscriber.', sources: [5, 6] },
+      subrocket: 'Subscribers pick box size, how often it ships, the first box date and a delivery window.',
+    },
+    {
+      topic: 'Gift subscriptions',
+      stripe: { text: 'No built-in gifting. You stitch it together from one-off payments, coupons and your own code.', sources: [] },
+      subrocket: 'Prepaid 3, 6 or 12-box gifts with a claim link. Recipients can keep going on their own card.',
+    },
+    {
+      topic: 'Expiring cards',
+      stripe: { text: 'One reminder, 1 month before the card expires. Sent from stripe.com unless you verify your own email domain. Stripe writes the email; you set the logo and colours.', sources: [7, 10] },
+      subrocket: 'Reminders 30, 7 and 1 day before, from your domain, in your words and your brand. They stop the moment the card is updated.',
+    },
+    {
+      topic: 'Skipping a box',
+      stripe: { text: 'Subscribers can’t pause or skip in the customer portal. Only you can pause, from the Dashboard or API.', sources: [8] },
+      subrocket: 'Subscribers skip 1, 2 or 3 boxes themselves, from their account page.',
+    },
+    {
+      topic: 'Before a cancel',
+      stripe: { text: 'An optional coupon offer and a reason survey.', sources: [9] },
+      subrocket: 'A skip offer first, for the full fridge. Cancelling stays one click away.',
+    },
+  ],
+  note: 'Compared with Stripe Billing’s built-in settings and no-code tools. Keep Stripe’s Smart Retries on: they work after a payment fails, subrocket works before it.',
+} as const
+
+const last = comparison.rows.length - 1
+---
+
+<section id="vs-stripe" class="scroll-mt-24 py-20 sm:py-28" aria-labelledby="vs-heading">
+  <div class="mx-auto max-w-6xl px-4 sm:px-6">
+    <div class="grid gap-6 lg:grid-cols-[1.1fr_1fr] lg:items-end lg:gap-16" data-reveal>
+      <div>
+        <p class="eyebrow text-pop">{comparison.eyebrow}</p>
+        <h2 id="vs-heading" class="mt-4 text-4xl font-semibold sm:text-5xl">{comparison.heading}</h2>
+      </div>
+      <p class="max-w-[34rem] text-lg text-muted-foreground">{comparison.body}</p>
+    </div>
+
+    <table class="vs mt-12 w-full border-separate border-spacing-0 text-left sm:mt-16" data-reveal style="transition-delay: 100ms">
+      <caption class="sr-only">{comparison.eyebrow}</caption>
+      <thead>
+        <tr>
+          <th scope="col" class="w-[20%] pb-4 align-bottom"><span class="sr-only">Feature</span></th>
+          <th scope="col" class="w-[40%] px-6 pb-4 align-bottom text-sm font-medium text-muted-foreground">{comparison.columns.stripe}</th>
+          <th scope="col" class="sub-col w-[40%] rounded-t-2xl px-6 pb-4 pt-5 align-bottom">
+            <span class="flex items-center gap-2 text-sm font-semibold">
+              <svg viewBox="0 0 24 24" class="size-4" aria-hidden="true"><path d="M19.6 7.2A10 10 0 1 0 21.9 13" fill="none" stroke="#e5337c" stroke-width="4.2" stroke-linecap="round" /><circle cx="21.6" cy="2.6" r="2.6" fill="#e5337c" /></svg>
+              {comparison.columns.subrocket}
+            </span>
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+        {comparison.rows.map((row, i) => (
+          <tr>
+            <th scope="row" class="border-t border-border py-5 pr-4 align-top text-base font-semibold tracking-tight">{row.topic}</th>
+            <td data-label={comparison.columns.stripe} class="border-t border-border px-6 py-5 align-top text-[0.95rem] text-muted-foreground">
+              <span class="flex gap-3">
+                <Minus class="mt-1 size-4 shrink-0 text-muted-foreground/60" aria-hidden="true" />
+                <span>
+                  {row.stripe.text}
+                  {row.stripe.sources.length > 0 && (
+                    <sup class="ml-0.5 text-[0.62rem] font-medium text-pop-deep">
+                      {row.stripe.sources.map((n, j) => (
+                        <>{j > 0 && ', '}<a href="#sources" class="hover:underline" aria-label={`Source ${n}`}>{n}</a></>
+                      ))}
+                    </sup>
+                  )}
+                </span>
+              </span>
+            </td>
+            <td data-label={comparison.columns.subrocket} class:list={['sub-col border-t border-border px-6 py-5 align-top text-[0.95rem] font-medium', i === last && 'rounded-b-2xl']}>
+              <span class="flex gap-3">
+                <Check class="mt-1 size-4 shrink-0 text-pop" aria-hidden="true" />
+                <span>{row.subrocket}</span>
+              </span>
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+
+    <p class="mt-6 max-w-[46rem] text-sm text-muted-foreground">{comparison.note}</p>
+  </div>
+</section>
+
+<style>
+  .sub-col {
+    background: var(--card);
+    box-shadow: inset 1px 0 0 var(--border), inset -1px 0 0 var(--border);
+  }
+  thead .sub-col { box-shadow: inset 1px 0 0 var(--border), inset -1px 0 0 var(--border), inset 0 1px 0 var(--border); }
+  tbody tr:last-child .sub-col { box-shadow: inset 1px 0 0 var(--border), inset -1px 0 0 var(--border), inset 0 -1px 0 var(--border); }
+
+  /* Phones: each row becomes a card with labelled halves */
+  @media (max-width: 767px) {
+    .vs, .vs tbody, .vs tr, .vs th, .vs td { display: block; width: 100%; }
+    .vs thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+    .vs tbody { display: grid; gap: 0.75rem; }
+    .vs tr {
+      overflow: hidden;
+      border: 1px solid var(--border);
+      border-radius: 1rem;
+      background: var(--card);
+    }
+    .vs th[scope="row"] { border: 0; padding: 1rem 1.25rem 0.25rem; }
+    .vs td { border: 0; padding: 0.6rem 1.25rem; box-shadow: none; border-radius: 0; }
+    .vs td.sub-col { background: var(--color-pop-soft); padding-bottom: 1rem; margin-top: 0.4rem; }
+    .vs td::before {
+      content: attr(data-label);
+      display: block;
+      margin-bottom: 0.35rem;
+      font-family: var(--font-mono);
+      font-size: 0.65rem;
+      font-weight: 500;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--color-ink-muted);
+    }
+  }
+</style>

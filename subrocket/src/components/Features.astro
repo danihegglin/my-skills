@@ -1,0 +1,76 @@
+---
+import { Card, CardContent } from '@/components/ui/card'
+import { Gift, MailCheck, Pause, Database, Webhook, ChartColumn } from '@lucide/astro'
+
+const features = [
+  { id: 'checkout', title: 'Sell boxes as gifts', line: 'One toggle at checkout. Buyers prepay 3, 6 or 12 boxes for someone else.', stat: '2×', statLabel: 'more shoppers want to gift a subscription than ever have', src: 1, visual: 'gift' },
+  { id: 'rescue', title: 'No box held by a dead card', line: 'Customers update their card before it expires, not after.', stat: '53%', statLabel: 'of subscription churn is a failed payment', src: 3, visual: 'email' },
+  { id: 'portal', title: 'Skip a month, don’t cancel', line: 'Fridge full or shelf stocked? Subscribers skip instead of leaving.', stat: '1 in 10', statLabel: 'cancellations saved by offering a pause', src: 4, visual: 'pause' },
+]
+
+const extras = [
+  { icon: Database, text: 'Data stays in Stripe' },
+  { icon: Webhook, text: 'Webhooks for every event' },
+  { icon: ChartColumn, text: 'Churn and save reports' },
+]
+
+const mock = 'w-full rounded-2xl border border-border bg-white p-4 text-left shadow-[0_20px_40px_-24px_rgb(11_11_18/0.35)] transition-transform duration-500 group-hover:-translate-y-1'
+---
+
+<section id="features" class="relative py-24 sm:py-32">
+  <div class="mx-auto max-w-6xl px-4 sm:px-6">
+    <h2 class="max-w-2xl text-4xl font-semibold sm:text-5xl" data-reveal>Gift it. Save it. <span class="accent-text">Skip it.</span></h2>
+
+    <div class="mt-12 grid gap-4 md:grid-cols-3">
+      {features.map((f, i) => (
+        <Card id={f.id} className="group scroll-mt-28 gap-0 overflow-hidden rounded-3xl py-0 shadow-none transition-shadow duration-300 hover:shadow-[0_30px_60px_-36px_rgb(11_11_18/0.35)]" data-reveal style={{ transitionDelay: `${i * 90}ms` }}>
+          <div class="flex h-52 items-center justify-center bg-pop-soft p-6">
+            {f.visual === 'gift' && (
+              <div class={mock}>
+                <div class="flex items-center gap-2.5">
+                  <span class="flex size-8 items-center justify-center rounded-full bg-pop text-white"><Gift class="size-4" /></span>
+                  <p class="text-sm font-semibold">Sam sent you 3 beer boxes</p>
+                </div>
+                <div class="mt-3 flex h-9 items-center justify-center rounded-lg bg-ink text-sm font-semibold text-white">Claim your gift</div>
+              </div>
+            )}
+            {f.visual === 'email' && (
+              <div class={mock}>
+                <p class="text-sm font-semibold">Glow Box: your card expires soon</p>
+                <div class="mt-3 flex items-center justify-between">
+                  <span class="inline-flex h-9 items-center rounded-lg bg-ink px-4 text-sm font-semibold text-white">Update card</span>
+                  <span class="inline-flex items-center gap-1 text-xs font-medium text-accent-foreground"><MailCheck class="size-4" /> Updated</span>
+                </div>
+              </div>
+            )}
+            {f.visual === 'pause' && (
+              <div class={mock}>
+                <p class="text-sm font-semibold">Before you go</p>
+                <div class="mt-3 flex items-center gap-2 rounded-lg border border-pop/40 bg-pop-soft px-3 py-2 text-sm font-medium text-accent-foreground"><Pause class="size-4" /> Skip 2 boxes</div>
+                <p class="mt-2 px-1 text-xs text-muted-foreground underline underline-offset-2">Cancel anyway</p>
+              </div>
+            )}
+          </div>
+          <CardContent className="flex flex-1 flex-col p-7">
+            <h3 class="text-2xl font-semibold">{f.title}</h3>
+            <p class="mt-2 mb-6 text-muted-foreground">{f.line}</p>
+            <div class="mt-auto flex items-baseline gap-3 border-t border-border pt-5">
+              <p class="accent-text shrink-0 whitespace-nowrap font-display text-4xl font-semibold tracking-tight">{f.stat}</p>
+              <p class="text-xs leading-snug text-muted-foreground">{f.statLabel}<a href="#sources" class="ml-0.5 align-super text-[0.6rem] text-pop hover:underline">{f.src}</a></p>
+            </div>
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+
+    <ul class="mt-4 grid gap-3 sm:grid-cols-3" data-reveal>
+      {extras.map((e) => (
+        <li class="flex items-center gap-3 rounded-2xl border border-border bg-white px-5 py-4 text-sm font-medium">
+          <e.icon class="size-4 text-pop" />
+          {e.text}
+        </li>
+      ))}
+    </ul>
+    <p class="mt-4 text-xs text-muted-foreground">Apple Pay at checkout lifts conversion by 22% on average.<a href="#sources" class="ml-0.5 align-super text-[0.6rem] text-pop hover:underline">2</a></p>
+  </div>
+</section>

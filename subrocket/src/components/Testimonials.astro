@@ -1,0 +1,41 @@
+---
+import { Card, CardContent } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import QuoteAvatar from './QuoteAvatar'
+
+// SAMPLE QUOTES: replace with real, attributed customer quotes before launch.
+const testimonials = [
+  { quote: 'December gift boxes paid for the whole year.', name: 'Founder', company: 'Craft beer club', initials: 'CB' },
+  { quote: 'Expired cards used to cost us boxes every month.', name: 'Head of Growth', company: 'Beauty box', initials: 'BB' },
+  { quote: '‘Too much beer in the fridge’ became a skipped month.', name: 'Support Lead', company: 'Craft beer club', initials: 'CB' },
+]
+---
+
+<section class="border-y border-border bg-white py-24 sm:py-28">
+  <div class="mx-auto max-w-6xl px-4 sm:px-6">
+    <div class="flex flex-wrap items-end justify-between gap-4" data-reveal>
+      <h2 class="text-4xl font-semibold sm:text-5xl">What teams notice first</h2>
+      <Badge variant="outline" className="rounded-full text-muted-foreground">Sample quotes</Badge>
+    </div>
+    <div class="mt-12 grid gap-4 md:grid-cols-3">
+      {testimonials.map((t, i) => (
+        <figure data-reveal style={`transition-delay: ${i * 80}ms`}>
+          <Card className="h-full gap-0 rounded-3xl bg-cloud py-0 shadow-none transition-transform duration-300 hover:-translate-y-1">
+            <CardContent className="flex h-full flex-col justify-between gap-8 p-7">
+              <blockquote class="font-display text-xl font-medium leading-snug tracking-tight">
+                <span class="accent-text">“</span>{t.quote}<span class="accent-text">”</span>
+              </blockquote>
+              <figcaption class="flex items-center gap-3">
+                <QuoteAvatar initials={t.initials} />
+                <div class="text-sm">
+                  <p class="font-semibold">{t.name}</p>
+                  <p class="text-muted-foreground">{t.company}</p>
+                </div>
+              </figcaption>
+            </CardContent>
+          </Card>
+        </figure>
+      ))}
+    </div>
+  </div>
+</section>

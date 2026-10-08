@@ -1,18 +1,20 @@
 ---
 import Layout from '@/layouts/Layout.astro'
-import Header from '@/components/sections/Header.astro'
-import Footer from '@/components/sections/Footer.astro'
-import Button from '@/components/ui/Button.astro'
+import Header from '@/components/Header.astro'
+import Footer from '@/components/Footer.astro'
+import { buttonVariants } from '@/components/ui/button'
+import { cn } from '@/lib/utils'
+import { ArrowLeft } from '@lucide/astro'
 ---
 
 <Layout title="Page not found · subrocket" description="This page doesn’t exist. Head back to the subrocket homepage.">
   <Header />
-  <main id="main" class="flex min-h-[70vh] items-center py-24">
+  <main id="main" class="relative flex min-h-[80vh] items-center overflow-hidden pt-24">
     <div class="mx-auto max-w-xl px-4 text-center">
-      <span class="stamp text-2xl" style="--stamp-rotate: -6deg">Return to sender</span>
-      <h1 class="mt-8 text-5xl sm:text-6xl">This page didn’t ship.</h1>
-      <p class="mt-5 text-lg text-ink-muted">The link may be old, or the page isn’t live yet.</p>
-      <Button href="/" class="mt-8">Back to the homepage</Button>
+      <p class="eyebrow text-pop">404</p>
+      <h1 class="mt-4 text-5xl font-semibold sm:text-6xl">This page <span class="accent-text">drifted off.</span></h1>
+      <p class="mt-5 text-lg text-muted-foreground">The link may be old, or the page isn’t live yet.</p>
+      <a href="/" class={cn(buttonVariants({ size: 'lg' }), 'mt-8 h-12 rounded-full px-6')}><ArrowLeft class="size-4" /> Back to the homepage</a>
     </div>
   </main>
   <Footer />

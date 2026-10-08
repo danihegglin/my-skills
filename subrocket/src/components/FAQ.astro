@@ -1,0 +1,25 @@
+---
+import FAQAccordion from './FAQAccordion'
+
+const faqs = [
+  { question: 'I’m not on Stripe yet. Can I use subrocket?', answer: 'Yes. You create a Stripe account while connecting, which takes a few minutes. Stripe moves the money, subrocket runs the subscription side.' },
+  { question: 'Do I have to leave Stripe?', answer: 'No. Customers, prices and invoices stay in your Stripe account. Disconnect any time.' },
+  { question: 'How do gift subscriptions work?', answer: 'The buyer prepays 3, 6 or 12 boxes. On the delivery date the recipient gets a claim link and can add a card to keep the boxes coming.' },
+  { question: 'When do card update emails go out?', answer: '30, 7 and 1 day before a card expires. They stop as soon as the card changes.' },
+  { question: 'Can customers still cancel?', answer: 'Always, in one click. You can offer a skipped month first.' },
+  { question: 'Is payment data safe?', answer: 'Card details are collected and stored by Stripe. subrocket never sees full card numbers.' },
+  { question: 'What does it cost?', answer: 'No monthly fee and no setup fee. A fixed $0.10 per transaction, so a month with no sales costs nothing. Stripe’s usual processing fees apply as they do today.' },
+]
+---
+
+<section id="faq" class="py-24 sm:py-28">
+  <div class="mx-auto grid max-w-6xl gap-12 px-4 sm:px-6 lg:grid-cols-[0.8fr_1.2fr] lg:gap-16">
+    <div class="lg:sticky lg:top-28 lg:self-start" data-reveal>
+      <h2 class="text-4xl font-semibold sm:text-5xl">Questions</h2>
+      <p class="mt-5 text-muted-foreground">Anything else? <a href="mailto:hello@subrocket.com" class="font-medium text-foreground underline decoration-pop/40 underline-offset-4 transition-colors hover:text-pop">hello@subrocket.com</a></p>
+    </div>
+    <div>
+      <FAQAccordion client:visible faqs={faqs} />
+    </div>
+  </div>
+</section>

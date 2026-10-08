@@ -1,0 +1,38 @@
+---
+import { Card, CardContent } from '@/components/ui/card'
+import { Check, X } from '@lucide/astro'
+
+const them = ['Monthly fee from day one', 'You pay in slow months too', 'Pricier plans as you grow']
+const us = ['$0 per month, no setup fee', '$0.10 per transaction', 'Nothing when no money comes in']
+---
+
+<section id="pricing" class="scroll-mt-24 border-y border-border bg-white py-24 sm:py-28">
+  <div class="mx-auto grid max-w-6xl gap-12 px-4 sm:px-6 lg:grid-cols-[0.9fr_1.1fr] lg:items-center lg:gap-16">
+    <div data-reveal>
+      <p class="eyebrow text-pop">Pricing</p>
+      <h2 class="mt-4 text-4xl font-semibold sm:text-5xl">No monthly fee. <span class="accent-text">10¢ when you get paid.</span></h2>
+      <p class="mt-5 max-w-md text-lg text-muted-foreground">A fixed $0.10 per transaction, out of money you’re already collecting. On a $39 box that’s about 0.26%. Stripe’s own processing fees stay as they are.</p>
+    </div>
+
+    <div class="grid gap-4 sm:grid-cols-2" data-reveal style="transition-delay: 100ms">
+      <Card className="gap-0 rounded-3xl bg-cloud py-0 shadow-none">
+        <CardContent className="p-7">
+          <p class="text-sm font-medium text-muted-foreground">Typical subscription apps</p>
+          <p class="mt-4 font-display text-4xl font-semibold tracking-tight text-muted-foreground">$$$<span class="text-base font-medium">/mo</span></p>
+          <ul class="mt-6 space-y-3 text-sm text-muted-foreground">
+            {them.map((t) => <li class="flex items-start gap-2.5"><X class="mt-0.5 size-4 shrink-0" />{t}</li>)}
+          </ul>
+        </CardContent>
+      </Card>
+      <Card className="gap-0 rounded-3xl border-ink bg-ink py-0 text-white shadow-[0_30px_60px_-30px_rgb(11_11_18/0.5)]">
+        <CardContent className="p-7">
+          <p class="text-sm font-medium text-white/70">subrocket</p>
+          <p class="mt-4 font-display text-5xl font-semibold tracking-tight">$0<span class="text-base font-medium text-white/70">/mo</span></p>
+          <ul class="mt-6 space-y-3 text-sm">
+            {us.map((t) => <li class="flex items-start gap-2.5"><Check class="mt-0.5 size-4 shrink-0 text-pop" />{t}</li>)}
+          </ul>
+        </CardContent>
+      </Card>
+    </div>
+  </div>
+</section>
