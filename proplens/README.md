@@ -2,6 +2,8 @@
 
 Check any address before you rent or buy. PropLens estimates **noise** (roads, trains and trams, aircraft, restaurants and bars, industry), finds nearby **schools** and **shops**, and works out the hours of direct **sunlight** at any floor.
 
+Live at **https://proplens.vatia.workers.dev**
+
 React + Vite + TypeScript + Tailwind v4. Runs entirely in the browser on open data; no backend and no API keys.
 
 ```bash
