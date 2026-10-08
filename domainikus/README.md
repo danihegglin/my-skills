@@ -4,6 +4,8 @@ Finds free domain names. You describe your idea, and domainikus turns it into ca
 
 It's a single Python file with no dependencies. It also works as a Claude skill (`SKILL.md`): Claude writes the alternatives with the same meaning, and the script checks them.
 
+**Web app:** https://domainikus.vatia.workers.dev is a React + Vite page with a Cloudflare Worker backend. Its source is in [`web/`](web/).
+
 ## Usage
 
 ```sh
@@ -75,3 +77,21 @@ A "free" result means the registry has no record of the domain. It can still be 
 ```sh
 python3 -m unittest test_domainikus   # offline, network is mocked
 ```
+
+## Web app
+
+`web/` is the same tool as a website. It's a React + Vite frontend, plus a Cloudflare Worker that does the lookups and keeps the SQLite cache in a Durable Object.
+
+```sh
+cd web
+npm install
+npm run dev:api   # worker + cache on :8787 (wrangler dev, serves the last build)
+npm run dev       # Vite on :5173, proxies /api to :8787
+npm test          # vitest, network mocked
+npm run deploy    # build + wrangler deploy
+```
+
+- `shared/names.ts` holds the slugs, validation, keywords and ranking used by both the browser and the worker.
+- `worker/check.ts` does the RDAP and DNS lookups. `worker/generate.ts` handles Datamuse synonyms and Claude ideas. `worker/cache.ts` is the SQLite Durable Object.
+- The browser sends lookups to `/api/check` in batches of 12 domains, which keeps each request under the Workers subrequest limit. Results fill in as they arrive.
+- To turn on ideas from Claude, set the key with `npx wrangler secret put ANTHROPIC_API_KEY`. AI requests are limited to 10 per minute per IP, and the answers are cached per description.
