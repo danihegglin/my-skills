@@ -18,7 +18,7 @@ export default function MobileNav() {
       <SheetContent side="right" className="w-[85vw] max-w-sm bg-background">
         <SheetHeader>
           <SheetTitle className="font-display text-xl">subrocket</SheetTitle>
-          <SheetDescription>Gift checkout, card rescue and self-service for Stripe.</SheetDescription>
+          <SheetDescription>Gift checkout, card rescue and skip-a-month for subscription boxes.</SheetDescription>
         </SheetHeader>
         <nav aria-label="Mobile" className="px-4">
           <ul className="space-y-1">
@@ -36,7 +36,7 @@ export default function MobileNav() {
           </ul>
           <Separator className="my-6" />
           <a href="/signup" className={cn(buttonVariants({ size: 'lg' }), 'h-12 w-full rounded-full text-base')}>
-            Start free trial
+            Start for free
           </a>
         </nav>
       </SheetContent>

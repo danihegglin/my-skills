@@ -2,12 +2,13 @@
 import FAQAccordion from './FAQAccordion'
 
 const faqs = [
+  { question: 'I’m not on Stripe yet. Can I use subrocket?', answer: 'Yes. You create a Stripe account while connecting, which takes a few minutes. Stripe moves the money, subrocket runs the subscription side.' },
   { question: 'Do I have to leave Stripe?', answer: 'No. Customers, prices and invoices stay in your Stripe account. Disconnect any time.' },
   { question: 'How do gift subscriptions work?', answer: 'The buyer prepays 3, 6 or 12 boxes. On the delivery date the recipient gets a claim link and can add a card to keep the boxes coming.' },
   { question: 'When do card update emails go out?', answer: '30, 7 and 1 day before a card expires. They stop as soon as the card changes.' },
   { question: 'Can customers still cancel?', answer: 'Always, in one click. You can offer a skipped month first.' },
   { question: 'Is payment data safe?', answer: 'Card details are collected and stored by Stripe. subrocket never sees full card numbers.' },
-  { question: 'What does it cost?', answer: 'Every plan starts with a 14-day free trial. Pricing then scales with your monthly recurring revenue.' },
+  { question: 'What does it cost?', answer: 'No monthly fee. A small fee on each successful payment. A month with no payments costs nothing.' },
 ]
 ---
 

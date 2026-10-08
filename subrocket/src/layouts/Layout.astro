@@ -45,7 +45,7 @@ const canonical = new URL(Astro.url.pathname, Astro.site)
       operatingSystem: 'Web',
       description,
       url: canonical.toString(),
-      offers: { '@type': 'Offer', description: '14-day free trial' },
+      offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD', description: 'No monthly fee. A small fee per successful payment.' },
     })} />
   </head>
   <body class="min-h-screen overflow-x-hidden">

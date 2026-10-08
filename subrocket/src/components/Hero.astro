@@ -5,7 +5,7 @@ import { cn } from '@/lib/utils'
 import { ArrowRight, Check } from '@lucide/astro'
 import ProductPreview from './ProductPreview'
 
-const perks = ['14-day free trial', 'No card required', 'Live in an afternoon']
+const perks = ['$0 monthly fee', 'Pay only when you get paid', 'Live in an afternoon']
 const niches = ['Craft beer', 'Cosmetics', 'Coffee', 'Wine', 'Pet food', 'Snacks']
 ---
 
@@ -18,7 +18,7 @@ const niches = ['Craft beer', 'Cosmetics', 'Coffee', 'Wine', 'Pet food', 'Snacks
           <span class="absolute inline-flex size-full animate-ping rounded-full bg-pop opacity-60"></span>
           <span class="relative inline-flex size-2 rounded-full bg-pop"></span>
         </span>
-        For subscription boxes on Stripe
+        On Stripe already, or about to be
       </Badge>
 
       <h1 class="mt-7 text-[clamp(2.8rem,6.4vw,5.2rem)] font-semibold">
@@ -27,12 +27,12 @@ const niches = ['Craft beer', 'Cosmetics', 'Coffee', 'Wine', 'Pet food', 'Snacks
       </h1>
 
       <p class="rise mt-7 max-w-lg text-lg leading-relaxed text-muted-foreground sm:text-xl" style="animation-delay: 340ms">
-        Gift checkout, card rescue and a pause button for craft beer clubs, beauty boxes and every subscription that ships.
+        Gift checkout, card rescue and a pause button for subscription boxes. Connect your Stripe account, or create one in minutes.
       </p>
 
       <div class="rise mt-9 flex flex-col gap-3 sm:flex-row sm:items-center" style="animation-delay: 460ms">
         <a href="/signup" class={cn(buttonVariants({ size: 'lg' }), 'group h-13 rounded-full px-7 text-base font-semibold shadow-[0_12px_30px_-10px_rgb(11_11_18/0.45)] transition-all hover:-translate-y-0.5 hover:shadow-[0_18px_40px_-12px_rgb(229_51_124/0.45)]')}>
-          Start free trial
+          Start for free
           <ArrowRight class="size-4 transition-transform group-hover:translate-x-1" />
         </a>
         <a href="/demo" class={cn(buttonVariants({ variant: 'outline', size: 'lg' }), 'h-13 rounded-full bg-white/70 px-6 text-base backdrop-blur')}>Book a demo</a>
