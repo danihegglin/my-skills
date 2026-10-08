@@ -1,3 +1,5 @@
+import { cachedFetch } from "./cache";
+
 export type Climate = {
   year: number;
   timezone: string;
@@ -41,7 +43,7 @@ export async function fetchClimate(lat: number, lon: number, signal?: AbortSigna
   const url =
     `https://archive-api.open-meteo.com/v1/archive?latitude=${lat.toFixed(4)}&longitude=${lon.toFixed(4)}` +
     `&start_date=${year}-01-01&end_date=${year}-12-31&daily=sunshine_duration,daylight_duration&timezone=auto`;
-  const res = await fetch(url, { signal });
+  const res = await cachedFetch(url, signal);
   if (!res.ok) throw new Error(`Open-Meteo answered ${res.status}`);
   return summarizeClimate((await res.json()) as ArchiveResponse, year);
 }

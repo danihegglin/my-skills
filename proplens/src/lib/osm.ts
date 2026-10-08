@@ -1,3 +1,4 @@
+import { viaCache } from "./cache";
 import type { LatLon } from "./geo";
 
 export type OsmElement = {
@@ -133,6 +134,15 @@ async function readBuffer(res: Response): Promise<ArrayBuffer> {
 }
 
 async function viaMirrors<T>(query: string, signal: AbortSignal, timeoutMs: number, read: (res: Response) => Promise<T>): Promise<T> {
+  // The shared cache first: an address someone has looked up before loads without asking Overpass at all.
+  const cached = await viaCache(ENDPOINTS[0], signal, query, timeoutMs);
+  if (cached) {
+    try {
+      return await read(cached);
+    } catch (err) {
+      if (signal.aborted) throw err;
+    }
+  }
   let lastError: unknown;
   for (const endpoint of ENDPOINTS) {
     if (signal.aborted) throw signal.reason;

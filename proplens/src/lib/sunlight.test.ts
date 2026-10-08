@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { makeProjection } from "./geo";
 import type { OsmElement } from "./osm";
-import { buildSkyline, buildingHeight, buildingHorizon, parseBuildings } from "./skyline";
+import { parseRegister } from "./register";
+import { applyRegister, buildSkyline, buildingHeight, buildingHorizon, parseBuildings } from "./skyline";
 import { analyzeSun, observerHeight } from "./sunlight";
 import { TERRAIN_DISTANCES, terrainHorizon } from "./terrain";
 
@@ -23,7 +24,7 @@ describe("buildings", () => {
   it("derives heights from tags", () => {
     expect(buildingHeight({ building: "yes", height: "21.5 m" }).height).toBe(21.5);
     expect(buildingHeight({ building: "apartments", "building:levels": "5" }).height).toBe(16);
-    expect(buildingHeight({ building: "house" })).toEqual({ height: 8, levels: null, estimated: true });
+    expect(buildingHeight({ building: "house" })).toEqual({ height: 8, levels: null, estimated: true, source: "typical" });
   });
 
   it("finds the address's own building and the skyline around it", () => {
@@ -39,7 +40,62 @@ describe("buildings", () => {
   });
 });
 
+describe("building register", () => {
+  const entrance = (egid: string, x: number, y: number, props: Record<string, unknown>) => {
+    const p = proj.toLatLon({ x, y });
+    return { geometry: { coordinates: [p.lon, p.lat] as [number, number] }, properties: { egid, ...props } };
+  };
+
+  it("keeps one entry per building with its most storeys", () => {
+    const reg = parseRegister([
+      entrance("1", 0, -30, { gastw: 6, garea: 400, gbauj: 1965, strname_deinr: "Zollstrasse 1" }),
+      entrance("1", 10, -30, { gastw: 7, strname_deinr: "Zollstrasse 3" }),
+      entrance("2", 0, 80, { gastw: null }),
+      { properties: { egid: "3" } },
+    ]);
+    expect(reg).toHaveLength(2);
+    expect(reg[0]).toMatchObject({ egid: "1", floors: 7, address: "Zollstrasse 1" });
+    expect(reg[1].floors).toBeNull();
+  });
+
+  it("replaces guessed and mapped storeys with registered ones, but not measured heights", () => {
+    const guessed = box(10, -20, -40, 20, -20, { building: "yes" });
+    const levels = box(11, -20, 20, 20, 40, { building: "apartments", "building:levels": "3" });
+    const measured = box(12, 30, -10, 50, 10, { building: "yes", height: "12" });
+    const empty = box(13, -50, -10, -30, 10, { building: "yes" });
+    const reg = parseRegister([
+      entrance("1", 0, -30, { gastw: 8, strname_deinr: "Südweg 2", gbauj: 1972 }),
+      entrance("2", 0, 30, { gastw: 5 }),
+      entrance("3", 40, 0, { gastw: 9 }),
+    ]);
+    const [a, b, c, d] = applyRegister(parseBuildings([guessed, levels, measured, empty], proj), reg, proj);
+    expect(a).toMatchObject({ height: 25, levels: 8, source: "register", estimated: false, address: "Südweg 2", year: 1972 });
+    expect(b).toMatchObject({ height: 16, levels: 5, source: "register" });
+    expect(c).toMatchObject({ height: 12, source: "measured" });
+    expect(d).toMatchObject({ height: 10, source: "typical", estimated: true });
+  });
+});
+
 describe("sunlight", () => {
+  it("names the buildings that block the sun and how much", () => {
+    // A tall block due south, a low shed to the north and a tower to the east.
+    const block = box(20, -60, -40, 60, -25, { building: "apartments", height: "30" });
+    const shed = box(21, -5, 20, 5, 25, { building: "shed", height: "2" });
+    const tower = box(22, 40, -10, 60, 10, { building: "yes", height: "60" });
+    const sky = buildSkyline(parseBuildings([block, shed, tower], proj), 250);
+    const sun = analyzeSun({ lat: 47.38, lon: 8.53, floor: 0, skyline: sky, terrain: null, climate: null, year: 2026 });
+    expect(sun.shade.map((s) => s.building.id)).toEqual([20, 22]);
+    const [south, east] = sun.shade;
+    // Every winter hour with the sun above the horizon but no direct light is blamed on one of them.
+    const blocked = sun.keyDays[0].samples.filter((s) => s.altitude > 0 && !s.lit).length * (5 / 60);
+    expect(south.winter + east.winter).toBeCloseTo(blocked, 5);
+    expect(south.winter).toBeGreaterThan(east.winter);
+    expect(south.year).toBeGreaterThan(500);
+    // From high up the block no longer shades; the tower still does.
+    const high = analyzeSun({ lat: 47.38, lon: 8.53, floor: 15, skyline: sky, terrain: null, climate: null, year: 2026 });
+    expect(high.shade.map((s) => s.building.id)).toEqual([22]);
+  });
+
   it("gives full daylight on open ground and none behind a tall southern wall in winter", () => {
     const open = analyzeSun({ lat: 47.38, lon: 8.53, floor: 0, skyline: null, terrain: null, climate: null, year: 2026 });
     const winterOpen = open.keyDays.find((d) => d.id === "winter")!;

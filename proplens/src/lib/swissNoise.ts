@@ -1,3 +1,4 @@
+import { cachedFetch } from "./cache";
 import { toLv95 } from "./geo";
 
 type Levels = { day: number | null; night: number | null };
@@ -60,7 +61,7 @@ export async function fetchOfficialNoise(lat: number, lon: number, signal?: Abor
     INFO_FORMAT: "text/plain",
     FEATURE_COUNT: "10",
   });
-  const res = await fetch(`https://wms.geo.admin.ch/?${params}`, { signal });
+  const res = await cachedFetch(`https://wms.geo.admin.ch/?${params}`, signal);
   if (!res.ok) throw new Error(`geo.admin.ch answered ${res.status}`);
   return parseFeatureInfo(await res.text());
 }

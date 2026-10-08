@@ -1,7 +1,9 @@
-import { ArrowRight, BellRing, Check, LoaderCircle, MailCheck, Map as MapIcon } from "lucide-react";
+import { ArrowLeft, ArrowRight, BellRing, Check, CreditCard, LoaderCircle, MailCheck, Map as MapIcon } from "lucide-react";
 import { forwardRef, useEffect, useRef, useState } from "react";
 import type { AlertForm, AlertMode, Confirmation } from "../lib/alerts";
 import { subscribe } from "../lib/alerts";
+import type { BillingConfig } from "../lib/billing";
+import { billingConfig, completeCheckout, mountCheckout, priceLabel } from "../lib/billing";
 import type { AreaRef } from "../lib/area";
 import type { LatLon } from "../lib/geo";
 import type { AreaRanking, RankingUpdate } from "../lib/useAreaRanking";
@@ -28,6 +30,11 @@ const AlertSignup = forwardRef<HTMLElement, Props>(function AlertSignup({ areas,
   const [busy, setBusy] = useState<RankingUpdate | "sending" | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState<{ confirmation: Confirmation; email: string; area: string } | null>(null);
+  const [payment, setPayment] = useState<{ clientSecret: string; sessionId: string; email: string; area: string } | null>(null);
+  const [billing, setBilling] = useState<BillingConfig | null>(null);
+  useEffect(() => {
+    billingConfig().then(setBilling);
+  }, []);
   const set = <K extends keyof AlertForm>(k: K, v: AlertForm[K]) => setForm((f) => ({ ...f, [k]: v }));
   // Stop a ranking started from this form if the page goes away.
   const ctrl = useRef<AbortController | null>(null);
@@ -48,8 +55,9 @@ const AlertSignup = forwardRef<HTMLElement, Props>(function AlertSignup({ areas,
       const r = known ?? (await rankArea(area, focus, signal, (u) => !signal.aborted && setBusy(u)));
       if (!r.homes.length) throw new Error(`We couldn't find any homes with an address in ${area.label}.`);
       setBusy("sending");
-      const confirmation = await subscribe(form, area, r);
-      setDone({ confirmation, email: form.email.trim(), area: area.label });
+      const result = await subscribe(form, area, r);
+      if ("payment" in result) setPayment({ ...result.payment, email: form.email.trim(), area: area.label });
+      else setDone({ confirmation: result.confirmation, email: form.email.trim(), area: area.label });
     } catch (err) {
       if (signal.aborted) return;
       setError(err instanceof Error ? err.message : "Something went wrong. Please try again.");
@@ -76,6 +84,16 @@ const AlertSignup = forwardRef<HTMLElement, Props>(function AlertSignup({ areas,
     >
       {done ? (
         <Done {...done} />
+      ) : payment && billing?.enabled ? (
+        <Payment
+          {...payment}
+          billing={billing}
+          onBack={() => setPayment(null)}
+          onPaid={(confirmation) => {
+            setDone({ confirmation, email: payment.email, area: payment.area });
+            setPayment(null);
+          }}
+        />
       ) : (
         <form
           onSubmit={(e) => {
@@ -141,11 +159,11 @@ const AlertSignup = forwardRef<HTMLElement, Props>(function AlertSignup({ areas,
           <div className="mt-6 flex flex-wrap items-center gap-3">
             <button
               type="submit"
-              disabled={!!busy}
+              disabled={!!busy || !billing?.enabled}
               className="group inline-flex h-12 items-center gap-2 rounded-full bg-ink px-6 text-[15px] font-medium text-white transition hover:bg-forest disabled:opacity-70"
             >
-              {busy ? <LoaderCircle className="size-[18px] animate-spin text-lime" aria-hidden /> : <BellRing className="size-[18px] text-lime" aria-hidden />}
-              {busy === "sending" ? "Creating alert…" : busy ? "Ranking the area…" : "Create alert"}
+              {busy || !billing ? <LoaderCircle className="size-[18px] animate-spin text-lime" aria-hidden /> : <CreditCard className="size-[18px] text-lime" aria-hidden />}
+              {busy === "sending" ? "Opening payment…" : busy ? "Ranking the area…" : billing?.enabled ? `Continue to payment · ${priceLabel(billing)}` : billing ? "Alerts open soon" : "Create alert"}
             </button>
             {onExplore && (
               <button type="button" onClick={() => onExplore(area)} className="inline-flex h-12 items-center gap-2 rounded-full px-4 text-[15px] font-medium text-ink-2 transition hover:bg-wash hover:text-ink">
@@ -154,6 +172,13 @@ const AlertSignup = forwardRef<HTMLElement, Props>(function AlertSignup({ areas,
               </button>
             )}
           </div>
+          <p className="mt-2.5 text-[13px] leading-snug text-muted">
+            {billing?.enabled
+              ? `${priceLabel(billing)} covers alerts for every area you add with this email. Secure payment by Stripe; cancel anytime.`
+              : billing
+                ? "Alerts are a paid subscription and open as soon as payments are set up."
+                : ""}
+          </p>
           {busy && busy !== "sending" && <RankProgress update={busy} />}
           {error && (
             <p role="alert" className="mt-3 text-[14px] font-medium text-critical">
@@ -223,8 +248,8 @@ function RankProgress({ update }: { update: RankingUpdate }) {
 function Done({ confirmation, email, area }: { confirmation: Confirmation; email: string; area: string }) {
   const text: Record<Confirmation, [string, string]> = {
     sent: ["Check your inbox", `We sent a confirmation link to ${email}. Your alerts for ${area} start once you click it.`],
-    confirmed: ["Alert updated", `Your alert for ${area} now uses these settings.`],
-    pending: ["You're signed up", `We'll email ${email} a confirmation link before the first alert for ${area}.`],
+    confirmed: ["Alert is on", `Your subscription covers ${area}; alerts go to ${email} with these settings.`],
+    pending: ["You're subscribed", `We'll email ${email} a confirmation link before the first alert for ${area}.`],
   };
   const [title, body] = text[confirmation];
   return (
@@ -236,6 +261,85 @@ function Done({ confirmation, email, area }: { confirmation: Confirmation; email
         <h3 className="font-display text-[20px] font-bold">{title}</h3>
         <p className="mt-1 text-[15px] leading-relaxed text-ink-2">{body}</p>
       </div>
+    </div>
+  );
+}
+
+/** Stripe's embedded Checkout, inside the alert card. */
+function Payment({
+  clientSecret,
+  sessionId,
+  email,
+  billing,
+  onBack,
+  onPaid,
+}: {
+  clientSecret: string;
+  sessionId: string;
+  email: string;
+  billing: Extract<BillingConfig, { enabled: true }>;
+  onBack: () => void;
+  onPaid: (c: Confirmation) => void;
+}) {
+  const el = useRef<HTMLDivElement>(null);
+  // The page around may re-render while the card is typed in; keep the form mounted regardless.
+  const paid = useRef(onPaid);
+  paid.current = onPaid;
+  const [state, setState] = useState<"loading" | "ready" | "finishing">("loading");
+  const [error, setError] = useState<string | null>(null);
+  useEffect(() => {
+    let checkout: Awaited<ReturnType<typeof mountCheckout>> | null = null;
+    let gone = false;
+    mountCheckout(billing.publishableKey, clientSecret, el.current!, async () => {
+      setState("finishing");
+      // The webhook would get there too; asking now switches the alert on straight away.
+      for (let attempt = 0; attempt < 5; attempt++) {
+        try {
+          const r = await completeCheckout(sessionId);
+          if (!gone) paid.current(r.confirmation);
+          return;
+        } catch {
+          await new Promise((r) => setTimeout(r, 1500));
+        }
+      }
+      if (!gone) paid.current("pending");
+    }).then(
+      (c) => {
+        if (gone) c.destroy();
+        else {
+          checkout = c;
+          setState("ready");
+        }
+      },
+      (err) => !gone && setError(err instanceof Error ? err.message : "The payment form couldn't load."),
+    );
+    return () => {
+      gone = true;
+      checkout?.destroy();
+    };
+  }, [billing.publishableKey, clientSecret, sessionId]);
+
+  return (
+    <div>
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <button onClick={onBack} disabled={state === "finishing"} className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[14px] font-medium text-ink-2 transition hover:bg-wash hover:text-ink">
+          <ArrowLeft className="size-4" aria-hidden /> Back
+        </button>
+        <span className="text-[13px] text-muted">
+          {priceLabel(billing)} · {email}
+        </span>
+      </div>
+      {state !== "ready" && !error && (
+        <p className="flex items-center gap-2 py-6 text-[14px] text-ink-2" aria-live="polite">
+          <LoaderCircle className="size-4 animate-spin" aria-hidden /> {state === "finishing" ? "Payment received, switching your alert on…" : "Loading the secure payment form…"}
+        </p>
+      )}
+      {error && (
+        <p role="alert" className="py-4 text-[14px] font-medium text-critical">
+          {error}
+        </p>
+      )}
+      <div ref={el} className={state === "finishing" ? "hidden" : "overflow-hidden rounded-2xl"} />
     </div>
   );
 }

@@ -14,12 +14,12 @@ type View =
   | { kind: "landing" }
   | { kind: "report"; place: Place; floor: number }
   | { kind: "area"; area: AreaRef; focus?: LatLon }
-  | { kind: "alerts"; action: "confirm" | "unsubscribe"; token: string };
+  | { kind: "alerts"; action: "confirm" | "unsubscribe" | "manage"; token: string };
 
 function readUrl(): View {
   const q = new URLSearchParams(location.search);
   const action = q.get("alerts");
-  if ((action === "confirm" || action === "unsubscribe") && q.get("token")) return { kind: "alerts", action, token: q.get("token")! };
+  if ((action === "confirm" || action === "unsubscribe" || action === "manage") && q.get("token")) return { kind: "alerts", action, token: q.get("token")! };
 
   const areaId = q.get("area");
   if (areaId) {

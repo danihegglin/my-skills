@@ -50,7 +50,7 @@ export function confirmEmail(s: Sub, base: string): Email {
     `<h1 style="font-size:20px;margin:0 0 10px">Confirm your listing alerts</h1>
 <p style="font-size:15px;line-height:1.55;margin:0 0 18px">You asked to hear about ${esc(prefs(s))}. Confirm and we'll email you when a new listing at a matching address comes up.</p>
 <a href="${esc(link)}" style="display:inline-block;background:#18181b;color:#fff;text-decoration:none;font-weight:600;padding:12px 20px;border-radius:999px">Confirm alerts</a>`,
-    "If you didn't sign up, ignore this email and you won't hear from us again.",
+    `If you didn't sign up, ignore this email and you won't hear from us again. <a href="${esc(`${base}/?alerts=manage&token=${encodeURIComponent(s.token)}`)}" style="color:#71717a">Manage your subscription</a>`,
   );
   return { to: s.email, subject: `Confirm your PropLens alerts for ${s.area_label}`, html, text: `Confirm your alerts for ${prefs(s)}:\n${link}\n\nIf you didn't sign up, ignore this email.` };
 }
@@ -59,6 +59,7 @@ export type DigestItem = Pick<Listing, "url" | "title" | "address" | "price" | "
 
 export function digestEmail(s: Sub, items: DigestItem[], more: number, base: string): Email {
   const unsubscribe = `${base}/?alerts=unsubscribe&token=${encodeURIComponent(s.token)}`;
+  const manage = `${base}/?alerts=manage&token=${encodeURIComponent(s.token)}`;
   const report = (i: DigestItem) => `${base}/?${new URLSearchParams({ q: i.home.address, s: s.area_label, lat: i.home.lat.toFixed(6), lon: i.home.lon.toFixed(6) })}`;
   const facts = (i: DigestItem) =>
     [i.rooms ? `${i.rooms} rooms` : "", i.space ? `${i.space} m²` : "", i.price ? `${chf(i.price)}${i.mode === "rent" ? "/month" : ""}` : "Price on request"].filter(Boolean).join(" · ");
@@ -81,14 +82,14 @@ export function digestEmail(s: Sub, items: DigestItem[], more: number, base: str
 <p style="font-size:14px;line-height:1.5;color:#52525b;margin:0 0 8px">Matching your alert for ${esc(prefs(s))}. Scores are for the address: noise, schools, shopping and sunlight.</p>
 <table style="width:100%;border-collapse:collapse">${rows}</table>
 ${more ? `<p style="font-size:13px;color:#52525b">And ${more} more; they'll follow in the next email.</p>` : ""}`,
-    `Listings from Flatfox. You get this because you signed up for PropLens alerts. <a href="${esc(unsubscribe)}" style="color:#71717a">Unsubscribe</a>`,
+    `Listings from Flatfox. You get this because you subscribed to PropLens alerts. <a href="${esc(unsubscribe)}" style="color:#71717a">Unsubscribe from this alert</a> · <a href="${esc(manage)}" style="color:#71717a">Manage your subscription</a>`,
   );
   const text = [
     subject,
     "",
     ...items.map((i) => `${i.score}  ${i.title}\n    ${i.address}\n    ${facts(i)}\n    ${i.url}`),
     more ? `\nAnd ${more} more in the next email.` : "",
-    `\nUnsubscribe: ${unsubscribe}`,
+    `\nUnsubscribe from this alert: ${unsubscribe}\nManage your subscription: ${manage}`,
   ].join("\n");
   return { to: s.email, subject, html, text, unsubscribe: `${base}/api/alerts/unsubscribe?token=${encodeURIComponent(s.token)}` };
 }

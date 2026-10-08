@@ -1,3 +1,5 @@
+import { cachedFetch } from "./cache";
+
 export type Municipality = { name: string; number: number; canton: string };
 
 const LAYER = "ch.swisstopo.swissboundaries3d-gemeinde-flaeche.fill";
@@ -10,7 +12,7 @@ export async function fetchMunicipality(lat: number, lon: number, signal?: Abort
     const url =
       `https://api3.geo.admin.ch/rest/services/api/MapServer/identify?geometryType=esriGeometryPoint` +
       `&geometry=${lon.toFixed(6)},${lat.toFixed(6)}&sr=4326&layers=all:${LAYER}&tolerance=0&returnGeometry=false&timeInstant=${timeInstant}`;
-    const res = await fetch(url, { signal });
+    const res = await cachedFetch(url, signal);
     if (!res.ok) throw new Error(`geo.admin.ch answered ${res.status}`);
     const json = (await res.json()) as { results?: { attributes: { gemname: string; gde_nr: number; kanton: string } }[] };
     const hit = json.results?.[0]?.attributes;

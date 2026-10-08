@@ -1,6 +1,6 @@
 import type { Climate } from "./climate";
-import type { Skyline } from "./skyline";
-import { buildingHorizon } from "./skyline";
+import type { Building, Skyline } from "./skyline";
+import { skylineProfile } from "./skyline";
 import type { DaySample } from "./sun";
 import { HORIZON_ALT, daySamples } from "./sun";
 import type { TerrainSamples } from "./terrain";
@@ -42,8 +42,12 @@ export type SunResult = {
   facades: FacadeSun[];
   /** Hours of actual sunshine per year at this spot, weighting clear-sky access by the local climate. */
   realSunshine: number | null;
+  /** Buildings that block direct sun here, most first: hours lost on the shortest day and over a year. */
+  shade: Shade[];
   score: number;
 };
+
+export type Shade = { building: Building; winter: number; year: number };
 
 const STEP_MIN = 5;
 const STEP_H = STEP_MIN / 60;
@@ -65,12 +69,27 @@ export function analyzeSun(input: SunInput): SunResult {
   const samplesFor = input.sampler ?? daySamples;
   const year = input.year ?? new Date().getFullYear();
   const h = observerHeight(floor);
-  const buildings = input.skyline ? buildingHorizon(input.skyline, h) : new Float32Array(360);
+  const profile = input.skyline ? skylineProfile(input.skyline, h) : null;
+  const buildings = profile?.angles ?? new Float32Array(360);
   const terrain = input.terrain ? terrainHorizon(input.terrain, h) : null;
   const horizon = new Float32Array(360);
   for (let b = 0; b < 360; b++) horizon[b] = Math.max(buildings[b], terrain ? terrain[b] : 0, 0);
 
   const lit = (s: DaySample) => s.altitude > HORIZON_ALT && s.altitude > horizon[Math.floor(s.azimuth) % 360];
+  // The building in the way when the sun is up and clear of the terrain but behind the building skyline.
+  const blocker = (s: DaySample) => {
+    const bin = Math.floor(s.azimuth) % 360;
+    if (!profile || s.altitude <= Math.max(HORIZON_ALT, terrain ? terrain[bin] : 0, 0) || s.altitude > buildings[bin]) return null;
+    return profile.owners[bin];
+  };
+  const shadeBy = new Map<Building, Shade>();
+  const blame = (s: DaySample, key: "winter" | "year", hours: number) => {
+    const b = blocker(s);
+    if (!b) return;
+    let entry = shadeBy.get(b);
+    if (!entry) shadeBy.set(b, (entry = { building: b, winter: 0, year: 0 }));
+    entry[key] += hours;
+  };
 
   const months: MonthSun[] = [];
   let annualDirect = 0;
@@ -83,6 +102,7 @@ export function analyzeSun(input: SunInput): SunResult {
     annualDirect += direct * days;
     annualDaylight += daylight * days;
     months.push({ month: m, daylight, direct });
+    if (profile) for (const s of samples) blame(s, "year", STEP_H * days);
   }
 
   const south = lat < 0;
@@ -132,6 +152,9 @@ export function analyzeSun(input: SunInput): SunResult {
     }, 0);
   }
 
+  if (profile) for (const s of keyDays[0].samples) blame(s, "winter", STEP_H);
+  const shade = [...shadeBy.values()].filter((x) => x.year >= 1 || x.winter > 0).sort((a, b) => b.year - a.year || b.winter - a.winter);
+
   const winter = keyDays[0];
   const winterShare = winter.daylight ? winter.direct / winter.daylight : 0;
   const annualShare = annualDaylight ? annualDirect / annualDaylight : 0;
@@ -153,6 +176,7 @@ export function analyzeSun(input: SunInput): SunResult {
     annualDaylight,
     facades,
     realSunshine,
+    shade,
     score: Math.round(score),
   };
 }

@@ -12,10 +12,12 @@ import { analyzeNoise, withOfficial } from "./noise";
 import type { OsmElement, QueryName } from "./osm";
 import { RADIUS, countFrom, overpass } from "./osm";
 import type { Building, Skyline } from "./skyline";
-import { buildSkyline, parseBuildings } from "./skyline";
+import { applyRegister, buildSkyline, parseBuildings } from "./skyline";
 import type { SunResult } from "./sunlight";
 import { analyzeSun } from "./sunlight";
 import type { Municipality } from "./municipality";
+import type { RegisterBuilding } from "./register";
+import { fetchRegister } from "./register";
 import { fetchMunicipality } from "./municipality";
 import type { OfficialNoise } from "./swissNoise";
 import { fetchOfficialNoise, inSwitzerland } from "./swissNoise";
@@ -23,7 +25,7 @@ import type { TerrainSamples } from "./terrain";
 import type { SectionId } from "./score";
 import { fetchTerrain } from "./terrain";
 
-export type StepId = QueryName | "climate" | "terrain" | "official" | "municipality";
+export type StepId = QueryName | "climate" | "terrain" | "official" | "municipality" | "register";
 export type StepState = "pending" | "done" | "failed" | "skipped";
 
 export const STEP_LABELS: Record<StepId, string> = {
@@ -31,6 +33,7 @@ export const STEP_LABELS: Record<StepId, string> = {
   air: "Scanning airports and flight paths",
   places: "Finding schools, shops and restaurants",
   buildings: "Measuring the surrounding skyline",
+  register: "Reading storeys from the federal building register",
   official: "Reading official Swiss noise maps",
   municipality: "Looking up the municipality",
   terrain: "Following hills and mountains on the horizon",
@@ -48,6 +51,7 @@ type Raw = {
   terrain?: TerrainSamples | null;
   official?: OfficialNoise | null;
   municipality?: Municipality | null;
+  register?: RegisterBuilding[] | null;
 };
 
 export type Report = {
@@ -77,9 +81,9 @@ export function useReport(place: Place | null, attempt: number) {
     setRaw({});
     const swiss = inSwitzerland(p.lat, p.lon);
     setSteps(Object.fromEntries(
-      (["buildings", "places", "streets", "air", "official", "municipality", "terrain", "climate"] as StepId[]).map((s) => [
+      (["buildings", "register", "places", "streets", "air", "official", "municipality", "terrain", "climate"] as StepId[]).map((s) => [
         s,
-        (s === "official" || s === "municipality") && !swiss ? "skipped" : "pending",
+        (s === "official" || s === "municipality" || s === "register") && !swiss ? "skipped" : "pending",
       ]),
     ));
 
@@ -102,6 +106,8 @@ export function useReport(place: Place | null, attempt: number) {
     for (const q of ["buildings", "places", "streets", "air"] as QueryName[]) track(q, q, () => overpass(q, p, ctrl.signal));
     if (swiss) track("official", "official", () => fetchOfficialNoise(p.lat, p.lon, ctrl.signal));
     if (swiss) track("municipality", "municipality", () => fetchMunicipality(p.lat, p.lon, ctrl.signal));
+    // Storeys for every Swiss building: the skyline re-measures once they arrive.
+    if (swiss) track("register", "register", () => fetchRegister(p, RADIUS.buildings, ctrl.signal));
     track("terrain", "terrain", () => fetchTerrain(p, ctrl.signal));
     track("climate", "climate", () => fetchClimate(p.lat, p.lon, ctrl.signal));
     return () => ctrl.abort();
@@ -113,7 +119,7 @@ export function useReport(place: Place | null, attempt: number) {
   const report = useMemo<Report | null>(() => {
     if (!place || !coreSettled || coreFailed) return null;
     const proj = makeProjection({ lat: place.lat, lon: place.lon });
-    const buildings = raw.buildings ? parseBuildings(raw.buildings, proj) : [];
+    const buildings = raw.buildings ? applyRegister(parseBuildings(raw.buildings, proj), raw.register ?? [], proj) : [];
     const skyline = raw.buildings ? buildSkyline(buildings, RADIUS.buildings) : null;
     const modelled = raw.streets || raw.places || raw.air
       ? analyzeNoise({ proj, streets: raw.streets ?? null, air: raw.air ?? null, places: raw.places ?? null, skyline })

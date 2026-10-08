@@ -1,7 +1,9 @@
-import { Building, CloudSun, Minus, Plus, Sun, TriangleAlert } from "lucide-react";
-import { forwardRef } from "react";
+import { ArrowUp, Building, CloudSun, Minus, Plus, Sun, TriangleAlert } from "lucide-react";
+import { forwardRef, useState } from "react";
+import { bearing, compassLabel, distanceToPolygon } from "../lib/geo";
 import type { Report } from "../lib/report";
-import type { SunResult } from "../lib/sunlight";
+import type { Building as Bldg, HeightSource } from "../lib/skyline";
+import type { Shade, SunResult } from "../lib/sunlight";
 import { FacadeTable, MonthlySunChart, SunPathChart, fmtTime } from "./SunCharts";
 import { Section, SubHeading } from "./ui";
 
@@ -112,6 +114,8 @@ const SunSection = forwardRef<HTMLElement, Props>(function SunSection({ report, 
         </div>
       </div>
 
+      {report.skyline && <ShadeList report={report} shade={sun.shade} floor={floor} />}
+
       <div className="mt-8 grid gap-3 sm:grid-cols-2">
         <div className="flex gap-3 rounded-3xl bg-paper p-4">
           <Building className="mt-0.5 size-5 shrink-0 text-ink-2" aria-hidden />
@@ -136,14 +140,126 @@ const SunSection = forwardRef<HTMLElement, Props>(function SunSection({ report, 
         </div>
       </div>
       <p className="mt-6 text-[13px] leading-relaxed text-muted">
-        Building heights come from OpenStreetMap
-        {report.skyline && report.skyline.estimatedShare > 0.05
-          ? `; ${Math.round(report.skyline.estimatedShare * 100)}% of nearby buildings had no height and use a typical value for their type`
-          : ""}
-        . Trees, balconies and your own building's overhangs aren't modelled{report.terrain ? "" : ", and terrain data wasn't available"}.
+        <HeightNote report={report} /> Trees, balconies and your own building's overhangs aren't modelled{report.terrain ? "" : ", and terrain data wasn't available"}.
       </p>
     </Section>
   );
 });
 
 export default SunSection;
+
+const KIND: Record<string, string> = {
+  apartments: "Apartment building",
+  residential: "Residential building",
+  house: "House",
+  detached: "Detached house",
+  semidetached_house: "Semi-detached house",
+  terrace: "Terraced houses",
+  commercial: "Commercial building",
+  office: "Office building",
+  retail: "Shop building",
+  industrial: "Industrial building",
+  warehouse: "Warehouse",
+  school: "School",
+  university: "University building",
+  hospital: "Hospital",
+  church: "Church",
+  hotel: "Hotel",
+  garage: "Garage",
+  garages: "Garages",
+  yes: "Building",
+};
+
+export const kindLabel = (kind: string) => KIND[kind] ?? kind.charAt(0).toUpperCase() + kind.slice(1).replace(/_/g, " ");
+
+export const SOURCE_LABEL: Record<HeightSource, string> = {
+  measured: "mapped height",
+  register: "storeys from the federal building register",
+  levels: "mapped storeys",
+  typical: "typical height for its type",
+};
+
+const DIRECTION: Record<string, string> = { N: "north", NE: "north-east", E: "east", SE: "south-east", S: "south", SW: "south-west", W: "west", NW: "north-west" };
+
+function where(b: Bldg) {
+  const n = b.ring.length - 1;
+  const c = b.ring.slice(0, n).reduce((a, p) => ({ x: a.x + p.x / n, y: a.y + p.y / n }), { x: 0, y: 0 });
+  const az = bearing({ x: 0, y: 0 }, c);
+  return { distance: Math.max(1, Math.round(distanceToPolygon({ x: 0, y: 0 }, b.ring))), azimuth: az, direction: DIRECTION[compassLabel(az)] ?? compassLabel(az) };
+}
+
+function ShadeList({ report, shade, floor }: { report: Report; shade: Shade[]; floor: number }) {
+  const [all, setAll] = useState(false);
+  const others = report.skyline!.others;
+  const tallest = others.reduce<Bldg | null>((a, b) => (!a || b.height > a.height ? b : a), null);
+  const shown = all ? shade : shade.slice(0, 5);
+  const maxYear = Math.max(1, ...shade.map((s) => s.year));
+  return (
+    <div className="mt-8">
+      <SubHeading aside={floorName(floor)}>Buildings that block your sun</SubHeading>
+      <p className="mb-3 text-[14px] leading-relaxed text-ink-2">
+        {others.length} buildings stand within 250 m{tallest ? `; the tallest is ≈ ${Math.round(tallest.height)} m` : ""}. Each one is traced with its
+        real footprint and height. {shade.length ? "These cut off direct sun here:" : `None of them blocks direct sun at ${floorName(floor).toLowerCase()}.`}
+      </p>
+      {shade.length > 0 && (
+        <ol className="divide-y divide-line rounded-3xl border border-line">
+          {shown.map(({ building: b, winter, year }) => {
+            const w = where(b);
+            return (
+              <li key={b.id} className="flex items-center gap-3 px-4 py-3 sm:gap-4">
+                <span className="grid size-10 shrink-0 place-items-center rounded-full bg-paper" title={`${w.direction}, ${Math.round(w.azimuth)}°`}>
+                  <ArrowUp className="size-4 text-ink" style={{ transform: `rotate(${w.azimuth}deg)` }} aria-hidden />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <div className="truncate text-[15px] font-semibold text-ink">{b.address ?? kindLabel(b.kind)}</div>
+                  <div className="mt-0.5 text-[13px] leading-snug text-ink-2 tabular">
+                    {w.distance} m {w.direction} · ≈ {Math.round(b.height)} m tall
+                    {b.levels ? `, ${b.levels} storeys` : ""} · {b.footprint.toLocaleString("en")} m² footprint
+                    {b.year ? ` · built ${b.year}` : ""}
+                  </div>
+                  <div className="mt-0.5 text-[12px] text-muted">
+                    {b.address ? `${kindLabel(b.kind)} · ` : ""}
+                    {SOURCE_LABEL[b.source]}
+                  </div>
+                </div>
+                <div className="w-[112px] shrink-0 text-right">
+                  <div className="font-display text-[17px] font-bold leading-tight text-ink tabular">
+                    −{year >= 10 ? Math.round(year).toLocaleString("en") : year.toFixed(1)} h<span className="font-sans text-[12px] font-normal text-muted"> a year</span>
+                  </div>
+                  <div className="text-[12px] text-muted tabular">{winter > 0 ? `−${winter.toFixed(1)} h on Dec 21` : "none on Dec 21"}</div>
+                  <div className="mt-1 h-1 overflow-hidden rounded-full bg-wash">
+                    <div className="ml-auto h-full rounded-full bg-sun" style={{ width: `${(100 * year) / maxYear}%` }} />
+                  </div>
+                </div>
+              </li>
+            );
+          })}
+        </ol>
+      )}
+      {shade.length > 5 && (
+        <button onClick={() => setAll((a) => !a)} className="mt-2 text-[13px] font-medium text-ink-2 underline-offset-2 hover:text-ink hover:underline">
+          {all ? "Show fewer" : `Show all ${shade.length}`}
+        </button>
+      )}
+    </div>
+  );
+}
+
+function HeightNote({ report }: { report: Report }) {
+  const others = report.skyline?.others ?? [];
+  if (!others.length) return <>Building heights come from OpenStreetMap.</>;
+  const count = (src: HeightSource) => others.filter((b) => b.source === src).length;
+  const register = count("register");
+  const mapped = count("measured") + count("levels");
+  const typical = count("typical");
+  const pct = (n: number) => `${Math.round((100 * n) / others.length)}%`;
+  return (
+    <>
+      Heights of the {others.length} surrounding buildings:{" "}
+      {[register ? `${pct(register)} from storeys in the federal building register` : "", mapped ? `${pct(mapped)} mapped in OpenStreetMap` : "", typical ? `${pct(typical)} a typical height for their type` : ""]
+        .filter(Boolean)
+        .join(", ")}
+      .
+    </>
+  );
+}

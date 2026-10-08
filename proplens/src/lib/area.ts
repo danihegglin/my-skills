@@ -1,5 +1,6 @@
 // Areas (postcodes, municipalities, districts) for the area ranking: search, boundaries and Overpass queries.
 
+import { cachedFetch } from "./cache";
 import type { LatLon } from "./geo";
 import { haversine, makeProjection, pointInPolygon } from "./geo";
 import { PHOTON, lang } from "./geocode";
@@ -127,7 +128,7 @@ export async function areasAt(lat: number, lon: number, title: string, signal?: 
     const url =
       `${GEOADMIN}/MapServer/identify?geometryType=esriGeometryPoint&geometry=${lon.toFixed(6)},${lat.toFixed(6)}` +
       `&sr=4326&layers=all:${PLZ_LAYER},${MUNI_LAYER}&tolerance=0&returnGeometry=false&timeInstant=${year}`;
-    const res = await fetch(url, { signal });
+    const res = await cachedFetch(url, signal);
     if (!res.ok) throw new Error(`geo.admin.ch answered ${res.status}`);
     return ((await res.json()) as { results?: Hit[] }).results ?? [];
   };
@@ -189,7 +190,7 @@ export async function loadAreaShape(ref: AreaRef, signal?: AbortSignal): Promise
   const [kind, value] = [ref.id.slice(0, ref.id.indexOf(":")), ref.id.slice(ref.id.indexOf(":") + 1)];
   if (kind === "plz" || kind === "gg") {
     const layer = kind === "plz" ? PLZ_LAYER : MUNI_LAYER;
-    const res = await fetch(`${GEOADMIN}/MapServer/${layer}/${encodeURIComponent(value)}?geometryFormat=geojson&sr=4326`, { signal });
+    const res = await cachedFetch(`${GEOADMIN}/MapServer/${layer}/${encodeURIComponent(value)}?geometryFormat=geojson&sr=4326`, signal);
     if (!res.ok) throw new Error(`geo.admin.ch answered ${res.status}`);
     const json = (await res.json()) as { feature?: { geometry?: GeoJsonGeometry } };
     if (!json.feature?.geometry) throw new Error("Area boundary not found");

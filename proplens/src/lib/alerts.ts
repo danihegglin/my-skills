@@ -38,9 +38,12 @@ async function call<T>(path: string, body: unknown): Promise<T> {
   return json;
 }
 
-export async function subscribe(form: AlertForm, ref: AreaRef, ranking: AreaRanking): Promise<Confirmation> {
-  const res = await call<{ confirmation?: Confirmation }>("/api/alerts", signupBody(form, ref, ranking));
-  return res.confirmation ?? "pending";
+/** Either the alert is on (the email already pays), or the payment form opens with this session. */
+export type SignupResult = { confirmation: Confirmation } | { payment: { clientSecret: string; sessionId: string } };
+
+export async function subscribe(form: AlertForm, ref: AreaRef, ranking: AreaRanking): Promise<SignupResult> {
+  const res = await call<{ confirmation?: Confirmation; payment?: { clientSecret: string; sessionId: string } }>("/api/alerts", signupBody(form, ref, ranking));
+  return res.payment ? { payment: res.payment } : { confirmation: res.confirmation ?? "pending" };
 }
 
 export async function alertAction(action: "confirm" | "unsubscribe", token: string): Promise<void> {

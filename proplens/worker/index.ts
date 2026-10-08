@@ -1,13 +1,19 @@
 import { DurableObject } from "cloudflare:workers";
 import type { Home, Listing, Mode, Signup } from "./alerts";
 import { matchListing, parseSignup, wanted } from "./alerts";
+import type { BillingEnv, StripeSubscription } from "./billing";
+import { GRACE_DAYS, PAYING, StripeError, billingEnabled, createCheckout, getPrice, periodEnd, stripe, verifySignature } from "./billing";
+import { cacheKey, ruleFor } from "./cache";
+import type { Cache } from "./cacheStore";
+import { SHARDS } from "./cacheStore";
 import type { DigestItem } from "./email";
 import { confirmEmail, digestEmail, resendMailer } from "./email";
 import { newFlatfoxListings } from "./listings";
 
-interface Env {
+interface Env extends BillingEnv {
   ASSETS: Fetcher;
   SIGNUPS: DurableObjectNamespace<Signups>;
+  CACHE: DurableObjectNamespace<Cache>;
   /** Public address used in email links. */
   PUBLIC_URL?: string;
   /** Secret (`wrangler secret put ADMIN_TOKEN`) that unlocks the export and manual scans. */
@@ -22,6 +28,14 @@ const MAX_BODY = 1_500_000;
 /** A new subscription also hears about matching listings first seen up to this long before it. */
 const BACKLOG_DAYS = 14;
 const DIGEST_SIZE = 10;
+
+/** Subscriptions whose email has a paid-up alerts subscription (bind the current time in ms). */
+const PAID = `EXISTS (SELECT 1 FROM billing b WHERE b.email = s.email AND b.status IN (${[...PAYING].map((x) => `'${x}'`).join(", ")}) AND b.paid_until > ?)`;
+const paidSince = () => Date.now() - GRACE_DAYS * 86_400_000;
+/** Unpaid signups (abandoned checkouts) are deleted after this many days. */
+const UNPAID_DAYS = 7;
+
+export type BillingRecord = { email: string; customer: string | null; subscription: string | null; status: string; paidUntil: number | null };
 
 type SubRow = { token: string; email: string; area_id: string; area_label: string; mode: Mode; budget: number | null; min_score: number; confirmed: number; created: string };
 type AreaRow = { id: string; label: string; south: number; west: number; north: number; east: number };
@@ -53,7 +67,10 @@ export class Signups extends DurableObject<Env> {
         price INTEGER, rooms REAL, space INTEGER, home_address TEXT, home_lat REAL, home_lon REAL, score INTEGER,
         first_seen TEXT NOT NULL, PRIMARY KEY (area_id, id));
       CREATE TABLE IF NOT EXISTS sent (token TEXT NOT NULL, listing_id TEXT NOT NULL, at TEXT NOT NULL, PRIMARY KEY (token, listing_id));
-      CREATE TABLE IF NOT EXISTS attempts (client TEXT NOT NULL, at INTEGER NOT NULL);`);
+      CREATE TABLE IF NOT EXISTS attempts (client TEXT NOT NULL, at INTEGER NOT NULL);
+      CREATE TABLE IF NOT EXISTS billing (
+        email TEXT PRIMARY KEY, customer TEXT, subscription TEXT, status TEXT NOT NULL, paid_until INTEGER, updated TEXT NOT NULL);
+      CREATE INDEX IF NOT EXISTS billing_customer ON billing (customer);`);
   }
 
   private get mailer() {
@@ -65,11 +82,11 @@ export class Signups extends DurableObject<Env> {
   }
 
   /** Stores or updates a subscription and replaces the area's ranking with the one sent along. */
-  subscribe(s: Signup, client: string): { status: "ok" | "limited"; confirmed: boolean } {
+  subscribe(s: Signup, client: string): { status: "ok" | "limited"; confirmed: boolean; paid: boolean; customer: string | null } {
     const hourAgo = Date.now() - 3_600_000;
     this.sql.exec("DELETE FROM attempts WHERE at < ?", hourAgo);
     const recent = this.sql.exec<{ n: number }>("SELECT COUNT(*) AS n FROM attempts WHERE client = ?", client).one().n;
-    if (recent >= HOURLY_LIMIT) return { status: "limited", confirmed: false };
+    if (recent >= HOURLY_LIMIT) return { status: "limited", confirmed: false, paid: false, customer: null };
     this.sql.exec("INSERT INTO attempts (client, at) VALUES (?, ?)", client, Date.now());
     const now = new Date().toISOString();
     const a = s.area;
@@ -95,7 +112,41 @@ export class Signups extends DurableObject<Env> {
       );
     });
     const sub = this.sql.exec<{ confirmed: number }>("SELECT confirmed FROM subscriptions WHERE email = ? AND area_id = ? AND mode = ?", s.email, a.id, s.mode).one();
-    return { status: "ok", confirmed: sub.confirmed === 1 };
+    const bill = this.billing(s.email);
+    return { status: "ok", confirmed: sub.confirmed === 1, paid: bill.paid, customer: bill.customer };
+  }
+
+  /** Whether an email has a paid-up alerts subscription, and its Stripe customer if it ever had one. */
+  billing(email: string): { paid: boolean; customer: string | null } {
+    const row = this.sql.exec<{ customer: string | null; status: string; paid_until: number | null }>("SELECT customer, status, paid_until FROM billing WHERE email = ?", email).toArray()[0];
+    return { paid: !!row && PAYING.has(row.status) && (row.paid_until ?? 0) > paidSince(), customer: row?.customer ?? null };
+  }
+
+  /** Records a payment or subscription change from Stripe; a newly paid email gets its confirmation links. */
+  async setBilling(r: BillingRecord): Promise<{ confirmation: "sent" | "pending" | "confirmed" }> {
+    const email = r.email.trim().toLowerCase();
+    this.sql.exec(
+      `INSERT INTO billing (email, customer, subscription, status, paid_until, updated) VALUES (?, ?, ?, ?, ?, ?)
+       ON CONFLICT (email) DO UPDATE SET customer = COALESCE(excluded.customer, customer), subscription = COALESCE(excluded.subscription, subscription),
+         status = excluded.status, paid_until = COALESCE(excluded.paid_until, paid_until), updated = excluded.updated`,
+      email, r.customer, r.subscription, r.status, r.paidUntil, new Date().toISOString(),
+    );
+    const unconfirmed = this.sql.exec<{ n: number }>("SELECT COUNT(*) AS n FROM subscriptions WHERE email = ? AND confirmed = 0", email).one().n;
+    if (!unconfirmed) return { confirmation: "confirmed" };
+    if (!this.mailer || !this.billing(email).paid) return { confirmation: "pending" };
+    await this.sendConfirmations();
+    return { confirmation: "sent" };
+  }
+
+  emailForCustomer(customer: string): string | null {
+    return this.sql.exec<{ email: string }>("SELECT email FROM billing WHERE customer = ?", customer).toArray()[0]?.email ?? null;
+  }
+
+  /** The Stripe customer behind an alert's email, for the billing portal link in its emails. */
+  customerForToken(token: string): string | null {
+    return (
+      this.sql.exec<{ customer: string | null }>("SELECT b.customer FROM subscriptions s JOIN billing b ON b.email = s.email WHERE s.token = ?", token).toArray()[0]?.customer ?? null
+    );
   }
 
   confirm(token: string): boolean {
@@ -112,7 +163,8 @@ export class Signups extends DurableObject<Env> {
   async sendConfirmations(): Promise<number> {
     const mail = this.mailer;
     if (!mail) return 0;
-    const subs = this.sql.exec<SubRow>("SELECT * FROM subscriptions WHERE confirmed = 0 AND confirm_sent IS NULL").toArray();
+    // Only paid-up emails: nobody is asked to confirm before they've paid.
+    const subs = this.sql.exec<SubRow>(`SELECT * FROM subscriptions s WHERE confirmed = 0 AND confirm_sent IS NULL AND ${PAID}`, paidSince()).toArray();
     let sent = 0;
     for (const s of subs) {
       await mail(confirmEmail(s, this.base));
@@ -128,8 +180,11 @@ export class Signups extends DurableObject<Env> {
    */
   async scan(): Promise<ScanSummary> {
     const summary: ScanSummary = { areas: 0, newListings: 0, scored: 0, emails: 0, confirmations: 0, errors: [], mail: !!this.mailer };
-    const areas = this.sql.exec<AreaRow>("SELECT a.* FROM areas a WHERE EXISTS (SELECT 1 FROM subscriptions s WHERE s.area_id = a.id)").toArray();
     const now = new Date().toISOString();
+    // Abandoned checkouts: drop signups that never got paid for.
+    const stale = new Date(Date.now() - UNPAID_DAYS * 86_400_000).toISOString();
+    this.sql.exec("DELETE FROM subscriptions WHERE created < ? AND NOT EXISTS (SELECT 1 FROM billing b WHERE b.email = subscriptions.email)", stale);
+    const areas = this.sql.exec<AreaRow>(`SELECT a.* FROM areas a WHERE EXISTS (SELECT 1 FROM subscriptions s WHERE s.area_id = a.id AND ${PAID})`, paidSince()).toArray();
     for (const area of areas) {
       summary.areas++;
       try {
@@ -157,7 +212,7 @@ export class Signups extends DurableObject<Env> {
     } catch (err) {
       summary.errors.push(`confirmations: ${err instanceof Error ? err.message : String(err)}`);
     }
-    for (const s of this.sql.exec<SubRow>("SELECT * FROM subscriptions WHERE confirmed = 1").toArray()) {
+    for (const s of this.sql.exec<SubRow>(`SELECT * FROM subscriptions s WHERE confirmed = 1 AND ${PAID}`, paidSince()).toArray()) {
       const since = new Date(Date.parse(s.created) - BACKLOG_DAYS * 86_400_000).toISOString();
       const matches = this.sql
         .exec<ListingRow>(
@@ -205,9 +260,12 @@ export class Signups extends DurableObject<Env> {
       subscriptions: this.sql.exec("SELECT email, area_id, area_label, mode, budget, min_score, confirmed, confirm_sent, created, updated FROM subscriptions ORDER BY created DESC").toArray(),
       areas: this.sql.exec("SELECT id, label, homes, ranked, scanned FROM areas ORDER BY ranked DESC").toArray(),
       listings: this.sql.exec("SELECT area_id, id, title, address, mode, category, price, rooms, space, home_address, score, first_seen FROM listings WHERE category != 'IGNORED' ORDER BY first_seen DESC LIMIT 200").toArray(),
+      billing: this.sql.exec("SELECT email, customer, subscription, status, paid_until, updated FROM billing ORDER BY updated DESC").toArray(),
     };
   }
 }
+
+export { Cache } from "./cacheStore";
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" } });
@@ -246,9 +304,21 @@ export default {
       }
       const parsed = parseSignup(body);
       if (!parsed.ok) return parsed.spam ? json({ ok: true, confirmation: "sent" }) : json({ error: parsed.error }, 400);
+      // Alerts are a paid subscription: without Stripe configured, nobody can sign up.
+      if (!billingEnabled(env)) return json({ error: "Alerts open soon: payments are still being set up." }, 503);
       const client = await hash(`${request.headers.get("CF-Connecting-IP") ?? "unknown"}:proplens`);
       const result = await store().subscribe(parsed.signup, client);
       if (result.status === "limited") return json({ error: "Too many signups from your connection. Please try again later." }, 429);
+      if (!result.paid) {
+        // One yearly subscription per email; this alert switches on once it's paid.
+        try {
+          const session = await createCheckout(env, parsed.signup.email, result.customer);
+          return json({ ok: true, payment: { clientSecret: session.client_secret, sessionId: session.id } });
+        } catch (err) {
+          console.error("checkout failed", err);
+          return json({ error: "The payment page couldn't be opened. Please try again." }, 502);
+        }
+      }
       const mail = !!(env.RESEND_API_KEY && env.ALERTS_FROM);
       if (mail && !result.confirmed) ctx.waitUntil(store().sendConfirmations().catch((err) => console.error("confirmation failed", err)));
       return json({ ok: true, confirmation: result.confirmed ? "confirmed" : mail ? "sent" : "pending" });
@@ -269,6 +339,21 @@ export default {
       return admin ? json(await store().scan()) : json({ error: "Not found" }, 404);
     }
 
+    if (url.pathname === "/api/fetch" && request.method === "POST") return cachedFetch(request, env);
+
+    if (url.pathname.startsWith("/api/billing/")) return billingRoute(request, url, env);
+
+    if (url.pathname === "/api/cache/stats" && request.method === "GET") {
+      if (!admin) return json({ error: "Not found" }, 404);
+      const shards = await Promise.all(Array.from({ length: SHARDS }, (_, i) => cacheShard(env, i.toString(16)).stats()));
+      return json({
+        entries: shards.reduce((n, s) => n + s.entries, 0),
+        bytes: shards.reduce((n, s) => n + s.bytes, 0),
+        breakerOpen: shards.filter((s) => s.breakerOpen).length,
+        shards,
+      });
+    }
+
     if (url.pathname.startsWith("/api/")) return json({ error: "Not found" }, 404);
     return env.ASSETS.fetch(request);
   },
@@ -279,5 +364,134 @@ export default {
         .scan()
         .then((s) => console.log("listing scan", JSON.stringify(s))),
     );
+    ctx.waitUntil(Promise.all(Array.from({ length: SHARDS }, (_, i) => cacheShard(env, i.toString(16)).trim())));
   },
 } satisfies ExportedHandler<Env>;
+
+const cacheShard = (env: Env, digit: string) => env.CACHE.get(env.CACHE.idFromName(`shard-${digit}`));
+
+/**
+ * The shared lookup cache: answers an allow-listed upstream request (Overpass, Open-Meteo, geo.admin.ch) from
+ * storage, or fetches, stores and returns it. Bodies stay gzip-compressed end to end.
+ */
+async function cachedFetch(request: Request, env: Env): Promise<Response> {
+  const req = (await request.json().catch(() => null)) as { url?: unknown; body?: unknown; timeout?: unknown } | null;
+  if (!req || typeof req.url !== "string" || req.url.length > 8000) return json({ error: "Invalid request" }, 400);
+  let target: URL;
+  try {
+    target = new URL(req.url);
+  } catch {
+    return json({ error: "Invalid request" }, 400);
+  }
+  const body = typeof req.body === "string" ? req.body : undefined;
+  if (body && body.length > 20000) return json({ error: "Request too large" }, 413);
+  const rule = ruleFor(target, body !== undefined);
+  if (!rule) return json({ error: "Not a cached source" }, 403);
+  const key = await cacheKey(rule, target, body);
+  const timeout = Math.max(5000, Math.min(170_000, Number(req.timeout) || 40_000));
+  const r = await cacheShard(env, key[0]).lookup(key, rule, target.href, body, timeout);
+  if (!r.gzip) return json({ error: "The data source didn't answer" }, r.status);
+  return new Response(r.gzip, {
+    headers: {
+      "Content-Type": r.type,
+      "Content-Encoding": "gzip",
+      "Cache-Control": "no-store",
+      "X-Cache": r.hit ? "HIT" : "MISS",
+      "X-Cached-At": new Date(r.cachedAt ?? Date.now()).toISOString(),
+    },
+    encodeBody: "manual",
+  });
+}
+
+/* ---------- billing ---------- */
+
+type CheckoutSession = {
+  id: string;
+  status: string | null;
+  customer: string | null;
+  customer_email: string | null;
+  customer_details?: { email?: string | null } | null;
+  metadata?: Record<string, string> | null;
+  subscription: string | StripeSubscription | null;
+};
+
+/** The billing record a completed Checkout Session stands for. */
+async function recordFromSession(env: Env, session: CheckoutSession): Promise<BillingRecord | null> {
+  const email = session.metadata?.email ?? session.customer_email ?? session.customer_details?.email;
+  if (session.status !== "complete" || !email) return null;
+  const sub = typeof session.subscription === "string" ? await stripe<StripeSubscription>(env, "GET", `subscriptions/${session.subscription}`) : session.subscription;
+  return {
+    email,
+    customer: session.customer,
+    subscription: sub?.id ?? null,
+    status: sub?.status ?? "active",
+    // A year from now until Stripe tells us the real period end.
+    paidUntil: (sub && periodEnd(sub)) ?? Date.now() + 366 * 86_400_000,
+  };
+}
+
+async function billingRoute(request: Request, url: URL, env: Env): Promise<Response> {
+  const store = () => env.SIGNUPS.get(env.SIGNUPS.idFromName("all"));
+  const route = url.pathname.slice("/api/billing/".length);
+
+  if (route === "config" && request.method === "GET") {
+    if (!billingEnabled(env)) return json({ enabled: false });
+    try {
+      return json({ enabled: true, publishableKey: env.STRIPE_PUBLISHABLE_KEY, ...(await getPrice(env)) });
+    } catch (err) {
+      console.error("price lookup failed", err);
+      return json({ enabled: false });
+    }
+  }
+
+  // Called by the page right after embedded Checkout completes, so the alert switches on without waiting for the webhook.
+  if (route === "complete" && request.method === "POST") {
+    if (!billingEnabled(env)) return json({ error: "Not found" }, 404);
+    const body = (await request.json().catch(() => null)) as { sessionId?: unknown } | null;
+    const id = typeof body?.sessionId === "string" && /^cs_[A-Za-z0-9_]+$/.test(body.sessionId) ? body.sessionId : null;
+    if (!id) return json({ error: "Invalid request" }, 400);
+    try {
+      const record = await recordFromSession(env, await stripe<CheckoutSession>(env, "GET", `checkout/sessions/${id}`));
+      if (!record) return json({ error: "The payment isn't complete yet" }, 409);
+      return json({ ok: true, ...(await store().setBilling(record)) });
+    } catch (err) {
+      console.error("checkout completion failed", err);
+      return json({ error: err instanceof StripeError ? err.message : "Couldn't check the payment" }, 502);
+    }
+  }
+
+  if (route === "webhook" && request.method === "POST") {
+    if (!env.STRIPE_WEBHOOK_SECRET || !env.STRIPE_SECRET_KEY) return json({ error: "Not found" }, 404);
+    const payload = await request.text();
+    if (!(await verifySignature(payload, request.headers.get("Stripe-Signature"), env.STRIPE_WEBHOOK_SECRET))) return json({ error: "Invalid signature" }, 400);
+    const event = JSON.parse(payload) as { type: string; data: { object: unknown } };
+    if (event.type === "checkout.session.completed") {
+      const record = await recordFromSession(env, event.data.object as CheckoutSession);
+      if (record) await store().setBilling(record);
+    } else if (event.type.startsWith("customer.subscription.")) {
+      // Events can arrive out of order: read the subscription's current state instead of the event's snapshot.
+      const sub = await stripe<StripeSubscription>(env, "GET", `subscriptions/${(event.data.object as StripeSubscription).id}`);
+      const email = sub.metadata?.email ?? (await store().emailForCustomer(sub.customer));
+      if (email) await store().setBilling({ email, customer: sub.customer, subscription: sub.id, status: sub.status, paidUntil: periodEnd(sub) });
+    }
+    return json({ received: true });
+  }
+
+  // Stripe's customer portal: cancel, change card, download invoices. Reached from the link in alert emails.
+  if (route === "portal" && request.method === "POST") {
+    if (!billingEnabled(env)) return json({ error: "Not found" }, 404);
+    const body = (await request.json().catch(() => null)) as { token?: unknown } | null;
+    const token = typeof body?.token === "string" && /^[0-9a-f-]{36}$/.test(body.token) ? body.token : null;
+    const customer = token ? await store().customerForToken(token) : null;
+    if (!customer) return json({ error: "No subscription found for this link" }, 404);
+    try {
+      const portal = await stripe<{ url: string }>(env, "POST", "billing_portal/sessions", { customer, return_url: (env.PUBLIC_URL ?? url.origin).replace(/\/$/, "") });
+      return json({ url: portal.url });
+    } catch (err) {
+      console.error("portal failed", err);
+      return json({ error: err instanceof StripeError ? err.message : "Couldn't open the billing portal" }, 502);
+    }
+  }
+
+  return json({ error: "Not found" }, 404);
+}

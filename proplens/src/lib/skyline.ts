@@ -2,19 +2,28 @@ import type { LatLon, Projection, XY } from "./geo";
 import { bearing, distanceToPolygon, len, pointInPolygon, polygonArea, rayHit } from "./geo";
 import type { OsmElement } from "./osm";
 import { elementLines } from "./osm";
+import type { RegisterBuilding } from "./register";
+
+/** Where a building's height comes from, best first. */
+export type HeightSource = "measured" | "register" | "levels" | "typical";
 
 export type Building = {
   id: number;
   ring: XY[];
   latlngs: LatLon[];
   height: number;
-  /** Floors from OSM, when mapped. */
+  /** Floors from OSM or the building register, when known. */
   levels: number | null;
-  /** True when neither height nor floors were mapped and we fell back to a typical value. */
+  /** True when neither height nor floors were known and we fell back to a typical value. */
   estimated: boolean;
+  source: HeightSource;
   /** Open structures (canopies, carports) cast shade but don't block sound. */
   solid: boolean;
   kind: string;
+  /** Footprint, m². */
+  footprint: number;
+  address: string | null;
+  year: number | null;
 };
 
 const TYPICAL_HEIGHT: Record<string, number> = {
@@ -39,15 +48,15 @@ function parseMetres(v?: string): number | null {
   return m[2] === "ft" || m[2] === "'" ? n * 0.3048 : n;
 }
 
-export function buildingHeight(tags: Record<string, string>): { height: number; levels: number | null; estimated: boolean } {
+/** Storeys to metres: 3 m a storey, a taller ground floor and half-height roof storeys. */
+export const storeysToHeight = (levels: number, roofLevels = 0) => levels * 3 + roofLevels * 1.5 + 1;
+
+export function buildingHeight(tags: Record<string, string>): { height: number; levels: number | null; estimated: boolean; source: HeightSource } {
   const levels = parseMetres(tags["building:levels"]);
   const height = parseMetres(tags.height);
-  if (height) return { height: Math.min(height, 400), levels, estimated: false };
-  if (levels) {
-    const roof = parseMetres(tags["roof:levels"]) ?? 0;
-    return { height: levels * 3 + roof * 1.5 + 1, levels, estimated: false };
-  }
-  return { height: TYPICAL_HEIGHT[tags.building] ?? 10, levels: null, estimated: true };
+  if (height) return { height: Math.min(height, 400), levels, estimated: false, source: "measured" };
+  if (levels) return { height: storeysToHeight(levels, parseMetres(tags["roof:levels"]) ?? 0), levels, estimated: false, source: "levels" };
+  return { height: TYPICAL_HEIGHT[tags.building] ?? 10, levels: null, estimated: true, source: "typical" };
 }
 
 export function parseBuildings(elements: OsmElement[], proj: Projection): Building[] {
@@ -57,22 +66,49 @@ export function parseBuildings(elements: OsmElement[], proj: Projection): Buildi
     if (!tags.building || tags.building === "no") continue;
     const line = elementLines(e)[0];
     if (!line || line.length < 4) continue;
-    const { height, levels, estimated } = buildingHeight(tags);
+    const { height, levels, estimated, source } = buildingHeight(tags);
+    const ring = line.map((p) => proj.toXY(p.lat, p.lon));
+    const street = tags["addr:street"] ?? tags["addr:place"];
     out.push({
       id: e.id,
-      ring: line.map((p) => proj.toXY(p.lat, p.lon)),
+      ring,
       latlngs: line,
       height,
       levels,
       estimated,
+      source,
       solid: !OPEN_STRUCTURES.has(tags.building),
       kind: tags.building,
+      footprint: Math.round(polygonArea(ring)),
+      address: street && tags["addr:housenumber"] ? `${street} ${tags["addr:housenumber"]}` : null,
+      year: Number(tags.start_date?.slice(0, 4)) || null,
     });
   }
   return out;
 }
 
-type Hit = { d: number; h: number; solid: boolean };
+/**
+ * Takes storeys, address and year from the Swiss building register for every building whose footprint
+ * holds a registered building. A mapped height (OSM `height`) still wins; storeys replace mapped or guessed ones.
+ */
+export function applyRegister(buildings: Building[], register: RegisterBuilding[], proj: Projection): Building[] {
+  if (!register.length) return buildings;
+  const pts = register.map((r) => ({ r, p: proj.toXY(r.lat, r.lon) }));
+  return buildings.map((b) => {
+    const xs = b.ring.map((q) => q.x);
+    const ys = b.ring.map((q) => q.y);
+    const [x0, x1, y0, y1] = [Math.min(...xs), Math.max(...xs), Math.min(...ys), Math.max(...ys)];
+    const inside = pts.filter(({ p }) => p.x >= x0 && p.x <= x1 && p.y >= y0 && p.y <= y1 && pointInPolygon(p, b.ring)).map(({ r }) => r);
+    if (!inside.length) return b;
+    // Row houses mapped as one footprint: the tallest registered part sets the skyline.
+    const top = inside.reduce((a, r) => ((r.floors ?? 0) > (a.floors ?? 0) ? r : a));
+    const next = { ...b, address: b.address ?? top.address, year: b.year ?? top.year };
+    if (b.source === "measured" || !top.floors) return next;
+    return { ...next, height: storeysToHeight(top.floors), levels: top.floors, estimated: false, source: "register" as const };
+  });
+}
+
+type Hit = { d: number; h: number; solid: boolean; building: Building };
 
 export type Skyline = {
   /** The building the address sits in (or right next to), excluded from shading/shielding. */
@@ -146,7 +182,7 @@ export function buildSkyline(buildings: Building[], radius: number, ownId?: numb
   }
 
   function record(bin: number, d: number, b: Building) {
-    hits[bin].push({ d, h: b.height, solid: b.solid });
+    hits[bin].push({ d, h: b.height, solid: b.solid, building: b });
     if (b.solid && b.height >= 3 && d < screenDist[bin]) screenDist[bin] = d;
   }
 
@@ -161,16 +197,25 @@ export function buildSkyline(buildings: Building[], radius: number, ownId?: numb
   };
 }
 
-/** Elevation angle (degrees) of the building skyline per 1° azimuth bin, for an eye at `observerHeight` m. */
-export function buildingHorizon(s: Skyline, observerHeight: number): Float32Array {
-  const out = new Float32Array(360);
+/**
+ * Elevation angle (degrees) of the building skyline per 1° azimuth bin, for an eye at `observerHeight` m,
+ * and the building that forms the skyline in each direction.
+ */
+export function skylineProfile(s: Skyline, observerHeight: number): { angles: Float32Array; owners: (Building | null)[] } {
+  const angles = new Float32Array(360);
+  const owners: (Building | null)[] = Array(360).fill(null);
   for (let b = 0; b < 360; b++) {
     let best = 0;
     for (const hit of s.hits[b]) {
       const angle = (Math.atan2(hit.h - observerHeight, Math.max(hit.d, 1)) * 180) / Math.PI;
-      if (angle > best) best = angle;
+      if (angle > best) {
+        best = angle;
+        owners[b] = hit.building;
+      }
     }
-    out[b] = best;
+    angles[b] = best;
   }
-  return out;
+  return { angles, owners };
 }
+
+export const buildingHorizon = (s: Skyline, observerHeight: number): Float32Array => skylineProfile(s, observerHeight).angles;

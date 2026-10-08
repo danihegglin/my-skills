@@ -1,3 +1,4 @@
+import { cachedFetch } from "./cache";
 import type { LatLon } from "./geo";
 import { makeProjection } from "./geo";
 
@@ -53,7 +54,7 @@ export async function fetchTerrain(p: LatLon, signal?: AbortSignal): Promise<Ter
     const url =
       `https://api.open-meteo.com/v1/elevation?latitude=${chunk.map((c) => c.lat.toFixed(5)).join(",")}` +
       `&longitude=${chunk.map((c) => c.lon.toFixed(5)).join(",")}`;
-    const res = await fetch(url, { signal });
+    const res = await cachedFetch(url, signal);
     if (!res.ok) throw new Error(`Elevation service answered ${res.status}`);
     const json = (await res.json()) as { elevation: number[] };
     heights.push(...json.elevation);

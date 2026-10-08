@@ -1,6 +1,7 @@
-import { BellOff, BellRing, Check, LoaderCircle } from "lucide-react";
+import { BellOff, BellRing, Check, CreditCard, LoaderCircle } from "lucide-react";
 import { useState } from "react";
 import { alertAction } from "../lib/alerts";
+import { portalUrl } from "../lib/billing";
 import Logo from "./Logo";
 
 const COPY = {
@@ -16,12 +17,21 @@ const COPY = {
     title: "Unsubscribe from this alert?",
     body: "We'll stop emailing you about this area right away and delete the alert.",
     button: "Unsubscribe",
-    done: ["You're unsubscribed", "You won't get any more emails for this alert."],
+    done: ["You're unsubscribed", "You won't get any more emails for this alert. Your yearly subscription keeps running for your other alerts; manage it from any alert email."],
+  },
+  manage: {
+    icon: CreditCard,
+    title: "Manage your subscription",
+    body: "Cancel your alerts subscription, change your card or download invoices on Stripe's secure billing page.",
+    button: "Open billing page",
+    done: ["Opening Stripe…", "Taking you to the billing page."],
   },
 } as const;
 
+type Action = keyof typeof COPY;
+
 /** Landing spot for the confirm and unsubscribe links in alert emails. A button press, so link scanners can't act on them. */
-export default function AlertLink({ action, token, onHome }: { action: "confirm" | "unsubscribe"; token: string; onHome: () => void }) {
+export default function AlertLink({ action, token, onHome }: { action: Action; token: string; onHome: () => void }) {
   const [state, setState] = useState<"idle" | "busy" | "done">("idle");
   const [error, setError] = useState<string | null>(null);
   const c = COPY[action];
@@ -31,6 +41,10 @@ export default function AlertLink({ action, token, onHome }: { action: "confirm"
     setState("busy");
     setError(null);
     try {
+      if (action === "manage") {
+        location.href = await portalUrl(token);
+        return;
+      }
       await alertAction(action, token);
       setState("done");
     } catch (err) {

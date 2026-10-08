@@ -265,6 +265,7 @@ function PoiLayer({ pois, icon, color, limit }: { pois: Poi[]; icon: LucideIcon;
 function SunLayer({ report, sun }: { report: Report; sun: SunResult | null }) {
   const proj = useMemo(() => makeProjection({ lat: report.place.lat, lon: report.place.lon }), [report.place]);
   const maxH = Math.max(12, ...report.buildings.map((b) => b.height));
+  const shading = useMemo(() => new Map((sun?.shade ?? []).map((s) => [s.building.id, s])), [sun]);
   const rays = useMemo(() => {
     if (!sun) return [];
     return sun.keyDays
@@ -283,16 +284,28 @@ function SunLayer({ report, sun }: { report: Report; sun: SunResult | null }) {
     <>
       {report.buildings.map((b) => {
         const t = Math.min(1, b.height / maxH);
-        const own = b === report.skyline?.own;
+        const own = b.id === report.skyline?.own?.id;
+        const shade = shading.get(b.id);
         return (
           <Polygon
             key={b.id}
             positions={b.latlngs.map((p) => [p.lat, p.lon] as [number, number])}
-            pathOptions={{ color: own ? "#10140f" : "#3d4a40", weight: own ? 2 : 0.5, fillColor: own ? "#d4f26a" : "#3d4a40", fillOpacity: own ? 0.8 : 0.12 + t * 0.6 }}
+            pathOptions={{
+              color: own ? "#10140f" : shade ? CATEGORY_HEX.sun : "#3d4a40",
+              weight: own ? 2 : shade ? 2 : 0.5,
+              fillColor: own ? "#d4f26a" : "#3d4a40",
+              fillOpacity: own ? 0.8 : 0.12 + t * 0.6,
+            }}
           >
             <Tooltip sticky className="pl-tip">
-              {own ? "This building · " : ""}
-              {b.levels ? `${b.levels} floors · ` : ""}≈ {Math.round(b.height)} m{b.estimated ? " (typical height)" : ""}
+              {own ? "This building · " : b.address ? `${b.address} · ` : ""}
+              {b.levels ? `${b.levels} storeys · ` : ""}≈ {Math.round(b.height)} m{b.source === "typical" ? " (typical height)" : b.source === "register" ? " (building register)" : ""}
+              {shade && (
+                <>
+                  <br />
+                  Blocks {Math.round(shade.year).toLocaleString("en")} h of sun a year{shade.winter > 0 ? `, ${shade.winter.toFixed(1)} h on Dec 21` : ""}
+                </>
+              )}
             </Tooltip>
           </Polygon>
         );
