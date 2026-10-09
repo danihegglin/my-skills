@@ -1,5 +1,5 @@
 import { AlertTriangle, ArrowRight, Check, CircleCheck, CircleDashed, Link2, LoaderCircle, Map as MapIcon, MapPin, RotateCcw, TriangleAlert, X } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { AreaRef } from "../lib/area";
 import { areasAt } from "../lib/area";
 import type { LatLon } from "../lib/geo";
@@ -8,12 +8,14 @@ import { reversePlace } from "../lib/geocode";
 import type { LayerId, Report, SectionId, StepId } from "../lib/report";
 import { STEP_LABELS, insights, overallScore, useReport, useSun } from "../lib/report";
 import type { SunResult } from "../lib/sunlight";
+import { evaluate, reportMetrics, savedId, usePreferences, useSaved } from "../lib/preferences";
 import AlertSignup from "./AlertSignup";
 import { SchoolsSection, ShoppingSection } from "./AmenitySections";
 import FlightsSection from "./FlightsSection";
 import Logo from "./Logo";
 import MapPanel from "./MapPanel";
 import NoiseSection from "./NoiseSection";
+import { CompareLink, MatchCard, PreferencesButton, SaveButton } from "./Preferences";
 import PriceSection from "./PriceSection";
 import SearchBox from "./SearchBox";
 import SunSection from "./SunSection";
@@ -25,13 +27,14 @@ type Props = {
   onFloor: (f: number) => void;
   onSelect: (p: Place | null) => void;
   onArea: (area: AreaRef, focus?: LatLon) => void;
+  onCompare: () => void;
 };
 
 const MAP_LAYERS: LayerId[] = ["noise", "flights", "schools", "shopping", "sun"];
 
 const SECTION_LABELS: Record<SectionId, string> = { noise: "Quiet", schools: "Schools", shopping: "Shopping", sun: "Sunlight" };
 
-export default function ReportView({ place, floor, onFloor, onSelect, onArea }: Props) {
+export default function ReportView({ place, floor, onFloor, onSelect, onArea, onCompare }: Props) {
   const [attempt, setAttempt] = useState(0);
   const { report, steps, failed } = useReport(place, attempt);
   const sun = useSun(report, floor);
@@ -89,14 +92,32 @@ export default function ReportView({ place, floor, onFloor, onSelect, onArea }: 
   };
   const overall = report ? overallScore(scores) : null;
 
+  // Personal preferences: what this address offers, and how well that fits.
+  const [prefs] = usePreferences();
+  const metrics = useMemo(() => (report ? reportMetrics(report, sun) : null), [report, sun]);
+  const match = useMemo(() => (metrics ? evaluate(prefs, metrics) : null), [prefs, metrics]);
+  // A saved address keeps its comparison snapshot current while its report is open.
+  const [saved, setSaved] = useSaved();
+  useEffect(() => {
+    if (!metrics) return;
+    const id = savedId(place);
+    const s = saved.find((x) => x.id === id);
+    if (s && (s.floor !== floor || s.score !== overall || JSON.stringify(s.metrics) !== JSON.stringify(metrics)))
+      setSaved(saved.map((x) => (x.id === id ? { ...x, floor, score: overall, metrics } : x)));
+  }, [metrics, overall, floor, place, saved, setSaved]);
+
   return (
     <div className="min-h-dvh">
       <header className="sticky top-0 z-[1000] border-b border-line bg-paper/85 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-[1500px] items-center gap-4 px-4 py-3 sm:px-6">
+        <div className="mx-auto flex max-w-[1500px] flex-wrap items-center gap-x-3 gap-y-2 px-4 py-3 sm:flex-nowrap sm:gap-4 sm:px-6">
           <Logo onClick={() => onSelect(null)} compact />
-          <div className="ml-auto min-w-0 max-w-md flex-1">
+          <div className="order-last w-full min-w-0 sm:order-none sm:ml-auto sm:w-auto sm:max-w-md sm:flex-1">
             <SearchBox onSelect={onSelect} size="sm" placeholder="Check another address" />
           </div>
+          <span className="ml-auto flex items-center gap-2 sm:ml-0">
+            <CompareLink onCompare={onCompare} compact />
+            <PreferencesButton compact />
+          </span>
         </div>
       </header>
 
@@ -113,6 +134,7 @@ export default function ReportView({ place, floor, onFloor, onSelect, onArea }: 
                 {place.lat.toFixed(5)}, {place.lon.toFixed(5)}
               </span>
               <CopyLink />
+              <SaveButton place={place} floor={floor} score={overall} metrics={metrics} />
             </p>
           </div>
           <ScoreCard overall={overall} scores={scores} loading={!report} onJump={jump} />
@@ -129,6 +151,7 @@ export default function ReportView({ place, floor, onFloor, onSelect, onArea }: 
               <Progress steps={steps} />
             ) : (
               <>
+                {match && <MatchCard match={match} pending={Object.values(steps).includes("pending")} />}
                 <Insights report={report} sun={sun} onJump={jump} />
                 <NoiseSection ref={(el) => { refs.current.noise = el; }} noise={report.noise} />
                 <FlightsSection ref={(el) => { refs.current.flights = el; }} report={report} onShowMap={() => showOnMap("flights")} />

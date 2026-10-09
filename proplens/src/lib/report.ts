@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import type { ShoppingResult, SchoolsResult } from "./amenities";
-import { analyzeSchools, analyzeShopping } from "./amenities";
+import type { GetAround, ShoppingResult, SchoolsResult } from "./amenities";
+import { analyzeGetAround, analyzeSchools, analyzeShopping } from "./amenities";
 import type { FlightAnalysis } from "./airports";
 import { analyzeFlights } from "./airports";
 import type { Climate } from "./climate";
@@ -32,6 +32,7 @@ export const STEP_LABELS: Record<StepId, string> = {
   streets: "Tracing streets, rail lines and industry",
   air: "Scanning airports and flight paths",
   places: "Finding schools, shops and restaurants",
+  around: "Finding stops, stations and parks",
   buildings: "Measuring the surrounding skyline",
   register: "Reading storeys from the federal building register",
   official: "Reading official Swiss noise maps",
@@ -41,11 +42,13 @@ export const STEP_LABELS: Record<StepId, string> = {
 };
 
 const CORE: QueryName[] = ["streets", "air", "places", "buildings"];
+const QUERIES: QueryName[] = ["buildings", "places", "streets", "air", "around"];
 
 type Raw = {
   streets?: OsmElement[] | null;
   air?: OsmElement[] | null;
   places?: OsmElement[] | null;
+  around?: OsmElement[] | null;
   buildings?: OsmElement[] | null;
   climate?: Climate | null;
   terrain?: TerrainSamples | null;
@@ -61,6 +64,10 @@ export type Report = {
   flights: FlightAnalysis | null;
   schools: SchoolsResult | null;
   shopping: ShoppingResult | null;
+  /** Public transport, train station and green space; null until (or unless) they load. */
+  getAround: GetAround | null;
+  /** Bars, pubs and clubs within 150 m; null when places didn't load. */
+  barsNearby: number | null;
   skyline: Skyline | null;
   buildings: Building[];
   climate: Climate | null;
@@ -81,7 +88,7 @@ export function useReport(place: Place | null, attempt: number) {
     setRaw({});
     const swiss = inSwitzerland(p.lat, p.lon);
     setSteps(Object.fromEntries(
-      (["buildings", "register", "places", "streets", "air", "official", "municipality", "terrain", "climate"] as StepId[]).map((s) => [
+      (["buildings", "register", "places", "around", "streets", "air", "official", "municipality", "terrain", "climate"] as StepId[]).map((s) => [
         s,
         (s === "official" || s === "municipality" || s === "register") && !swiss ? "skipped" : "pending",
       ]),
@@ -103,7 +110,7 @@ export function useReport(place: Place | null, attempt: number) {
       );
     }
 
-    for (const q of ["buildings", "places", "streets", "air"] as QueryName[]) track(q, q, () => overpass(q, p, ctrl.signal));
+    for (const q of QUERIES) track(q, q, () => overpass(q, p, ctrl.signal));
     if (swiss) track("official", "official", () => fetchOfficialNoise(p.lat, p.lon, ctrl.signal));
     if (swiss) track("municipality", "municipality", () => fetchMunicipality(p.lat, p.lon, ctrl.signal));
     // Storeys for every Swiss building: the skyline re-measures once they arrive.
@@ -130,6 +137,8 @@ export function useReport(place: Place | null, attempt: number) {
       flights: raw.air ? analyzeFlights(raw.air, proj) : null,
       schools: raw.places ? analyzeSchools(raw.places, proj) : null,
       shopping: raw.places ? analyzeShopping(raw.places, proj, countFrom(raw.places)) : null,
+      getAround: raw.around ? analyzeGetAround(raw.around, proj) : null,
+      barsNearby: raw.places ? analyzeGetAround(raw.places, proj).barsNearby : null,
       skyline,
       buildings,
       climate: raw.climate ?? null,
@@ -152,6 +161,7 @@ export function useSun(report: Report | null, floor: number): SunResult | null {
       skyline: report.skyline,
       terrain: report.terrain,
       climate: report.climate,
+      timeZone: report.timeZone,
     });
   }, [report, floor]);
 }

@@ -6,6 +6,7 @@ import type { LatLon } from "../lib/geo";
 import type { Place } from "../lib/geocode";
 import { searchPlaces } from "../lib/geocode";
 import AreaSearch from "./AreaSearch";
+import { CompareLink, PreferencesButton } from "./Preferences";
 import Logo from "./Logo";
 import SearchBox from "./SearchBox";
 
@@ -38,7 +39,7 @@ const LENSES = [
   },
 ];
 
-export default function Landing({ onSelect, onArea }: { onSelect: (p: Place) => void; onArea: (a: AreaRef, focus?: LatLon) => void }) {
+export default function Landing({ onSelect, onArea, onCompare }: { onSelect: (p: Place) => void; onArea: (a: AreaRef, focus?: LatLon) => void; onCompare: () => void }) {
   const [busy, setBusy] = useState<string | null>(null);
 
   async function tryExample(q: string) {
@@ -55,9 +56,13 @@ export default function Landing({ onSelect, onArea }: { onSelect: (p: Place) => 
     <div className="min-h-dvh overflow-x-clip">
       <header className="mx-auto flex max-w-7xl items-center justify-between px-5 py-5 sm:px-8">
         <Logo />
-        <a href="#how" className="rounded-full px-4 py-2 text-sm font-medium text-ink-2 transition hover:bg-wash hover:text-ink">
-          How it works
-        </a>
+        <div className="flex items-center gap-2">
+          <a href="#how" className="hidden rounded-full px-4 py-2 text-sm font-medium text-ink-2 transition hover:bg-wash hover:text-ink sm:inline">
+            How it works
+          </a>
+          <CompareLink onCompare={onCompare} />
+          <PreferencesButton />
+        </div>
       </header>
 
       <main>

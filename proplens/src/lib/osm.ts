@@ -36,7 +36,23 @@ export const RADIUS = {
   shops: 1500,
   buildings: 250,
   airports: 25000,
+  stops: 800,
+  stations: 2000,
+  green: 1000,
 };
+
+/** Bus, tram and metro stops, train stations and ferries; `area(r)` is the Overpass filter for radius r. */
+export const transitFilters = (area: (r: number) => string) => `
+  nwr["highway"="bus_stop"]${area(RADIUS.stops)};
+  nwr["railway"~"^(tram_stop|station|halt)$"]${area(RADIUS.stations)};
+  nwr["public_transport"="station"]${area(RADIUS.stations)};
+  nwr["amenity"="ferry_terminal"]${area(RADIUS.stations)};`;
+
+/** Parks, woods and other public green space. */
+export const greenFilters = (area: string) => `
+  nwr["leisure"~"^(park|nature_reserve)$"]${area};
+  nwr["landuse"~"^(forest|recreation_ground|village_green)$"]${area};
+  nwr["natural"="wood"]${area};`;
 
 function around(r: number, p: LatLon) {
   return `(around:${r},${p.lat.toFixed(6)},${p.lon.toFixed(6)})`;
@@ -78,6 +94,15 @@ out tags center;`,
 out tags center;
 nwr["shop"]${around(800, p)};
 out count;`,
+
+  // Stops, stations and green space for preferences, kept apart so the core report doesn't wait for them.
+  around: (p: LatLon) => `[out:json][timeout:45];
+(${transitFilters((r) => around(r, p))}
+);
+out tags center;
+(${greenFilters(around(RADIUS.green, p))}
+);
+out tags geom(${bbox(p, RADIUS.green + 100)});`,
 
   buildings: (p: LatLon) => `[out:json][timeout:45];
 way["building"]${around(RADIUS.buildings, p)};

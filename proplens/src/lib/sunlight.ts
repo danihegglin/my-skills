@@ -44,6 +44,9 @@ export type SunResult = {
   realSunshine: number | null;
   /** Buildings that block direct sun here, most first: hours lost on the shortest day and over a year. */
   shade: Shade[];
+  /** Average hours of direct sun a day after 17:00 / before 10:00 local time, April to September. */
+  eveningSun: number;
+  morningSun: number;
   score: number;
 };
 
@@ -62,7 +65,41 @@ export type SunInput = {
   year?: number;
   /** Sun positions per day; pass a memoised `daySamples` when analysing many nearby points. */
   sampler?: typeof daySamples;
+  /** IANA time zone for clock-time figures (morning and evening sun); solar time when missing. */
+  timeZone?: string;
 };
+
+/** Evening and morning sun are counted from April to September, by local clock time. */
+const SEASON = [3, 4, 5, 6, 7, 8];
+export const EVENING_FROM = 17;
+export const MORNING_UNTIL = 10;
+
+const formatters = new Map<string, Intl.DateTimeFormat>();
+
+/** Hour of day (0–24, fractional) of a UTC timestamp in a time zone, with the offset looked up once per day. */
+export function clockHour(timeZone: string | undefined, lon: number): (t: number) => number {
+  const offsets = new Map<number, number>();
+  const offsetAt = (t: number) => {
+    if (!timeZone) return Math.round(lon / 15) * 3_600_000;
+    try {
+      let f = formatters.get(timeZone);
+      if (!f) {
+        f = new Intl.DateTimeFormat("en-US", { timeZone, hourCycle: "h23", year: "numeric", month: "numeric", day: "numeric", hour: "numeric", minute: "numeric" });
+        formatters.set(timeZone, f);
+      }
+      const parts = Object.fromEntries(f.formatToParts(new Date(t)).map((p) => [p.type, Number(p.value)]));
+      return Date.UTC(parts.year, parts.month - 1, parts.day, parts.hour, parts.minute) - Math.floor(t / 60_000) * 60_000;
+    } catch {
+      return Math.round(lon / 15) * 3_600_000;
+    }
+  };
+  return (t) => {
+    const day = Math.floor(t / 86_400_000);
+    let off = offsets.get(day);
+    if (off === undefined) offsets.set(day, (off = offsetAt(t)));
+    return ((((t + off) / 3_600_000) % 24) + 24) % 24;
+  };
+}
 
 export function analyzeSun(input: SunInput): SunResult {
   const { lat, lon, floor } = input;
@@ -91,6 +128,9 @@ export function analyzeSun(input: SunInput): SunResult {
     entry[key] += hours;
   };
 
+  const hour = clockHour(input.timeZone, lon);
+  let evening = 0;
+  let morning = 0;
   const months: MonthSun[] = [];
   let annualDirect = 0;
   let annualDaylight = 0;
@@ -102,6 +142,13 @@ export function analyzeSun(input: SunInput): SunResult {
     annualDirect += direct * days;
     annualDaylight += daylight * days;
     months.push({ month: m, daylight, direct });
+    if (SEASON.includes(m))
+      for (const s of samples) {
+        if (!lit(s)) continue;
+        const h = hour(s.t);
+        if (h >= EVENING_FROM) evening += STEP_H;
+        else if (h < MORNING_UNTIL) morning += STEP_H;
+      }
     if (profile) for (const s of samples) blame(s, "year", STEP_H * days);
   }
 
@@ -177,6 +224,8 @@ export function analyzeSun(input: SunInput): SunResult {
     facades,
     realSunshine,
     shade,
+    eveningSun: evening / SEASON.length,
+    morningSun: morning / SEASON.length,
     score: Math.round(score),
   };
 }

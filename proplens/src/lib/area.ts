@@ -4,7 +4,7 @@ import { cachedFetch } from "./cache";
 import type { LatLon } from "./geo";
 import { haversine, makeProjection, pointInPolygon } from "./geo";
 import { PHOTON, lang } from "./geocode";
-import { DINING_RE, EDUCATION_RE, RADIUS, RAILS_RE, ROADS_RE } from "./osm";
+import { DINING_RE, EDUCATION_RE, RADIUS, RAILS_RE, ROADS_RE, greenFilters, transitFilters } from "./osm";
 import { inSwitzerland } from "./swissNoise";
 
 export type AreaKind = "postcode" | "municipality" | "district" | "city" | "neighbourhood";
@@ -278,6 +278,12 @@ out tags center;`,
   nwr["shop"](${grow(b, RADIUS.shops)});
   nwr["amenity"~"^(pharmacy|marketplace|post_office)$"](${grow(b, RADIUS.shops)});
 );
-out tags center;`,
+out tags center;
+(${transitFilters((r) => `(${grow(b, r)})`)}
+);
+out tags center;
+(${greenFilters(`(${grow(b, RADIUS.green)})`)}
+);
+out tags geom(${grow(b, RADIUS.green + 100)});`,
   };
 }

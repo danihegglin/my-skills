@@ -1,8 +1,8 @@
 import L from "leaflet";
 import type { LucideIcon } from "lucide-react";
-import { AlertTriangle, ArrowRight, Check, Crosshair, GraduationCap, House, LoaderCircle, Map as MapIcon, Plane, RotateCcw, ShoppingBasket, Sun, Volume2, X } from "lucide-react";
+import { AlertTriangle, ArrowRight, Check, Crosshair, GraduationCap, House, LoaderCircle, Map as MapIcon, Plane, RotateCcw, ShoppingBasket, SlidersHorizontal, Sun, Volume2, X } from "lucide-react";
 import type { ReactNode } from "react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { CircleMarker, MapContainer, Marker, Polygon, Popup, Rectangle, Tooltip, useMap, useMapEvents } from "react-leaflet";
 import type { AreaRef } from "../lib/area";
 import { KIND_LABEL } from "../lib/area";
@@ -17,7 +17,10 @@ import AlertSignup from "./AlertSignup";
 import AreaSearch from "./AreaSearch";
 import Logo from "./Logo";
 import { BaseMap } from "./MapPanel";
+import type { Match } from "../lib/preferences";
+import { evaluate, homeMetrics, matchWord, usePreferences } from "../lib/preferences";
 import { Segmented } from "./form";
+import { CompareLink, PreferencesButton, openPreferences } from "./Preferences";
 import { Badge, ScoreRing, TONE_COLOR, TONE_HEX, scoreTone, scoreWord } from "./ui";
 
 type Props = {
@@ -26,9 +29,10 @@ type Props = {
   onArea: (area: AreaRef, focus?: LatLon) => void;
   onOpen: (place: Place) => void;
   onHome: () => void;
+  onCompare: () => void;
 };
 
-type SortId = "score" | "noise" | "sun" | "schools" | "shopping";
+type SortId = "match" | "score" | "noise" | "sun" | "schools" | "shopping";
 type KindFilter = "all" | HomeKind;
 
 const SORTS: [SortId, string][] = [
@@ -39,13 +43,25 @@ const SORTS: [SortId, string][] = [
   ["shopping", "Shops"],
 ];
 
-const sortScore = (h: AreaHome, by: SortId) => (by === "score" ? h.score : h.scores[by]);
+const sortScore = (h: AreaHome, by: Exclude<SortId, "match">) => (by === "score" ? h.score : h.scores[by]);
+/** The number a home is ranked and coloured by. */
+type ValueOf = (h: AreaHome) => number;
 const PAGE = 25;
 
-export default function AreaView({ area, focus, onArea, onOpen, onHome }: Props) {
+export default function AreaView({ area, focus, onArea, onOpen, onHome, onCompare }: Props) {
   const [attempt, setAttempt] = useState(0);
   const { steps, progress, ranking, error } = useAreaRanking(area, focus, attempt);
-  const [sort, setSort] = useState<SortId>("score");
+  const [prefs] = usePreferences();
+  const [chosen, setSort] = useState<SortId | null>(null);
+  // With preferences set, rank by personal match unless another order was picked.
+  const sort: SortId = chosen === "match" && !prefs.length ? "score" : (chosen ?? (prefs.length ? "match" : "score"));
+  const matches = useMemo(() => {
+    const out = new Map<number, Match>();
+    if (ranking && prefs.length) for (const h of ranking.homes) out.set(h.id, evaluate(prefs, homeMetrics(h)));
+    return out;
+  }, [ranking, prefs]);
+  const valueOf: ValueOf = useCallback((h: AreaHome) => (sort === "match" ? (matches.get(h.id)?.match ?? 0) : sortScore(h, sort)), [sort, matches]);
+  const sorts: [SortId, string][] = prefs.length ? [["match", "For you"], ...SORTS] : SORTS;
   const [kind, setKind] = useState<KindFilter>("all");
   const [shown, setShown] = useState(PAGE);
   const [selected, setSelected] = useState<number | null>(null);
@@ -53,8 +69,8 @@ export default function AreaView({ area, focus, onArea, onOpen, onHome }: Props)
   const homes = useMemo(() => {
     if (!ranking) return [];
     const list = ranking.homes.filter((h) => kind === "all" || h.kind === kind);
-    return sort === "score" ? list : [...list].sort((a, b) => sortScore(b, sort) - sortScore(a, sort) || b.score - a.score);
-  }, [ranking, sort, kind]);
+    return sort === "score" ? list : [...list].sort((a, b) => valueOf(b) - valueOf(a) || b.score - a.score);
+  }, [ranking, sort, kind, valueOf]);
 
   useEffect(() => setShown(PAGE), [sort, kind, area.id]);
 
@@ -73,11 +89,15 @@ export default function AreaView({ area, focus, onArea, onOpen, onHome }: Props)
   return (
     <div className="min-h-dvh">
       <header className="sticky top-0 z-[1000] border-b border-line bg-paper/85 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-[1500px] items-center gap-4 px-4 py-3 sm:px-6">
+        <div className="mx-auto flex max-w-[1500px] flex-wrap items-center gap-x-3 gap-y-2 px-4 py-3 sm:flex-nowrap sm:gap-4 sm:px-6">
           <Logo onClick={onHome} compact />
-          <div className="ml-auto min-w-0 max-w-md flex-1">
+          <div className="order-last w-full min-w-0 sm:order-none sm:ml-auto sm:w-auto sm:max-w-md sm:flex-1">
             <AreaSearch onSelect={(a) => onArea(a)} size="sm" placeholder="Rank another postcode or town" />
           </div>
+          <span className="ml-auto flex items-center gap-2 sm:ml-0">
+            <CompareLink onCompare={onCompare} compact />
+            <PreferencesButton compact />
+          </span>
         </div>
       </header>
 
@@ -102,7 +122,7 @@ export default function AreaView({ area, focus, onArea, onOpen, onHome }: Props)
 
         <div className="grid gap-6 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)]">
           <aside className="h-[52vh] min-h-[320px] lg:sticky lg:top-[84px] lg:h-[calc(100dvh-108px)]">
-            <AreaMap ranking={ranking} homes={homes} sort={sort} selected={selected} onSelect={setSelected} onOpen={open} onRecentre={(c) => onArea(area, c)} />
+            <AreaMap ranking={ranking} homes={homes} valueOf={valueOf} selected={selected} onSelect={setSelected} onOpen={open} onRecentre={(c) => onArea(area, c)} />
           </aside>
 
           <div className="min-w-0 space-y-6">
@@ -119,8 +139,13 @@ export default function AreaView({ area, focus, onArea, onOpen, onHome }: Props)
                   <Segmented value={kind} onChange={setKind} options={[["all", "All"], ["flats", "Flats"], ["house", "Houses"]]} label="Building type" />
                 </div>
                 <div className="mt-3 overflow-x-auto pb-1">
-                  <Segmented value={sort} onChange={setSort} options={SORTS} label="Rank by" />
+                  <Segmented value={sort} onChange={setSort} options={sorts} label="Rank by" />
                 </div>
+                {!prefs.length && (
+                  <button onClick={() => openPreferences()} className="mt-3 inline-flex items-center gap-1.5 text-[13px] font-medium text-ink-2 underline-offset-2 hover:text-ink hover:underline">
+                    <SlidersHorizontal className="size-4" aria-hidden /> Rank by what matters to you: set your preferences
+                  </button>
+                )}
                 {steps.official === "pending" && (
                   <p className="mt-3 flex items-center gap-2 text-[13px] text-muted" aria-live="polite">
                     <LoaderCircle className="size-3.5 animate-spin" aria-hidden /> Checking the leaders against official Swiss noise maps…
@@ -128,7 +153,7 @@ export default function AreaView({ area, focus, onArea, onOpen, onHome }: Props)
                 )}
                 <ol className="mt-4 divide-y divide-line">
                   {homes.slice(0, shown).map((h, i) => (
-                    <HomeRow key={h.id} home={h} rank={i + 1} sort={sort} selected={selected === h.id} onSelect={() => setSelected(h.id)} onOpen={() => open(h)} />
+                    <HomeRow key={h.id} home={h} rank={i + 1} sort={sort} value={valueOf(h)} match={matches.get(h.id)} selected={selected === h.id} onSelect={() => setSelected(h.id)} onOpen={() => open(h)} />
                   ))}
                 </ol>
                 {homes.length > shown && (
@@ -204,17 +229,39 @@ function Fact({ icon: Icon, children, tone }: { icon: LucideIcon; children: Reac
   );
 }
 
-function HomeRow({ home: h, rank, sort, selected, onSelect, onOpen }: { home: AreaHome; rank: number; sort: SortId; selected: boolean; onSelect: () => void; onOpen: () => void }) {
+function HomeRow({
+  home: h,
+  rank,
+  sort,
+  value,
+  match,
+  selected,
+  onSelect,
+  onOpen,
+}: {
+  home: AreaHome;
+  rank: number;
+  sort: SortId;
+  value: number;
+  match?: Match;
+  selected: boolean;
+  onSelect: () => void;
+  onOpen: () => void;
+}) {
   const ref = useRef<HTMLLIElement>(null);
   useEffect(() => {
     if (selected) ref.current?.scrollIntoView({ block: "nearest", behavior: "smooth" });
   }, [selected]);
-  const value = sortScore(h, sort);
+  // Shortfalls, worst first: "misses" when not met at all, "short on" when partly met.
+  const missed = (match?.results ?? [])
+    .filter((r) => r.satisfaction != null && r.satisfaction < 1)
+    .sort((a, b) => a.satisfaction! - b.satisfaction! || b.pref.importance - a.pref.importance)
+    .map((r) => `${r.satisfaction === 0 ? "misses" : "short on"} ${r.def.label.toLowerCase()}`);
   return (
     <li ref={ref} className={`-mx-2 flex items-center gap-3 rounded-2xl px-2 py-3 transition sm:gap-4 ${selected ? "bg-lime/25" : ""}`}>
       <span className="w-6 shrink-0 text-right font-display text-[14px] font-bold text-muted tabular">{rank}</span>
       <button onClick={onSelect} className="shrink-0" aria-label={`Show ${h.address} on the map`}>
-        <ScoreRing score={value} size={46} stroke={5} label={sort === "score" ? "PropLens score" : `${SORTS.find(([id]) => id === sort)![1]} score`} />
+        <ScoreRing score={value} size={46} stroke={5} label={sort === "match" ? "Your match" : sort === "score" ? "PropLens score" : `${SORTS.find(([id]) => id === sort)![1]} score`} />
       </button>
       <button onClick={onSelect} className="min-w-0 flex-1 text-left">
         <span className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
@@ -226,6 +273,12 @@ function HomeRow({ home: h, rank, sort, selected, onSelect, onOpen }: { home: Ar
           {h.levels ? ` · ${h.levels} ${h.levels === 1 ? "floor" : "floors"}` : ""}
           {sort !== "score" ? ` · overall ${h.score}` : ` · ${scoreWord(h.score)}`}
         </span>
+        {match && match.match != null && (
+          <span className="mt-0.5 block text-[13px]" style={{ color: missed.length ? "var(--color-ink-2)" : TONE_COLOR.good }}>
+            {matchWord(match.match)}
+            {missed.length ? ` · ${missed.slice(0, 2).join(", ")}${missed.length > 2 ? ` +${missed.length - 2}` : ""}` : " · meets all your preferences"}
+          </span>
+        )}
         <span className="mt-1.5 flex flex-wrap gap-x-3 gap-y-1 text-[13px] text-ink-2 tabular">
           <Fact icon={Volume2}>{Math.round(h.noise.day)} dB</Fact>
           <Fact icon={Sun}>{h.winterSun.toFixed(1)} h winter sun</Fact>
@@ -261,7 +314,7 @@ const rankIcon = (n: number, score: number) =>
 function AreaMap({
   ranking,
   homes,
-  sort,
+  valueOf,
   selected,
   onSelect,
   onOpen,
@@ -269,7 +322,7 @@ function AreaMap({
 }: {
   ranking: AreaRanking | null;
   homes: AreaHome[];
-  sort: SortId;
+  valueOf: ValueOf;
   selected: number | null;
   onSelect: (id: number) => void;
   onOpen: (h: AreaHome) => void;
@@ -297,16 +350,16 @@ function AreaMap({
             key={h.id}
             center={[h.lat, h.lon]}
             radius={h.id === selected ? 8 : 5}
-            pathOptions={{ color: "#ffffff", weight: 1, fillColor: TONE_HEX[scoreTone(sortScore(h, sort))], fillOpacity: 0.95 }}
+            pathOptions={{ color: "#ffffff", weight: 1, fillColor: TONE_HEX[scoreTone(valueOf(h))], fillOpacity: 0.95 }}
             eventHandlers={{ click: () => onSelect(h.id) }}
           >
             <Tooltip className="pl-tip" direction="top" offset={[0, -6]}>
-              <b>{h.address}</b> · {sortScore(h, sort)}
+              <b>{h.address}</b> · {valueOf(h)}
             </Tooltip>
           </CircleMarker>
         ))}
         {homes.slice(0, 10).map((h, i) => (
-          <Marker key={`top${h.id}`} position={[h.lat, h.lon]} icon={rankIcon(i + 1, sortScore(h, sort))} eventHandlers={{ click: () => onSelect(h.id) }} zIndexOffset={1000 - i} />
+          <Marker key={`top${h.id}`} position={[h.lat, h.lon]} icon={rankIcon(i + 1, valueOf(h))} eventHandlers={{ click: () => onSelect(h.id) }} zIndexOffset={1000 - i} />
         ))}
         {sel && (
           <Popup position={[sel.lat, sel.lon]} offset={[0, -4]} closeButton={false} autoPan>

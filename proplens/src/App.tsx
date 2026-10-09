@@ -1,6 +1,7 @@
 import { Suspense, lazy, useCallback, useEffect, useState } from "react";
 import AlertLink from "./components/AlertLink";
 import Landing from "./components/Landing";
+import { PreferencesPanel } from "./components/Preferences";
 import type { AreaKind, AreaRef } from "./lib/area";
 import { KIND_LABEL } from "./lib/area";
 import type { LatLon } from "./lib/geo";
@@ -9,17 +10,21 @@ import type { Place } from "./lib/geocode";
 // The report and the area ranking pull in the map engine; keep them out of the landing page bundle.
 const ReportView = lazy(() => import("./components/ReportView"));
 const AreaView = lazy(() => import("./components/AreaView"));
+const ComparePage = lazy(() => import("./components/ComparePage"));
 
 type View =
   | { kind: "landing" }
   | { kind: "report"; place: Place; floor: number }
   | { kind: "area"; area: AreaRef; focus?: LatLon }
-  | { kind: "alerts"; action: "confirm" | "unsubscribe" | "manage"; token: string };
+  | { kind: "alerts"; action: "confirm" | "unsubscribe" | "manage"; token: string }
+  | { kind: "compare" };
 
 function readUrl(): View {
   const q = new URLSearchParams(location.search);
   const action = q.get("alerts");
   if ((action === "confirm" || action === "unsubscribe" || action === "manage") && q.get("token")) return { kind: "alerts", action, token: q.get("token")! };
+
+  if (q.has("compare")) return { kind: "compare" };
 
   const areaId = q.get("area");
   if (areaId) {
@@ -61,6 +66,7 @@ function urlFor(view: View) {
     if (focus) q.set("at", `${focus.lat.toFixed(5)},${focus.lon.toFixed(5)}`);
     return `${location.pathname}?${q}`;
   }
+  if (view.kind === "compare") return `${location.pathname}?compare`;
   return location.pathname;
 }
 
@@ -77,7 +83,7 @@ export default function App() {
 
   useEffect(() => {
     document.title =
-      view.kind === "report" ? `${view.place.title} · PropLens` : view.kind === "area" ? `Best addresses in ${view.area.label} · PropLens` : TITLE;
+      view.kind === "report" ? `${view.place.title} · PropLens` : view.kind === "area" ? `Best addresses in ${view.area.label} · PropLens` : view.kind === "compare" ? "Compare addresses · PropLens" : TITLE;
   }, [view]);
 
   const go = useCallback((next: View) => {
@@ -90,6 +96,8 @@ export default function App() {
   const select = useCallback((place: Place | null) => go(place ? { kind: "report", place, floor } : { kind: "landing" }), [go, floor]);
   const openArea = useCallback((area: AreaRef, focus?: LatLon) => go({ kind: "area", area, focus }), [go]);
   const home = useCallback(() => go({ kind: "landing" }), [go]);
+  const compare = useCallback(() => go({ kind: "compare" }), [go]);
+  const openAt = useCallback((place: Place, f: number) => go({ kind: "report", place, floor: f }), [go]);
 
   const setFloor = useCallback(
     (f: number) => {
@@ -101,15 +109,24 @@ export default function App() {
     [view],
   );
 
-  if (view.kind === "alerts") return <AlertLink action={view.action} token={view.token} onHome={home} />;
-  if (view.kind === "landing") return <Landing onSelect={select} onArea={openArea} />;
   return (
-    <Suspense fallback={<div className="min-h-dvh" />}>
-      {view.kind === "report" ? (
-        <ReportView place={view.place} floor={view.floor} onFloor={setFloor} onSelect={select} onArea={openArea} />
+    <>
+      {view.kind === "alerts" ? (
+        <AlertLink action={view.action} token={view.token} onHome={home} />
+      ) : view.kind === "landing" ? (
+        <Landing onSelect={select} onArea={openArea} onCompare={compare} />
       ) : (
-        <AreaView key={`${view.area.id}|${view.focus?.lat}`} area={view.area} focus={view.focus} onArea={openArea} onOpen={select} onHome={home} />
+        <Suspense fallback={<div className="min-h-dvh" />}>
+          {view.kind === "report" ? (
+            <ReportView place={view.place} floor={view.floor} onFloor={setFloor} onSelect={select} onArea={openArea} onCompare={compare} />
+          ) : view.kind === "compare" ? (
+            <ComparePage onOpen={openAt} onHome={home} />
+          ) : (
+            <AreaView key={`${view.area.id}|${view.focus?.lat}`} area={view.area} focus={view.focus} onArea={openArea} onOpen={select} onHome={home} onCompare={compare} />
+          )}
+        </Suspense>
       )}
-    </Suspense>
+      <PreferencesPanel />
+    </>
   );
 }

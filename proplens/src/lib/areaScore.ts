@@ -2,7 +2,7 @@
 
 import type { FlyoverLevel } from "./airports";
 import { analyzeFlights } from "./airports";
-import { analyzeSchools, analyzeShopping } from "./amenities";
+import { analyzeGetAround, analyzeSchools, analyzeShopping } from "./amenities";
 import type { AreaShape, BBox } from "./area";
 import { inArea } from "./area";
 import type { Climate } from "./climate";
@@ -46,6 +46,16 @@ export type AreaHome = {
   /** Walking distances in metres to the nearest supermarket and school. */
   supermarket: number | null;
   school: number | null;
+  /** Walking distances in metres to the nearest childcare or kindergarten, public transport stop, train station and green space. */
+  childcare: number | null;
+  stop: number | null;
+  station: number | null;
+  green: number | null;
+  /** Bars, pubs and clubs within 150 m. */
+  barsNearby: number;
+  /** Average daily hours of direct sun after 17:00 and before 10:00, April to September. */
+  eveningSun: number;
+  morningSun: number;
   flyover: FlyoverLevel;
   /** True once road, rail and aircraft noise come from the official Swiss noise maps. */
   official: boolean;
@@ -228,6 +238,12 @@ export function scoreArea(data: AreaData, shape: Pick<AreaShape, "rings" | "bbox
   const education = index(data.places, base, (t) => /^(kindergarten|childcare|school|college|university)$/.test(t.amenity ?? ""), 500);
   const shops = index(data.places, base, (t) => !!t.shop || /^(pharmacy|marketplace|post_office)$/.test(t.amenity ?? ""), 250);
   const anyShop = index(data.places, base, (t) => !!t.shop, 250);
+  const around = index(
+    data.places,
+    base,
+    (t) => !!(t.highway === "bus_stop" || t.railway || t.public_transport || t.amenity === "ferry_terminal" || t.leisure === "park" || t.leisure === "nature_reserve" || t.landuse || t.natural === "wood"),
+    250,
+  );
 
   // Sun positions barely change across a few kilometres: compute each day once for the whole window.
   const days = new Map<string, DaySample[]>();
@@ -252,7 +268,10 @@ export function scoreArea(data: AreaData, shape: Pick<AreaShape, "rings" | "bbox
     const noise = analyzeNoise({ proj, streets, air: data.air, places: dining.near(here, RADIUS.dining), skyline });
     const schools = analyzeSchools(education.near(here, RADIUS.education), proj);
     const shopping = analyzeShopping(shops.near(here, RADIUS.shops), proj, anyShop.near(here, 800).length);
-    const sun = analyzeSun({ lat: c.point.lat, lon: c.point.lon, floor: AREA_FLOOR, skyline, terrain: null, climate: data.climate, year, sampler });
+    const sun = analyzeSun({ lat: c.point.lat, lon: c.point.lon, floor: AREA_FLOOR, skyline, terrain: null, climate: data.climate, year, sampler, timeZone: data.climate?.timezone });
+    // The report's search radii: bus stops 800 m, stations 2 km, green space 1 km.
+    const reach = (e: OsmElement) => (e.tags?.highway === "bus_stop" ? RADIUS.stops : e.tags?.railway || e.tags?.public_transport || e.tags?.amenity ? RADIUS.stations : RADIUS.green);
+    const getAround = analyzeGetAround([...around.near(here, RADIUS.stations, reach), ...dining.near(here, 150)], proj);
     const flyover = data.air ? analyzeFlights(data.air, proj, 40000, false).exposure.level : "none";
     const scores = { noise: noise.score, schools: schools.score, shopping: shopping.score, sun: sun.score };
     const t = c.e.tags ?? {};
@@ -277,6 +296,13 @@ export function scoreArea(data: AreaData, shape: Pick<AreaShape, "rings" | "bbox
       winterSun: sun.keyDays[0].direct,
       supermarket: shopping.essentials.find((e) => e.id === "supermarket")?.nearest?.distance ?? null,
       school: schools.groups[1].items[0]?.distance ?? null,
+      childcare: schools.groups[0].items[0]?.distance ?? null,
+      stop: getAround.stop?.distance ?? null,
+      station: getAround.station?.distance ?? null,
+      green: getAround.green?.distance ?? null,
+      barsNearby: getAround.barsNearby,
+      eveningSun: sun.eveningSun,
+      morningSun: sun.morningSun,
       flyover,
       official: false,
     });

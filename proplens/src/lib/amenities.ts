@@ -1,7 +1,7 @@
 import type { LatLon, Projection } from "./geo";
-import { bearing, len } from "./geo";
+import { bearing, distanceToPolyline, len, pointInPolygon } from "./geo";
 import type { OsmElement } from "./osm";
-import { elementPoint } from "./osm";
+import { elementLines, elementPoint } from "./osm";
 
 export type Poi = {
   id: string;
@@ -182,4 +182,77 @@ export function analyzeShopping(places: OsmElement[] | null, proj: Projection, s
   const brands = [...new Set(markets.map(({ tags }) => tags.brand).filter((b): b is string => !!b))];
   const chains = (brands.length ? brands : [...new Set(markets.map(({ poi }) => poi.name))]).slice(0, 8);
   return { essentials, score, all, chains, shopsNearby, within500 };
+}
+
+/* ---------- getting around and green space ---------- */
+
+export type Green = { name: string; kind: string; distance: number; point: LatLon };
+
+export type GetAround = {
+  /** Nearest public transport stop of any kind (bus, tram, metro, train, ferry). */
+  stop?: Poi;
+  /** Nearest train station (not tram or metro). */
+  station?: Poi;
+  /** Nearest park, wood or other public green space, measured to its edge (0 inside it). */
+  green: Green | null;
+  /** Bars, pubs and clubs within 150 m. */
+  barsNearby: number;
+};
+
+const TRANSIT_LABELS: Record<string, string> = {
+  bus_stop: "Bus stop",
+  tram_stop: "Tram stop",
+  metro: "Metro station",
+  train: "Train station",
+  bus_station: "Bus station",
+  ferry: "Ferry",
+};
+
+function transitKind(t: Record<string, string>): string | null {
+  if (t.highway === "bus_stop") return "bus_stop";
+  if (t.railway === "tram_stop") return "tram_stop";
+  if (t.railway === "station" || t.railway === "halt") return t.station === "subway" ? "metro" : t.station === "light_rail" && t.railway === "halt" ? "tram_stop" : "train";
+  if (t.public_transport === "station") return t.bus === "yes" || t.amenity === "bus_station" ? "bus_station" : null;
+  if (t.amenity === "ferry_terminal") return "ferry";
+  return null;
+}
+
+const GREEN_LABELS: Record<string, string> = {
+  park: "Park",
+  nature_reserve: "Nature reserve",
+  forest: "Woods",
+  wood: "Woods",
+  recreation_ground: "Recreation ground",
+  village_green: "Green",
+};
+
+export function analyzeGetAround(places: OsmElement[] | null, proj: Projection): GetAround {
+  const els = places ?? [];
+  const stops = toPois(els, proj, transitKind, TRANSIT_LABELS);
+  const origin = { x: 0, y: 0 };
+  let green: Green | null = null;
+  for (const e of els) {
+    const t = e.tags ?? {};
+    const kind = t.leisure === "park" || t.leisure === "nature_reserve" ? t.leisure : t.landuse && GREEN_LABELS[t.landuse] ? t.landuse : t.natural === "wood" ? "wood" : null;
+    if (!kind) continue;
+    for (const line of elementLines(e)) {
+      if (line.length < 2) continue;
+      const xy = line.map((p) => proj.toXY(p.lat, p.lon));
+      const closed = line.length > 3 && line[0].lat === line[line.length - 1].lat && line[0].lon === line[line.length - 1].lon;
+      const near = distanceToPolyline(origin, xy);
+      const d = closed && pointInPolygon(origin, xy) ? 0 : near.d;
+      if (!green || d < green.distance) green = { name: t.name || GREEN_LABELS[kind], kind: GREEN_LABELS[kind], distance: d, point: proj.toLatLon(near.point) };
+    }
+  }
+  const barsNearby = els.filter((e) => {
+    const p = elementPoint(e);
+    if (!p || !/^(bar|pub|nightclub)$/.test(e.tags?.amenity ?? "")) return false;
+    return len(proj.toXY(p.lat, p.lon)) <= 150;
+  }).length;
+  return {
+    stop: stops[0]?.poi,
+    station: stops.find((s) => s.poi.kind === "train")?.poi,
+    green,
+    barsNearby,
+  };
 }

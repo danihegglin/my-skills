@@ -30,6 +30,31 @@ pip install openpyxl && python3 scripts/update-price-data.py   # refresh the bun
 
 Each lens gets a 0–100 score; the PropLens score weights noise 30%, sunlight 25%, shopping 25% and schools 20%. Reports are shareable: the address, coordinates and floor live in the URL.
 
+## Your preferences and comparing addresses
+
+The **Preferences** button (on every page) opens a list of things people look for. Pick the ones that matter, set a target and how important each one is: nice to have, important or must have.
+
+| Group | Preferences (targets) |
+| --- | --- |
+| Light | Evening sun: hours of direct sun after 5 pm, April–September (1, 2, 3 h) · Morning sun: before 10 am (0.5, 1, 2 h) · Winter sun on the shortest day (2–5 h) |
+| Getting around | Public transport: a bus, tram, metro or train stop (3–10 min walk) · Train station (5–20 min) · Near work or school: straight-line distance to an address you pick (2–20 km) |
+| Everyday | Supermarket · School · Childcare or kindergarten · Park or woods (3–15 min walk) |
+| Peace and quiet | Quiet nights (≤ 40/45/50 dB) · Quiet days (≤ 50/55/60 dB) · No bars, pubs or clubs within 150 m · No flight path (not overhead / not nearby) |
+
+- **Scoring:** each preference scores 0–1 against what the address offers.
+  - Hours count in proportion to the target.
+  - Walking times keep full marks up to the target and fall to zero at twice the target.
+  - Noise falls to zero 10 dB above the target.
+- **Match:** the weighted average, with important counting double and must-have triple. A must-have that isn't fully met caps the match at 59, and only a full match reaches 100.
+- **Where it shows:**
+  - *Reports:* a **Your match** card with every preference, the measured value and its target.
+  - *Area rankings:* a **For you** order that ranks every address by your match and says what each one misses.
+  - *Comparison:* **Save to compare** keeps up to six addresses (with what they offer at the saved floor) for the **Compare** page. There they sit side by side, with your match, each preference and the key facts, and the best value in each row highlighted.
+- **Storage:** preferences and saved addresses stay in the browser (localStorage); nothing is sent anywhere.
+- **New data behind it:**
+  - A fifth Overpass query per address fetches bus, tram and metro stops (800 m), train stations and ferries (2 km), and parks and woods (1 km, outlines cropped to the search box). The report doesn't wait for it; the match card says "Still loading…" until it arrives. Area rankings fetch the same data as part of their places query.
+  - The sunlight model counts direct sun before 10:00 and after 17:00 local time (the address's time zone, summer time included).
+
 ## Shared cache
 
 Every upstream lookup a report or area ranking makes (Overpass queries, official Swiss noise, geo.admin.ch boundaries and building register, Open-Meteo climate and elevation) goes through `POST /api/fetch` on the worker first:
@@ -120,6 +145,7 @@ src/lib/        data fetching and models (pure TypeScript, unit-tested)
   billing.ts    Stripe config, embedded Checkout and the billing portal
   cache.ts      the shared lookup cache, with direct fallback
   register.ts   Swiss building register (storeys, footprints) around an address
+  preferences.ts  preference catalogue, match scoring, saved addresses
 src/data/       bundled price statistics (prices.json)
 src/components/ landing page, report sections, area ranking, alert form, charts and map
 scripts/        update-price-data.py rebuilds prices.json from the official sources
