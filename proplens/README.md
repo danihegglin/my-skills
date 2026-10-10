@@ -30,6 +30,23 @@ pip install openpyxl && python3 scripts/update-price-data.py   # refresh the bun
 
 Each lens gets a 0–100 score; the PropLens score weights noise 30%, sunlight 25%, shopping 25% and schools 20%. Reports are shareable: the address, coordinates and floor live in the URL.
 
+## Shadows in 3D
+
+The Sunlight section has a **3D view** in the style of shadowmap.org. It loads on demand: three.js, MapLibre and a WebAssembly kernel, about 145 kB gzipped.
+
+- **Buildings:** every building within 250 m of the address is extruded to its height (federal building register or OpenStreetMap) and placed on the basemap. You can pan, tilt and turn the view, or make it full screen. The address's own building is highlighted.
+- **Shadows:** a three.js scene runs inside MapLibre as a custom layer.
+  - A directional light is aimed from the sun's actual position for the chosen date and local time (time zone and summer time included). Its shadow map falls onto a transparent ground plane, so only the shadows darken the map.
+  - Pick a day (21 Dec, 20 Mar, 21 Jun or any date), drag the time slider between sunrise and sunset, or press play to watch a day in about ten seconds.
+  - When the sun is behind the surrounding hills (the terrain horizon), the whole scene is in shade.
+  - The panel also says whether the chosen floor of your building is in the sun at that moment.
+- **Sun hours:** a heatmap of the hours of direct sun every spot gets on the chosen day.
+  - It covers the ground at 1 m resolution, 500 × 500 m (250,000 points), and every roof. Click anywhere for the hours at that spot.
+  - The tracing runs in WebAssembly (`assembly/sunhours.ts`, AssemblyScript, compiled by `npm run build:wasm` to a 463-byte `src/wasm/sunhours.wasm`) in a Web Worker.
+- **How the kernel works:** footprints are rasterised into a height grid, and the sun's positions every 10 minutes become samples. Sun below 0.5° or behind the terrain is skipped.
+  - For each sample, the grid is swept in lines parallel to the light, starting from the sunny side. Each line carries the top of the shadow cast so far: it drops by tan(altitude) per metre and rises to any taller roof.
+  - Every cell is visited once per sun position, so a June day takes about 0.3–0.8 s whatever the building heights. The first version marched each ray separately and took 4.7 s near a 49 m building.
+
 ## Your preferences and comparing addresses
 
 The **Preferences** button (on every page) opens a list of things people look for. Pick the ones that matter, set a target and how important each one is: nice to have, important or must have.
@@ -146,6 +163,9 @@ src/lib/        data fetching and models (pure TypeScript, unit-tested)
   cache.ts      the shared lookup cache, with direct fallback
   register.ts   Swiss building register (storeys, footprints) around an address
   preferences.ts  preference catalogue, match scoring, saved addresses
+  sunhours.ts, sunhours.worker.ts  height grid, sun samples and the WebAssembly sun-hours kernel
+  shadowScene.ts  three.js buildings, sun light and shadows as a MapLibre custom layer
+assembly/       AssemblyScript source of the sun-hours kernel (built to src/wasm/sunhours.wasm)
 src/data/       bundled price statistics (prices.json)
 src/components/ landing page, report sections, area ranking, alert form, charts and map
 scripts/        update-price-data.py rebuilds prices.json from the official sources

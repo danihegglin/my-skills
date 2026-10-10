@@ -1,5 +1,5 @@
-import { ArrowUp, Building, CloudSun, Minus, Plus, Sun, TriangleAlert } from "lucide-react";
-import { forwardRef, useState } from "react";
+import { ArrowUp, Box, Building, CloudSun, LoaderCircle, Minus, Plus, Sun, TriangleAlert } from "lucide-react";
+import { Suspense, forwardRef, lazy, useState } from "react";
 import { bearing, compassLabel, distanceToPolygon } from "../lib/geo";
 import type { Report } from "../lib/report";
 import type { Building as Bldg, HeightSource } from "../lib/skyline";
@@ -96,6 +96,8 @@ const SunSection = forwardRef<HTMLElement, Props>(function SunSection({ report, 
           </div>
         ))}
       </div>
+
+      {report.skyline && report.buildings.length > 0 && <Shadows3D report={report} sun={sun} floor={floor} />}
 
       <div className="mt-8">
         <SubHeading aside="Hover to explore">Sun paths against the skyline</SubHeading>
@@ -261,5 +263,46 @@ function HeightNote({ report }: { report: Report }) {
         .join(", ")}
       .
     </>
+  );
+}
+
+// three.js and the WebAssembly kernel load only when someone opens the 3D view.
+const Shadow3D = lazy(() => import("./Shadow3D"));
+
+function Shadows3D({ report, sun, floor }: { report: Report; sun: SunResult; floor: number }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="mt-8">
+      <SubHeading aside={open ? "Drag to pan · right-drag or two fingers to tilt and turn" : undefined}>Shadows in 3D</SubHeading>
+      {open ? (
+        <Suspense
+          fallback={
+            <div className="grid h-[520px] place-items-center rounded-3xl border border-line bg-wash text-[14px] text-ink-2 sm:h-[600px]">
+              <span className="flex items-center gap-2">
+                <LoaderCircle className="size-4 animate-spin" aria-hidden /> Loading the 3D view…
+              </span>
+            </div>
+          }
+        >
+          <Shadow3D report={report} sun={sun} floor={floor} />
+        </Suspense>
+      ) : (
+        <button
+          onClick={() => setOpen(true)}
+          className="group flex w-full items-center gap-4 rounded-3xl border border-line bg-[linear-gradient(135deg,#fdf6e3,#eef2f7)] p-5 text-left transition hover:border-ink/30"
+        >
+          <span className="grid size-12 shrink-0 place-items-center rounded-2xl bg-ink">
+            <Box className="size-6 text-lime" aria-hidden />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block font-display text-[18px] font-bold text-ink">Watch the shadows move</span>
+            <span className="block text-[14px] leading-snug text-ink-2">
+              The {report.buildings.length} buildings around you in 3D, with their shadows at any date and time, and a map of the hours of sun every spot gets.
+            </span>
+          </span>
+          <span className="hidden shrink-0 rounded-full bg-ink px-4 py-2 text-[14px] font-medium text-white transition group-hover:bg-forest sm:inline">Open 3D view</span>
+        </button>
+      )}
+    </div>
   );
 }

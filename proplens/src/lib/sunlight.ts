@@ -76,23 +76,34 @@ export const MORNING_UNTIL = 10;
 
 const formatters = new Map<string, Intl.DateTimeFormat>();
 
+/** Offset of local clock time from UTC in a time zone at instant `t`, ms; solar time when the zone is unknown. */
+export function utcOffset(timeZone: string | undefined, t: number, lon: number): number {
+  if (!timeZone) return Math.round(lon / 15) * 3_600_000;
+  try {
+    let f = formatters.get(timeZone);
+    if (!f) {
+      f = new Intl.DateTimeFormat("en-US", { timeZone, hourCycle: "h23", year: "numeric", month: "numeric", day: "numeric", hour: "numeric", minute: "numeric" });
+      formatters.set(timeZone, f);
+    }
+    const parts = Object.fromEntries(f.formatToParts(new Date(t)).map((p) => [p.type, Number(p.value)]));
+    return Date.UTC(parts.year, parts.month - 1, parts.day, parts.hour, parts.minute) - Math.floor(t / 60_000) * 60_000;
+  } catch {
+    return Math.round(lon / 15) * 3_600_000;
+  }
+}
+
+/** UTC instant of a local date and time (minutes after midnight) in a time zone. */
+export function zonedTime(year: number, month: number, day: number, minutes: number, timeZone: string | undefined, lon: number): number {
+  const guess = Date.UTC(year, month, day) + minutes * 60_000;
+  const first = guess - utcOffset(timeZone, guess, lon);
+  // Around a daylight-saving change the offset at the result can differ from the guess's.
+  return guess - utcOffset(timeZone, first, lon);
+}
+
 /** Hour of day (0–24, fractional) of a UTC timestamp in a time zone, with the offset looked up once per day. */
 export function clockHour(timeZone: string | undefined, lon: number): (t: number) => number {
   const offsets = new Map<number, number>();
-  const offsetAt = (t: number) => {
-    if (!timeZone) return Math.round(lon / 15) * 3_600_000;
-    try {
-      let f = formatters.get(timeZone);
-      if (!f) {
-        f = new Intl.DateTimeFormat("en-US", { timeZone, hourCycle: "h23", year: "numeric", month: "numeric", day: "numeric", hour: "numeric", minute: "numeric" });
-        formatters.set(timeZone, f);
-      }
-      const parts = Object.fromEntries(f.formatToParts(new Date(t)).map((p) => [p.type, Number(p.value)]));
-      return Date.UTC(parts.year, parts.month - 1, parts.day, parts.hour, parts.minute) - Math.floor(t / 60_000) * 60_000;
-    } catch {
-      return Math.round(lon / 15) * 3_600_000;
-    }
-  };
+  const offsetAt = (t: number) => utcOffset(timeZone, t, lon);
   return (t) => {
     const day = Math.floor(t / 86_400_000);
     let off = offsets.get(day);
