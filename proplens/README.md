@@ -40,6 +40,10 @@ The Sunlight section has a **3D view** in the style of shadowmap.org. It loads o
   - Pick a day (21 Dec, 20 Mar, 21 Jun or any date), drag the time slider between sunrise and sunset, or press play to watch a day in about ten seconds.
   - When the sun is behind the surrounding hills (the terrain horizon), the whole scene is in shade.
   - The panel also says whether the chosen floor of your building is in the sun at that moment.
+- **The sun in the scene:** the sun is drawn in the sky where it stands, 100 m from the address, with a ray down to the address. It is dimmed when it is behind the hills and hidden at night.
+  - The day's path arcs across the sky, with a bead at every full hour and labels every two hours (local clock time). Labels that would overlap the sun or each other are hidden.
+  - A compass ring on the ground marks N, E, S and W, and an arrow on it points towards the sun.
+  - A sky dial in the corner shows the sky seen from above: the rim is the horizon and the centre is straight overhead. It turns with the map and shows the day's path and the sun, with "from the south-west, 225°, 34° high". **Face the sun** (or tapping the dial on a phone) turns the view towards the sun. The view also opens facing it.
 - **Sun hours:** a heatmap of the hours of direct sun every spot gets on the chosen day.
   - It covers the ground at 1 m resolution, 500 × 500 m (250,000 points), and every roof. Click anywhere for the hours at that spot.
   - The tracing runs in WebAssembly (`assembly/sunhours.ts`, AssemblyScript, compiled by `npm run build:wasm` to a 463-byte `src/wasm/sunhours.wasm`) in a Web Worker.

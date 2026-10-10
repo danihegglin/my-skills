@@ -11,12 +11,45 @@ export type ShadowScene = {
   layer: CustomLayerInterface;
   /** Sun direction in degrees (azimuth from north, altitude); `lit` false when it is down or behind the hills. */
   setSun(azimuth: number, altitude: number, lit: boolean): void;
+  /** The day's sun path, and its positions at each full hour, as [azimuth, altitude] pairs. */
+  setSunPath(path: [number, number][], hours: [number, number][]): void;
+  /** Shows or hides the sun, its ray, its path and the ground arrow (the compass stays). */
+  setSunMarkers(visible: boolean): void;
+  /** Where a point in the sky (or on the ground at altitude 0) seen from the address lands on screen, in CSS pixels; null behind the camera. */
+  project(azimuth: number, altitude: number, radius?: number): { x: number; y: number } | null;
   /** A sun-hours texture over the grid (row 0 at the top = north), or null to hide it. */
   setHeatmap(canvas: HTMLCanvasElement | null): void;
   /** Roof colours by building id, or null for the normal colours. */
   setRoofColors(colors: Map<number, string> | null): void;
   dispose(): void;
 };
+
+/** How far from the address the sun and its path are drawn, metres: inside the default view. */
+export const SKY_RADIUS = 100;
+const SUN = 0xffd23f;
+const SUN_DEEP = 0xf59e0b;
+export const COMPASS_RADIUS = 60;
+
+/** A point in the sky (or on the ground at altitude 0) seen from the address, in scene metres. */
+function skyPoint(azimuth: number, altitude: number, r = SKY_RADIUS) {
+  const az = (azimuth * Math.PI) / 180;
+  const alt = (altitude * Math.PI) / 180;
+  return new THREE.Vector3(Math.sin(az) * Math.cos(alt), Math.cos(az) * Math.cos(alt), Math.sin(alt)).multiplyScalar(r);
+}
+
+/** A thin rod between two points (WebGL lines are one pixel wide; rods stay visible at any zoom). */
+function rod(material: THREE.Material, radius: number) {
+  const mesh = new THREE.Mesh(new THREE.CylinderGeometry(radius, radius, 1, 8, 1, true), material);
+  mesh.frustumCulled = false;
+  return Object.assign(mesh, {
+    span(a: THREE.Vector3, b: THREE.Vector3) {
+      const d = new THREE.Vector3().subVectors(b, a);
+      mesh.position.copy(a).addScaledVector(d, 0.5);
+      mesh.scale.set(1, d.length(), 1);
+      mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), d.normalize());
+    },
+  });
+}
 
 const WALL = 0xeeebe4;
 const ROOF = 0xf8f6f1;
@@ -84,6 +117,58 @@ export function createShadowScene(origin: LatLon, buildings: Building[], ownId: 
   }
   for (const o of [catcher, dusk, heat]) o.frustumCulled = false;
 
+  // The sun: a bright disc with a soft halo, drawn in the sky where it stands.
+  const sunGroup = new THREE.Group();
+  const discMaterial = new THREE.MeshBasicMaterial({ color: SUN });
+  sunGroup.add(new THREE.Mesh(new THREE.SphereGeometry(7, 32, 16), discMaterial));
+  for (const [r, opacity] of [[12, 0.35], [19, 0.14]] as const)
+    sunGroup.add(new THREE.Mesh(new THREE.SphereGeometry(r, 32, 16), new THREE.MeshBasicMaterial({ color: SUN, transparent: true, opacity, depthWrite: false })));
+  scene.add(sunGroup);
+
+  // Its light falling on the address.
+  const ray = rod(new THREE.MeshBasicMaterial({ color: SUN_DEEP, transparent: true, opacity: 0.75, depthWrite: false }), 0.6);
+  scene.add(ray);
+
+  // The day's path across the sky, with a bead at every full hour.
+  const pathMaterial = new THREE.MeshBasicMaterial({ color: SUN_DEEP, transparent: true, opacity: 0.55, depthWrite: false });
+  const beadMaterial = new THREE.MeshBasicMaterial({ color: SUN_DEEP });
+  const path = new THREE.Group();
+  scene.add(path);
+
+  // A compass on the ground around the address, with an arrow pointing to the sun.
+  const compass = new THREE.Group();
+  const white = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.85, depthWrite: false });
+  compass.add(new THREE.Mesh(new THREE.RingGeometry(COMPASS_RADIUS - 1.2, COMPASS_RADIUS, 128), white));
+  for (let deg = 0; deg < 360; deg += 45) {
+    const tick = new THREE.Mesh(new THREE.PlaneGeometry(deg % 90 ? 1 : 1.6, deg % 90 ? 5 : 9), white);
+    const a = (deg * Math.PI) / 180;
+    tick.position.set(Math.sin(a) * (COMPASS_RADIUS - 2), Math.cos(a) * (COMPASS_RADIUS - 2), 0);
+    tick.rotation.z = -a;
+    compass.add(tick);
+  }
+  const north = new THREE.Mesh(
+    new THREE.ShapeGeometry(new THREE.Shape([new THREE.Vector2(-4, COMPASS_RADIUS + 1), new THREE.Vector2(4, COMPASS_RADIUS + 1), new THREE.Vector2(0, COMPASS_RADIUS + 9)])),
+    new THREE.MeshBasicMaterial({ color: 0x10140f, transparent: true, opacity: 0.85, depthWrite: false }),
+  );
+  compass.add(north);
+  const arrowShape = new THREE.Shape([
+    new THREE.Vector2(-1.6, 10),
+    new THREE.Vector2(1.6, 10),
+    new THREE.Vector2(1.6, COMPASS_RADIUS - 16),
+    new THREE.Vector2(6, COMPASS_RADIUS - 16),
+    new THREE.Vector2(0, COMPASS_RADIUS - 4),
+    new THREE.Vector2(-6, COMPASS_RADIUS - 16),
+    new THREE.Vector2(-1.6, COMPASS_RADIUS - 16),
+  ]);
+  const arrow = new THREE.Mesh(new THREE.ShapeGeometry(arrowShape), new THREE.MeshBasicMaterial({ color: SUN_DEEP, transparent: true, opacity: 0.95, depthWrite: false }));
+  compass.add(arrow);
+  compass.position.z = 0.25;
+  compass.traverse((o) => (o.frustumCulled = false));
+  scene.add(compass);
+  sunGroup.traverse((o) => (o.frustumCulled = false));
+  let markers = true;
+  let up = false;
+
   let renderer: THREE.WebGLRenderer | null = null;
   let map: MapLibreMap | null = null;
 
@@ -126,8 +211,49 @@ export function createShadowScene(origin: LatLon, buildings: Building[], ownId: 
       sun.intensity = lit ? 2.4 : 0;
       sun.castShadow = lit;
       dusk.visible = !lit;
+      // The drawn sun: dimmed when it is behind the hills, gone at night.
+      up = altitude > 0;
+      const at = skyPoint(azimuth, Math.max(altitude, 0));
+      sunGroup.position.copy(at);
+      discMaterial.color.set(lit ? SUN : 0xd9c48a);
+      ray.span(new THREE.Vector3(0, 0, 3), at);
+      arrow.rotation.z = -az;
+      sunGroup.visible = ray.visible = arrow.visible = markers && up;
       if (renderer) renderer.shadowMap.needsUpdate = true;
       repaint();
+    },
+    setSunPath(points, hours) {
+      for (const c of [...path.children]) {
+        path.remove(c);
+        if (c instanceof THREE.Mesh) c.geometry.dispose();
+      }
+      const above = points.filter(([, alt]) => alt > 0).map(([az, alt]) => skyPoint(az, alt));
+      if (above.length > 1) {
+        const tube = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(above), Math.max(16, above.length * 2), 0.7, 6, false), pathMaterial);
+        path.add(tube);
+      }
+      for (const [az, alt] of hours) {
+        if (alt <= 0) continue;
+        const bead = new THREE.Mesh(new THREE.SphereGeometry(2.2, 12, 8), beadMaterial);
+        bead.position.copy(skyPoint(az, alt));
+        path.add(bead);
+      }
+      path.traverse((o) => (o.frustumCulled = false));
+      repaint();
+    },
+    setSunMarkers(visible) {
+      markers = visible;
+      sunGroup.visible = ray.visible = arrow.visible = visible && up;
+      path.visible = visible;
+      repaint();
+    },
+    project(azimuth, altitude, radius = SKY_RADIUS) {
+      if (!map) return null;
+      const p = skyPoint(azimuth, altitude, radius);
+      const v = new THREE.Vector4(p.x, p.y, p.z, 1).applyMatrix4(camera.projectionMatrix);
+      if (v.w <= 0) return null;
+      const canvas = map.getCanvas();
+      return { x: ((v.x / v.w + 1) / 2) * canvas.clientWidth, y: ((1 - v.y / v.w) / 2) * canvas.clientHeight };
     },
     setHeatmap(canvas) {
       heatMaterial.map?.dispose();
