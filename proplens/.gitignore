@@ -1,0 +1,7 @@
+node_modules/
+dist/
+.wrangler/
+*.tsbuildinfo
+# The repo root ignores *.html; this app's entry page must be tracked.
+!index.html
+.dev.vars

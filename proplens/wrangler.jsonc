@@ -1,0 +1,29 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "proplens",
+  "main": "worker/index.ts",
+  "compatibility_date": "2026-10-01",
+  "assets": {
+    "directory": "./dist",
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application",
+    // Static files are served without waking the worker; only the API runs code.
+    "run_worker_first": ["/api/*"]
+  },
+  "durable_objects": {
+    "bindings": [
+      { "name": "SIGNUPS", "class_name": "Signups" },
+      // Shared cache of looked-up addresses' map, noise, climate and terrain data.
+      { "name": "CACHE", "class_name": "Cache" }
+    ]
+  },
+  "migrations": [
+    { "tag": "v1", "new_sqlite_classes": ["Signups"] },
+    { "tag": "v2", "new_sqlite_classes": ["Cache"] }
+  ],
+  // Scan new listings in subscribed areas, send alert digests and trim the cache every three hours.
+  "triggers": { "crons": ["17 */3 * * *"] },
+  "vars": { "PUBLIC_URL": "https://proplens.vatia.workers.dev" },
+  "workers_dev": true,
+  "observability": { "enabled": true }
+}

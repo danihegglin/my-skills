@@ -1,0 +1,144 @@
+@import "tailwindcss";
+
+@theme {
+  --font-display: "Bricolage Grotesque Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Inter Variable", ui-sans-serif, system-ui, sans-serif;
+
+  --color-paper: #f4f3ee;
+  --color-card: #ffffff;
+  --color-ink: #10140f;
+  --color-ink-2: #474e45;
+  --color-muted: #7c8279;
+  --color-line: #e3e2da;
+  --color-wash: #ecebe4;
+  --color-lime: #d4f26a;
+  --color-lime-deep: #a8d12f;
+  --color-forest: #15322a;
+
+  /* Category identity (marks only, never text). */
+  --color-noise: #eb6834;
+  --color-school: #2a78d6;
+  --color-shop: #1baf7a;
+  --color-sun: #eda100;
+
+  /* Status (always paired with an icon or label). */
+  --color-good: #0ca30c;
+  --color-fair: #7cbf3a;
+  --color-warning: #fab219;
+  --color-serious: #ec835a;
+  --color-critical: #d03b3b;
+
+  --animate-sweep: sweep 7s linear infinite;
+  --animate-rise: rise 0.5s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+
+  @keyframes sweep {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+  @keyframes rise {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+  }
+}
+
+@layer base {
+  html {
+    background: var(--color-paper);
+    color: var(--color-ink);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  body {
+    font-family: var(--font-sans);
+    font-feature-settings: "cv11", "ss01";
+    min-height: 100dvh;
+  }
+  ::selection {
+    background: var(--color-lime);
+    color: var(--color-ink);
+  }
+  :focus-visible {
+    outline: 2px solid var(--color-ink);
+    outline-offset: 2px;
+  }
+}
+
+@utility tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+/* Leaflet polish */
+.leaflet-container {
+  font-family: var(--font-sans);
+  background: #eceae3;
+}
+.leaflet-control-attribution {
+  font-size: 10px;
+  background: rgb(255 255 255 / 0.75) !important;
+  border-radius: 8px 0 0 0;
+}
+.leaflet-bar {
+  border: 1px solid var(--color-line) !important;
+  border-radius: 12px !important;
+  overflow: hidden;
+  box-shadow: 0 1px 2px rgb(16 20 15 / 0.06) !important;
+}
+.leaflet-bar a {
+  color: var(--color-ink) !important;
+}
+.leaflet-tooltip.pl-tip {
+  background: var(--color-ink);
+  color: #fff;
+  border: 0;
+  border-radius: 10px;
+  padding: 6px 10px;
+  font-size: 12px;
+  line-height: 1.35;
+  box-shadow: 0 6px 20px rgb(16 20 15 / 0.18);
+}
+.leaflet-tooltip.pl-tip::before {
+  display: none;
+}
+.pl-marker {
+  background: transparent;
+  border: 0;
+}
+.pl-mark {
+  display: inline-block;
+  white-space: nowrap;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 0.92);
+  padding: 1px 7px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-ink);
+  box-shadow: 0 1px 3px rgb(16 20 15 / 0.18);
+  font-variant-numeric: tabular-nums;
+}
+.pl-ping {
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  background: rgb(212 242 106 / 0.5);
+  animation: pl-ping 2.4s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+@keyframes pl-ping {
+  75%,
+  100% {
+    transform: scale(1.9);
+    opacity: 0;
+  }
+}
